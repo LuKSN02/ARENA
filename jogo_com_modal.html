@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Arena — Página do Jogo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171E;
+    --panel: #1B1F28;
+    --ticker-bg: #0F1116;
+    --border: rgba(255,255,255,0.08);
+    --ink: #D7DAE1;
+    --ink-soft: #AEB3BE;
+    --muted: #7C8394;
+    --live: #34D399;
+    /* --accent e --glow são setados via JS conforme o jogo da URL */
+    --accent: #7C8394;
+    --glow: #171A22;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+
+  .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
+  .clip-tag{ clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+  .pulse-dot{ animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.45; transform:scale(.75); } }
+  .line-clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  /* ===== MODAL DE NOTÍCIA ===== */
+  #news-backdrop{
+    position:fixed; inset:0; z-index:60;
+    background: rgba(8,9,13,0.72);
+    backdrop-filter: blur(3px);
+    opacity:0; pointer-events:none;
+    transition: opacity .25s ease;
+  }
+  #news-backdrop.open{ opacity:1; pointer-events:auto; }
+
+  #news-modal{
+    position:fixed; z-index:61;
+    left:50%; top:50%;
+    width:min(760px, 92vw);
+    max-height:88vh;
+    background: var(--panel);
+    border:1px solid var(--border);
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    opacity:0;
+    transform: translate(-50%, -46%) scale(.96);
+    pointer-events:none;
+    transition: opacity .28s cubic-bezier(.22,1,.36,1), transform .28s cubic-bezier(.22,1,.36,1);
+  }
+  #news-modal.open{
+    opacity:1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events:auto;
+  }
+  #news-modal-body{
+    max-height: 88vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+  }
+  #news-modal-body::-webkit-scrollbar{ width:6px; }
+  #news-modal-body::-webkit-scrollbar-thumb{ background: var(--accent); }
+
+  body.modal-lock{ overflow:hidden; }
+
+  .modal-p{ line-height:1.75; }
+  .comment-avatar{
+    width:32px; height:32px; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700;
+    background: var(--glow); color: var(--accent); border:1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- CABEÇALHO DO JOGO -->
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <a href="home.html" class="font-mono text-[12px]" style="color: var(--muted);">&larr; Voltar para a Home</a>
+    <nav class="font-mono text-[11px]" style="color: var(--muted);">Notícias / <span id="breadcrumb-game" style="color: var(--ink);">Jogo</span></nav>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 pb-8">
+    <span id="game-tag" class="font-mono text-[11px] font-semibold px-3 py-1 inline-block" style="background: var(--accent); color:#12141A;">JOGO</span>
+    <h1 id="game-title" class="font-display text-5xl font-semibold uppercase tracking-wide mt-3" style="color: var(--ink);">Nome do Jogo</h1>
+    <p id="game-desc" class="text-sm mt-2 max-w-xl" style="color: var(--ink-soft);">Descrição do jogo.</p>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-10">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- NOTÍCIAS DO JOGO -->
+    <div class="lg:col-span-2">
+      <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
+        <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Últimas notícias</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5" id="news-grid"></div>
+    </div>
+
+    <!-- SIDEBAR: PRÓXIMAS PARTIDAS -->
+    <aside>
+      <div class="p-5" style="background: var(--panel); border:1px solid var(--border);">
+        <h3 class="mb-4 font-mono text-[13px] font-semibold">📅 PRÓXIMAS PARTIDAS</h3>
+        <div class="flex flex-col" id="matches-list"></div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<!-- ===== MODAL DE NOTÍCIA (Abordagem 1: SPA / Expansão dinâmica) ===== -->
+<div id="news-backdrop"></div>
+<div id="news-modal">
+  <div id="news-modal-body">
+    <div class="relative h-56" id="modal-hero" style="background: linear-gradient(to bottom right, var(--glow), var(--panel));">
+      <button id="modal-close" aria-label="Fechar" class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center font-mono text-lg" style="background: rgba(15,17,22,0.7); color: var(--ink); border:1px solid var(--border);">✕</button>
+      <span id="modal-tag" class="clip-tag absolute top-0 left-0 font-mono text-[11px] font-semibold px-4 py-1" style="background: var(--accent); color:#12141A;">JOGO</span>
+      <span id="modal-live" class="absolute bottom-3 right-3 hidden items-center gap-1 font-mono text-[10px] font-semibold" style="color: var(--live);">
+        <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO
+      </span>
+    </div>
+
+    <div class="p-6 sm:p-8">
+      <h2 id="modal-title" class="font-display text-3xl sm:text-4xl font-semibold uppercase tracking-wide leading-none"></h2>
+      <div class="flex items-center gap-3 mt-3 font-mono text-[11px]" style="color: var(--muted);">
+        <span id="modal-author"></span>
+        <span>•</span>
+        <span id="modal-date"></span>
+        <span>•</span>
+        <span id="modal-read"></span>
+      </div>
+
+      <div id="modal-content" class="mt-6 space-y-4 text-[15px] modal-p" style="color: var(--ink-soft);"></div>
+
+      <div id="modal-gallery" class="grid grid-cols-2 gap-3 mt-6"></div>
+
+      <!-- COMENTÁRIOS SIMULADOS -->
+      <div class="mt-10 pt-6" style="border-top:1px solid var(--border);">
+        <h3 class="font-mono text-[13px] font-semibold mb-4" style="color: var(--ink);">💬 COMENTÁRIOS (<span id="modal-comment-count">0</span>)</h3>
+        <div id="modal-comments" class="flex flex-col gap-4"></div>
+
+        <div class="flex items-start gap-3 mt-6">
+          <div class="comment-avatar">EU</div>
+          <div class="flex-1">
+            <textarea rows="2" placeholder="Escreva um comentário..." class="w-full px-3 py-2 text-[13px] resize-none focus:outline-none" style="background: var(--ticker-bg); border:1px solid var(--border); color: var(--ink);"></textarea>
+            <button class="mt-2 font-mono text-[11px] font-semibold px-4 py-2" style="background: var(--accent); color:#12141A;">PUBLICAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===============================================================
+  // Banco de dados dos jogos — em produção isso viria do CMS
+  // (uma query filtrando por game.slug == params.jogo).
+  // ===============================================================
+  const GAMES = {
+    valorant: {
+      label: "Valorant", accent: "#FF4655", glow: "#241016",
+      desc: "Tiro tático 5x5 da Riot Games, com agentes e habilidades únicas.",
+      news: [
+        { title: "LOUD vira sobre Sentinels e avança às finais do VCT Americas", excerpt: "Equipe brasileira domina o mapa decisivo e garante vaga na grande final.", author: "Rafael Souza", readTimeMin: 4, isLive: true },
+        { title: "Riot anuncia novo agente para o próximo ato", excerpt: "Personagem traz habilidade de controle de área inédita no jogo.", author: "Camila Reis", readTimeMin: 3 },
+      ],
+      matches: [
+        { day: "QUI", date: "07/08", match: "LOUD x Sentinels", time: "20h00" },
+        { day: "SÁB", date: "09/08", match: "MIBR x KRÜ", time: "18h00" },
+      ],
+    },
+    lol: {
+      label: "League of Legends", accent: "#C89B3C", glow: "#221d10",
+      desc: "MOBA 5x5 da Riot Games, um dos maiores cenários competitivos do mundo.",
+      news: [
+        { title: "Patch 14.3 reformula a rota de suporte", excerpt: "Riot ajusta itens de visão e reduz poder de campeões de engajamento.", author: "Marina Alves", readTimeMin: 6 },
+        { title: "CBLOL define chaveamento do playoffs", excerpt: "paiN Gaming garante vantagem de mando de campo na semifinal.", author: "Bruno Tavares", readTimeMin: 3 },
+      ],
+      matches: [
+        { day: "SÁB", date: "09/08", match: "paiN x RED", time: "17h30" },
+        { day: "DOM", date: "10/08", match: "LOUD x Flamengo", time: "20h00" },
+      ],
+    },
+    cs2: {
+      label: "CS2", accent: "#E8A03D", glow: "#241c10",
+      desc: "A nova geração do Counter-Strike, tiro tático 5x5 da Valve.",
+      news: [
+        { title: "FURIA bate NAVI de virada e assume liderança em Cologne", excerpt: "Time brasileiro vira desvantagem de 4 rounds no mapa decisivo.", author: "Bruno Tavares", readTimeMin: 3 },
+        { title: "Valve libera atualização de balanceamento de armas", excerpt: "Ajustes miram reduzir domínio de rifles em mapas específicos.", author: "Diego Martins", readTimeMin: 4 },
+      ],
+      matches: [
+        { day: "SEX", date: "08/08", match: "FURIA x G2", time: "13h00" },
+        { day: "DOM", date: "10/08", match: "MIBR x Imperial", time: "14h00" },
+      ],
+    },
+    dota2: {
+      label: "Dota 2", accent: "#C23C2A", glow: "#241412",
+      desc: "MOBA 5x5 da Valve, conhecido pela profundidade tática e pelo The International.",
+      news: [
+        { title: "Abertas as classificatórias sul-americanas para o TI", excerpt: "Oito equipes disputam duas vagas para o torneio internacional em setembro.", author: "Camila Reis", readTimeMin: 5 },
+      ],
+      matches: [
+        { day: "DOM", date: "10/08", match: "Team Liquid x OG", time: "15h00" },
+      ],
+    },
+    fortnite: {
+      label: "Fortnite", accent: "#8B5CF6", glow: "#1c1428",
+      desc: "Battle royale da Epic Games, com construção e eventos ao vivo dentro do jogo.",
+      news: [
+        { title: "Nova temporada traz mapa reformulado e colab surpresa", excerpt: "Epic Games confirma evento ao vivo no servidor para a virada de temporada.", author: "Diego Martins", readTimeMin: 3, isLive: true },
+      ],
+      matches: [
+        { day: "SEG", date: "11/08", match: "FNCS — Grande Final", time: "16h00" },
+      ],
+    },
+    cod: {
+      label: "Call of Duty", accent: "#5B90C9", glow: "#131c26",
+      desc: "Franquia de FPS tático da Activision, com cenário competitivo na Call of Duty League.",
+      news: [
+        { title: "Call of Duty League anuncia formato para os playoffs", excerpt: "Fase final volta ao modelo presencial com oito equipes classificadas.", author: "Pedro Lima", readTimeMin: 4 },
+      ],
+      matches: [
+        { day: "QUI", date: "07/08", match: "OpTic x Atlanta FaZe", time: "21h00" },
+      ],
+    },
+    freefire: {
+      label: "Free Fire", accent: "#FF5722", glow: "#251510",
+      desc: "Battle royale mobile da Garena, um dos jogos mais populares do Brasil.",
+      news: [
+        { title: "Free Fire World Series chega ao Brasil em outubro", excerpt: "Garena confirma São Paulo como sede da etapa e abre venda de ingressos.", author: "Ana Beatriz", readTimeMin: 3, isLive: true },
+      ],
+      matches: [
+        { day: "DOM", date: "10/08", match: "Final regional — Free Fire", time: "19h00" },
+      ],
+    },
+    apex: {
+      label: "Apex Legends", accent: "#DA3B46", glow: "#24141a",
+      desc: "Battle royale de heróis da Respawn Entertainment, com cenário competitivo na ALGS.",
+      news: [
+        { title: "ALGS anuncia nova lenda jogável para o próximo split", excerpt: "Respawn revela mudanças no meta competitivo antes da temporada de ranked.", author: "Lucas Prado", readTimeMin: 4 },
+      ],
+      matches: [],
+    },
+    mlbb: {
+      label: "Mobile Legends", accent: "#17B8A6", glow: "#0f2422",
+      desc: "MOBA mobile da Moonton, extremamente popular no Sudeste Asiático e em crescimento no Brasil.",
+      news: [
+        { title: "M-Series confirma fase de grupos com times brasileiros", excerpt: "Moonton libera calendário completo do maior torneio mundial de MLBB.", author: "Thiago Nunes", readTimeMin: 3 },
+      ],
+      matches: [],
+    },
+    rocketleague: {
+      label: "Rocket League", accent: "#2F8EFF", glow: "#101c2c",
+      desc: "Futebol com carros da Psyonix, com cenário competitivo na RLCS.",
+      news: [
+        { title: "RLCS: equipe brasileira vira 0x2 e vence de virada", excerpt: "Gols aéreos decidem confronto eletrizante na fase de grupos do Major.", author: "Gabriel Costa", readTimeMin: 3, isLive: true },
+      ],
+      matches: [],
+    },
+    eafc: {
+      label: "EA FC", accent: "#2ECC71", glow: "#10241a",
+      desc: "Simulador de futebol da EA Sports, com cenário competitivo global de e-football.",
+      news: [
+        { title: "eChampions League define os classificados para as quartas", excerpt: "Jogador brasileiro avança com campanha invicta na fase de grupos.", author: "Renata Dias", readTimeMin: 3 },
+      ],
+      matches: [],
+    },
+  };
+
+  // ===============================================================
+  // Roteamento por query param: jogo.html?jogo=fortnite
+  // ===============================================================
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("jogo") || "valorant";
+  const game = GAMES[slug] || GAMES.valorant;
+
+  document.documentElement.style.setProperty("--accent", game.accent);
+  document.documentElement.style.setProperty("--glow", game.glow);
+
+  document.getElementById("page-title").textContent = `${game.label} — Arena`;
+  document.getElementById("breadcrumb-game").textContent = game.label;
+  document.getElementById("game-tag").textContent = game.label.toUpperCase();
+  document.getElementById("game-title").textContent = game.label;
+  document.getElementById("game-desc").textContent = game.desc;
+
+  const newsGrid = document.getElementById("news-grid");
+  if (game.news.length === 0) {
+    newsGrid.innerHTML = `<p class="font-mono text-[12px]" style="color: var(--muted);">Nenhuma notícia publicada ainda para ${game.label}.</p>`;
+  } else {
+    game.news.forEach((n, idx) => {
+      const card = document.createElement("a");
+      card.href = "#";
+      card.dataset.index = idx;
+      card.className = "clip-card block cursor-pointer transition hover:opacity-90";
+      card.style.background = "var(--panel)";
+      card.style.border = "1px solid var(--border)";
+      card.innerHTML = `
+        <div class="relative h-32" style="background: linear-gradient(to bottom right, var(--glow), var(--panel));">
+          ${n.isLive ? `<span class="absolute top-2 right-3 flex items-center gap-1 font-mono text-[10px] font-semibold" style="color: var(--live);">
+            <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO
+          </span>` : ""}
+        </div>
+        <div class="p-4">
+          <h3 class="font-semibold text-[15px] leading-snug">${n.title}</h3>
+          <p class="text-[13px] mt-2 line-clamp-2" style="color: var(--ink-soft);">${n.excerpt}</p>
+          <div class="flex items-center justify-between mt-4 font-mono text-[11px]" style="color: var(--muted);">
+            <span>${n.author}</span><span>${n.readTimeMin} min</span>
+          </div>
+        </div>
+      `;
+      newsGrid.appendChild(card);
+    });
+  }
+
+  const matchesList = document.getElementById("matches-list");
+  if (game.matches.length === 0) {
+    matchesList.innerHTML = `<p class="font-mono text-[12px] py-2" style="color: var(--muted);">Nenhuma partida agendada no momento.</p>`;
+  } else {
+    game.matches.forEach((m, i) => {
+      const row = document.createElement("div");
+      row.className = "flex items-center justify-between py-3";
+      if (i > 0) row.style.borderTop = "1px solid var(--border)";
+      row.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="text-center w-10 shrink-0">
+            <div class="font-mono text-[10px]" style="color: var(--muted);">${m.day}</div>
+            <div class="font-mono text-[12px] font-semibold">${m.date}</div>
+          </div>
+          <div class="text-[13px] font-medium">${m.match}</div>
+        </div>
+        <span class="font-mono text-[12px]" style="color: var(--muted);">${m.time}</span>
+      `;
+      matchesList.appendChild(row);
+    });
+  }
+
+  // ===============================================================
+  // MODAL DE NOTÍCIA — Abordagem 1 (SPA / Expansão dinâmica)
+  // ===============================================================
+  const backdrop   = document.getElementById("news-backdrop");
+  const modal      = document.getElementById("news-modal");
+  const modalHero  = document.getElementById("modal-hero");
+  const modalTag   = document.getElementById("modal-tag");
+  const modalLive  = document.getElementById("modal-live");
+  const modalTitle = document.getElementById("modal-title");
+  const modalAuthor= document.getElementById("modal-author");
+  const modalDate  = document.getElementById("modal-date");
+  const modalRead  = document.getElementById("modal-read");
+  const modalContent = document.getElementById("modal-content");
+  const modalGallery = document.getElementById("modal-gallery");
+  const modalComments = document.getElementById("modal-comments");
+  const modalCommentCount = document.getElementById("modal-comment-count");
+  const modalClose = document.getElementById("modal-close");
+
+  // Em produção: n.content (array de parágrafos), n.images e n.comments
+  // viriam prontos do CMS/API. Aqui simulamos a partir do excerpt
+  // para a notícia funcionar como demo standalone.
+  function buildFallbackContent(n) {
+    return [
+      n.excerpt,
+      `A partida teve grande repercussão entre torcedores e analistas da cena de ${game.label}, que destacaram a consistência da equipe ao longo de toda a fase de grupos. Especialistas apontam que o resultado pode reorganizar as apostas para a reta final da temporada.`,
+      `Em entrevista após a partida, membros da organização comentaram sobre os ajustes táticos feitos ao longo da semana de preparação, reforçando o trabalho da comissão técnica e a importância dos treinos de scrim contra equipes internacionais.`,
+      `O próximo compromisso da equipe já está confirmado no calendário oficial e promete atrair grande audiência nas plataformas de streaming, consolidando ainda mais o interesse do público brasileiro pela modalidade.`,
+    ];
+  }
+
+  function buildFallbackComments(n) {
+    return [
+      { user: "gg_easy",      time: "12 min atrás", text: "Que virada insana, não acreditei até o último round!" },
+      { user: "torcedor_br",  time: "34 min atrás", text: "Time merece todo o reconhecimento, jogo muito consistente." },
+      { user: "analista_fps", time: "1 h atrás",     text: `Boa análise, ${n.author} — só senti falta de mais detalhes sobre a rotação de armas.` },
+    ];
+  }
+
+  function openNewsModal(n) {
+    modalHero.style.background = `linear-gradient(to bottom right, var(--glow), var(--panel))`;
+    modalTag.textContent = game.label.toUpperCase();
+    modalLive.classList.toggle("hidden", !n.isLive);
+    modalLive.classList.toggle("flex", !!n.isLive);
+    modalTitle.textContent = n.title;
+    modalAuthor.textContent = `por ${n.author}`;
+    modalDate.textContent = n.date || "Hoje";
+    modalRead.textContent = `${n.readTimeMin} min de leitura`;
+
+    const paragraphs = n.content || buildFallbackContent(n);
+    modalContent.innerHTML = paragraphs.map(p => `<p class="modal-p">${p}</p>`).join("");
+
+    modalGallery.innerHTML = [1, 2].map(i => `
+      <div class="h-28 sm:h-36" style="background: linear-gradient(135deg, var(--glow), var(--panel)); border:1px solid var(--border);"></div>
+    `).join("");
+
+    const comments = n.comments || buildFallbackComments(n);
+    modalCommentCount.textContent = comments.length;
+    modalComments.innerHTML = comments.map(c => `
+      <div class="flex items-start gap-3">
+        <div class="comment-avatar">${c.user.slice(0,2).toUpperCase()}</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 font-mono text-[11px]">
+            <span style="color: var(--ink);" class="font-semibold">${c.user}</span>
+            <span style="color: var(--muted);">${c.time}</span>
+          </div>
+          <p class="text-[13px] mt-1" style="color: var(--ink-soft);">${c.text}</p>
+        </div>
+      </div>
+    `).join("");
+
+    backdrop.classList.add("open");
+    modal.classList.add("open");
+    document.body.classList.add("modal-lock");
+  }
+
+  function closeNewsModal() {
+    backdrop.classList.remove("open");
+    modal.classList.remove("open");
+    document.body.classList.remove("modal-lock");
+  }
+
+  // Delega o clique em cada card gerado dinamicamente para abrir o modal
+  newsGrid.addEventListener("click", (e) => {
+    const card = e.target.closest("a.clip-card");
+    if (!card) return;
+    e.preventDefault();
+    const idx = Number(card.dataset.index);
+    openNewsModal(game.news[idx]);
+  });
+
+  backdrop.addEventListener("click", closeNewsModal);
+  modalClose.addEventListener("click", closeNewsModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeNewsModal();
+  });
+</script>
+
+</body>
+</html>

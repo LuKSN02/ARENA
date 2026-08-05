@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Inventário — Arena</title>
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171E;
+    --panel: #1B1F28;
+    --panel-2: #20242F;
+    --sidebar: #0F1116;
+    --border: rgba(255,255,255,0.08);
+    --ink: #D7DAE1;
+    --ink-soft: #AEB3BE;
+    --muted: #7C8394;
+    --live: #34D399;
+    --valorant: #FF4655;
+    --discord-blurple: #5865F2;
+
+    --r-comum: #7C8394;
+    --r-raro: #5865F2;
+    --r-epico: #8B5CF6;
+    --r-lendario: #F59E0B;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+  .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+  .clip-tag{ clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+
+  .filter-pill{
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    padding:8px 16px; border:1px solid var(--border); color: var(--muted); background:transparent; cursor:pointer;
+    transition: all .12s ease; white-space:nowrap;
+  }
+  .filter-pill.active{ border-color: var(--discord-blurple); color: var(--ink); background: color-mix(in srgb, var(--discord-blurple) 16%, transparent); }
+
+  .item-card{
+    background: var(--panel); border:1px solid var(--border); overflow:hidden;
+    display:flex; flex-direction:column; transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .item-card:hover{ transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.35); }
+  .item-swatch{ height:88px; position:relative; }
+  .item-swatch.emblema-swatch{ display:flex; align-items:center; justify-content:center; font-size:34px; background: var(--panel-2); }
+  .rarity-chip{
+    position:absolute; top:8px; left:8px; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
+    padding:3px 8px; border-radius:3px; color:#12141A; text-transform:uppercase; letter-spacing:.03em;
+  }
+  .equipped-chip{
+    position:absolute; top:8px; right:8px; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
+    padding:3px 8px; border-radius:3px; background: var(--live); color:#0B1410;
+  }
+  .item-body{ padding:12px 14px 14px; display:flex; flex-direction:column; gap:8px; flex:1; }
+  .item-name{ font-size:13px; font-weight:700; line-height:1.3; }
+  .item-desc{ font-size:11px; color: var(--muted); line-height:1.5; flex:1; }
+  .item-action{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:8px 0;
+    border-radius:3px; cursor:pointer; text-align:center; transition: filter .12s ease;
+  }
+  .item-action.equip{ background: var(--discord-blurple); color:#fff; }
+  .item-action.equipped{ background: transparent; border:1px solid var(--live); color: var(--live); cursor:default; }
+  .item-action.use{ background: var(--valorant); color:#12141A; }
+  .item-action.used{ background: transparent; border:1px solid var(--border); color: var(--muted); cursor:default; }
+  .item-action:hover:not(.equipped):not(.used){ filter: brightness(1.12); }
+
+  #empty-state{ display:none; }
+  #empty-state.show{ display:flex; }
+
+  /* ============ ITENS BLOQUEADOS (objetivo não cumprido) ============ */
+  .item-card.locked{ opacity:.92; }
+  .item-card.locked .item-swatch{ filter: grayscale(1) brightness(.45); }
+  .item-card.locked .item-name{ color: var(--ink-soft); }
+  .lock-overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background: rgba(10,11,15,0.35); font-size:22px;
+  }
+  .lock-req{
+    font-family:'JetBrains Mono', monospace; font-size:10px; line-height:1.5; color: var(--muted);
+  }
+  .progress-track{ height:5px; background: rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-top:6px; }
+  .progress-fill{ height:100%; background: var(--discord-blurple); border-radius:3px; transition: width .25s ease; }
+  .item-action.locked-btn{ background: transparent; border:1px solid var(--border); color: var(--muted); cursor:not-allowed; }
+
+  /* ============ PAINEL DEV — SIMULAR PROGRESSO ============ */
+  #dev-panel{ border:1px dashed var(--border); background: var(--panel); }
+  #dev-panel summary{ cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--muted); padding:12px 16px; }
+  #dev-panel summary:hover{ color: var(--ink); }
+  .dev-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; padding:8px 12px;
+    background: var(--panel-2); border:1px solid var(--border); color: var(--ink-soft); cursor:pointer;
+    transition: all .12s ease;
+  }
+  .dev-btn:hover{ border-color: var(--discord-blurple); color:#fff; }
+
+  #inv-toast{
+    position:fixed; top:20px; left:50%; transform: translateX(-50%) translateY(-140%);
+    z-index:90; background: var(--panel); border:1px solid var(--live); color: var(--live);
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    padding:10px 18px; transition: transform .22s ease;
+  }
+  #inv-toast.show{ transform: translateX(-50%) translateY(0); }
+
+  /* ============ NOTIFICAÇÃO DE CONQUISTA (distinta do toast simples) ============ */
+  #achievement-stack{
+    position:fixed; top:20px; right:20px; z-index:95;
+    display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+    pointer-events:none;
+  }
+  .achievement-toast{
+    width:300px; display:flex; gap:12px; align-items:center;
+    background: linear-gradient(135deg, var(--panel-2), var(--panel));
+    border:1px solid var(--r-color, var(--discord-blurple));
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 0 28px -6px var(--r-color, var(--discord-blurple)), 0 14px 30px -10px rgba(0,0,0,.6);
+    padding:12px 14px;
+    transform: translateX(120%); opacity:0;
+    transition: transform .32s cubic-bezier(.2,.8,.2,1), opacity .32s ease;
+  }
+  .achievement-toast.show{ transform: translateX(0); opacity:1; }
+  .achievement-icon{
+    width:44px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:22px; background: var(--panel); border:1px solid var(--r-color, var(--discord-blurple));
+    box-shadow: 0 0 14px -2px var(--r-color, var(--discord-blurple));
+  }
+  .achievement-eyebrow{ font-family:'JetBrains Mono', monospace; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color: var(--r-color, var(--discord-blurple)); }
+  .achievement-name{ font-family:'Teko', sans-serif; font-size:20px; font-weight:600; line-height:1.05; text-transform:uppercase; }
+  .achievement-rarity{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); }
+
+  /* ============ MODAL DE CONFIRMAÇÃO TEMÁTICO (substitui window.confirm) ============ */
+  #confirm-overlay{
+    position:fixed; inset:0; z-index:110;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    background: rgba(8,9,13,0.75);
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    opacity:0; pointer-events:none;
+    transition: opacity .22s ease;
+  }
+  #confirm-overlay.is-open{ opacity:1; pointer-events:auto; }
+
+  #confirm-box{
+    width:100%; max-width:380px;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid rgba(88,101,242,0.4);
+    box-shadow: 0 0 0 1px rgba(88,101,242,0.06), 0 0 36px -8px rgba(88,101,242,0.4), 0 20px 50px -15px rgba(0,0,0,.6);
+    transform: scale(.95); opacity:0;
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+  }
+  #confirm-overlay.is-open #confirm-box{ transform: scale(1); opacity:1; }
+
+  #confirm-close{
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    background: var(--panel); border:1px solid var(--border); color: var(--muted);
+    transition: all .16s ease;
+  }
+  #confirm-close:hover{
+    color:#fff; border-color: var(--discord-blurple);
+    box-shadow: 0 0 14px rgba(88,101,242,0.55), inset 0 0 8px rgba(88,101,242,0.15);
+    transform: rotate(90deg);
+  }
+
+  #confirm-icon{
+    width:46px; height:46px; display:flex; align-items:center; justify-content:center;
+    font-size:20px; background: color-mix(in srgb, var(--valorant) 14%, transparent);
+    border:1px solid var(--valorant); box-shadow: 0 0 16px -2px rgba(255,70,85,.5);
+  }
+
+  .confirm-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.04em; padding:10px 0;
+    text-align:center; cursor:pointer; transition: filter .12s ease, box-shadow .12s ease;
+  }
+  #confirm-cancel{ background:transparent; border:1px solid var(--border); color: var(--ink-soft); }
+  #confirm-cancel:hover{ border-color: var(--muted); color: var(--ink); }
+  #confirm-ok{ background: var(--valorant); color:#12141A; box-shadow: 0 0 16px -2px rgba(255,70,85,.55); }
+  #confirm-ok:hover{ filter: brightness(1.12); }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="home.html" class="font-display text-3xl font-bold tracking-wide" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <a href="home.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">&larr; Voltar para o portal</a>
+  </div>
+</header>
+
+<div id="no-session-banner" class="hidden" style="background: color-mix(in srgb, var(--valorant) 12%, transparent); border-bottom:1px solid var(--valorant);">
+  <div class="max-w-6xl mx-auto px-4 py-2.5 font-mono text-[12px]" style="color: var(--valorant);">
+    ⚠ Você não está logado — exibindo um inventário de demonstração.
+  </div>
+</div>
+
+<main class="max-w-6xl mx-auto px-4 py-10">
+
+  <div class="flex items-end justify-between flex-wrap gap-3 mb-2">
+    <div>
+      <h1 class="font-display text-4xl font-semibold uppercase tracking-wide">Meu Inventário</h1>
+      <p class="text-[13px] mt-1" style="color: var(--muted);">Banners, emblemas e cupons que você desbloqueou na Arena.</p>
+    </div>
+    <div class="font-mono text-[11px]" style="color: var(--muted);"><span id="item-count">0/0</span> desbloqueados</div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 my-6" id="filter-bar">
+    <button class="filter-pill active" data-filter="todos">TODOS</button>
+    <button class="filter-pill" data-filter="banner">🖼 BANNERS</button>
+    <button class="filter-pill" data-filter="emblema">🏅 EMBLEMAS</button>
+    <button class="filter-pill" data-filter="cupom">🎟 CUPONS</button>
+  </div>
+
+  <div id="items-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+
+  <div id="empty-state" class="flex-col items-center justify-center py-20 text-center" style="color: var(--muted);">
+    <div class="text-4xl mb-3">🎒</div>
+    <p class="text-[13px]">Nenhum item nessa categoria ainda.</p>
+  </div>
+
+  <!-- PAINEL DEV — simula eventos que, em produção, viriam de noticia.html,
+       campanhas.html etc. chamando bumpProgress() a partir de outras telas. -->
+  <details id="dev-panel" class="mt-10">
+    <summary>🧪 Simular progresso (ferramenta de teste)</summary>
+    <div class="px-4 pb-4 flex flex-wrap gap-2">
+      <button class="dev-btn" data-bump="newsRead">+1 notícia lida</button>
+      <button class="dev-btn" data-bump="chatMessages">+1 mensagem no chat</button>
+      <button class="dev-btn" data-bump="liveMatchesWatched">+1 partida assistida</button>
+      <button class="dev-btn" data-bump="campaignsJoined">+1 campanha concluída</button>
+      <button class="dev-btn" id="dev-advance-day">+1 dia ativo</button>
+      <button class="dev-btn" id="dev-reset" style="color: var(--valorant); border-color: var(--valorant);">Resetar progresso</button>
+    </div>
+  </details>
+
+</main>
+
+<div id="inv-toast">✓ ITEM EQUIPADO</div>
+
+<div id="achievement-stack"></div>
+
+<!-- ===== MODAL DE CONFIRMAÇÃO TEMÁTICO (substitui window.confirm) ===== -->
+<div id="confirm-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div id="confirm-box" class="clip-card p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div id="confirm-icon">⚠</div>
+      <button id="confirm-close" aria-label="Fechar">✕</button>
+    </div>
+    <p class="font-mono text-[10px] uppercase tracking-wide mb-1" style="color: var(--muted);">Confirmar ação</p>
+    <h3 id="confirm-title" class="font-display text-2xl font-semibold uppercase leading-tight mb-2"></h3>
+    <p id="confirm-message" class="text-[13px] leading-relaxed mb-6" style="color: var(--ink-soft);"></p>
+    <div class="grid grid-cols-2 gap-3">
+      <button id="confirm-cancel" class="confirm-btn">Cancelar</button>
+      <button id="confirm-ok" class="confirm-btn">Usar item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===============================================================
+  // 1) SESSÃO — mesma convenção usada em perfil-config.html: lê o
+  //    e-mail salvo pelo home.html no login e monta as chaves de
+  //    armazenamento a partir dele.
+  // ===============================================================
+  function getSessionEmail() {
+    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
+  }
+  const sessionEmail = getSessionEmail();
+  const inventoryKey = `arena-inventory-${sessionEmail || "demo"}`;
+  const profileKey = `arena-profile-${sessionEmail || "demo"}`;
+  if (!sessionEmail) document.getElementById("no-session-banner").classList.remove("hidden");
+
+  // ===============================================================
+  // 2) CATÁLOGO — itens fictícios "de fábrica". Banners usam o mesmo
+  //    formato (cor sólida ou degradê) que perfil-config.html já
+  //    entende, então equipar aqui reflete direto lá.
+  // ===============================================================
+  const CATALOG = [
+    { id: "banner-neon-grade", type: "banner", name: "Grade Neon", desc: "O clássico visual grafite da Arena.", rarity: "comum",
+      value: "#20242F" },
+    { id: "banner-sinal-ao-vivo", type: "banner", name: "Sinal ao Vivo", desc: "Recompensa por se engajar no chat da Arena.", rarity: "raro",
+      value: "linear-gradient(135deg,#0EA5E9,#5865F2)",
+      unlock: { type: "counter", key: "chatMessages", target: 10, label: "Envie 10 mensagens no chat da Arena" } },
+    { id: "banner-chamas-furia", type: "banner", name: "Chamas FURIA", desc: "Ganho por acompanhar partidas ao vivo.", rarity: "raro",
+      value: "linear-gradient(135deg,#FF4655,#F59E0B)",
+      unlock: { type: "counter", key: "liveMatchesWatched", target: 5, label: "Assista 5 partidas ao vivo" } },
+    { id: "banner-nebulosa-roxa", type: "banner", name: "Nebulosa Roxa", desc: "Edição especial de temporada.", rarity: "epico",
+      value: "linear-gradient(135deg,#5865F2,#8B5CF6)",
+      unlock: { type: "counter", key: "campaignsJoined", target: 3, label: "Conclua 3 campanhas de RPG" } },
+    { id: "banner-aurora-cyber", type: "banner", name: "Aurora Cyber", desc: "Item raríssimo de evento limitado.", rarity: "lendario",
+      value: "linear-gradient(135deg,#34D399,#5865F2,#EC4899)",
+      unlock: { type: "combo", items: ["banner-chamas-furia", "emblema-cacador-noticias", "emblema-coracao-roxo"],
+        label: "Desbloqueie Chamas FURIA, Caçador de Notícias e Coração Roxo" } },
+
+    { id: "emblema-primeira-vitoria", type: "emblema", name: "Primeira Vitória", desc: "Concedido ao criar sua conta na Arena.", rarity: "comum",
+      emoji: "⭐" },
+    { id: "emblema-cacador-noticias", type: "emblema", name: "Caçador de Notícias", desc: "Leu 10 matérias no portal.", rarity: "raro",
+      emoji: "📰",
+      unlock: { type: "counter", key: "newsRead", target: 10, label: "Leia 10 notícias no portal" } },
+    { id: "emblema-estrategista", type: "emblema", name: "Estrategista", desc: "Concluiu sua primeira campanha de RPG.", rarity: "raro",
+      emoji: "🧠",
+      unlock: { type: "counter", key: "campaignsJoined", target: 1, label: "Conclua 1 campanha de RPG" } },
+    { id: "emblema-coracao-roxo", type: "emblema", name: "Coração Roxo", desc: "Apoiador de longa data da comunidade.", rarity: "epico",
+      emoji: "💜",
+      unlock: { type: "counter", key: "chatMessages", target: 20, label: "Envie 20 mensagens no chat da Arena" } },
+    { id: "emblema-veterano", type: "emblema", name: "Veterano da Arena", desc: "Continua ativo há semanas na plataforma.", rarity: "epico",
+      emoji: "🎖️",
+      unlock: { type: "days", key: "daysActive", target: 14, label: "Seja um jogador ativo por 14 dias" } },
+    { id: "emblema-fa-fundador", type: "emblema", name: "Fã Fundador", desc: "Esteve entre os primeiros usuários da Arena.", rarity: "lendario",
+      emoji: "🏆",
+      unlock: { type: "date", before: "2026-09-01", label: "Exclusivo para contas criadas antes do lançamento oficial" } },
+
+    { id: "cupom-loja-10", type: "cupom", name: "10% OFF na Loja Arena", desc: "Válido para qualquer produto da loja oficial.", rarity: "comum",
+      emoji: "🎟️" },
+    { id: "cupom-chat-vip", type: "cupom", name: "Acesso VIP ao Chat", desc: "Libera o chat exclusivo durante transmissões ao vivo.", rarity: "raro",
+      emoji: "🔓",
+      unlock: { type: "counter", key: "chatMessages", target: 10, label: "Envie 10 mensagens no chat da Arena" } },
+  ];
+
+  const RARITY_LABEL = { comum: "Comum", raro: "Raro", epico: "Épico", lendario: "Lendário" };
+  const RARITY_COLOR = { comum: "var(--r-comum)", raro: "var(--r-raro)", epico: "var(--r-epico)", lendario: "var(--r-lendario)" };
+
+  // ===============================================================
+  // 3) ESTADO DO INVENTÁRIO — na primeira visita, "concede" um kit
+  //    inicial (senão a tela ficaria vazia pra sempre numa demo sem
+  //    backend). Cupons têm `used`; banners/emblemas têm `equipped`.
+  // ===============================================================
+  function loadInventory() {
+    try {
+      const raw = localStorage.getItem(inventoryKey);
+      if (raw) return JSON.parse(raw);
+    } catch (err) { /* segue pro seed */ }
+
+    const starter = CATALOG
+      .filter(it => it.rarity === "comum")
+      .map(it => ({ id: it.id, used: false, equipped: it.type !== "cupom" }));
+    saveInventory(starter);
+    return starter;
+  }
+  function saveInventory(inv) {
+    try { localStorage.setItem(inventoryKey, JSON.stringify(inv)); } catch (err) { /* silencioso */ }
+  }
+
+  let inventory = loadInventory(); // [{id, used?, equipped?}]
+
+  function ownedState(itemId) { return inventory.find(i => i.id === itemId); }
+
+  // ===============================================================
+  // 3.1) PROGRESSO DE OBJETIVOS — contadores compartilhados que, em
+  //    produção, seriam incrementados pelas próprias páginas (ex:
+  //    noticia.html chama bumpProgress('newsRead') ao abrir uma
+  //    matéria, campanhas.html chama bumpProgress('campaignsJoined')
+  //    ao concluir uma campanha, etc). `firstVisit` é carimbado uma
+  //    única vez e alimenta os objetivos baseados em tempo/data.
+  // ===============================================================
+  const progressKey = `arena-progress-${sessionEmail || "demo"}`;
+
+  function loadProgress() {
+    let progress = {};
+    try {
+      const raw = localStorage.getItem(progressKey);
+      progress = raw ? JSON.parse(raw) : {};
+    } catch (err) { progress = {}; }
+    if (!progress.firstVisit) progress.firstVisit = Date.now();
+    progress.newsRead ??= 0;
+    progress.chatMessages ??= 0;
+    progress.campaignsJoined ??= 0;
+    progress.liveMatchesWatched ??= 0;
+    saveProgress(progress);
+    return progress;
+  }
+  function saveProgress(progress) {
+    try { localStorage.setItem(progressKey, JSON.stringify(progress)); } catch (err) { /* silencioso */ }
+  }
+
+  let progress = loadProgress();
+
+  function bumpProgress(key, amount = 1) {
+    progress[key] = (progress[key] || 0) + amount;
+    saveProgress(progress);
+    checkUnlocks();
+    render();
+  }
+
+  function daysActiveCount() {
+    return Math.floor((Date.now() - progress.firstVisit) / 86400000);
+  }
+
+  // ===============================================================
+  // 3.2) AVALIAÇÃO DE DESBLOQUEIO — cada item bloqueado é checado
+  //    contra seu `unlock`; quando a condição é satisfeita, o item
+  //    entra automaticamente no inventário.
+  // ===============================================================
+  function unlockProgressValue(item) {
+    const u = item.unlock;
+    if (!u) return null;
+    if (u.type === "counter") return progress[u.key] || 0;
+    if (u.type === "days") return daysActiveCount();
+    if (u.type === "combo") return u.items.filter(id => ownedState(id)).length;
+    return null; // "date" não tem barra de progresso
+  }
+  function unlockTarget(item) {
+    const u = item.unlock;
+    if (u.type === "counter" || u.type === "days") return u.target;
+    if (u.type === "combo") return u.items.length;
+    return null;
+  }
+  function isUnlocked(item) {
+    const u = item.unlock;
+    if (!u) return true;
+    if (u.type === "counter") return (progress[u.key] || 0) >= u.target;
+    if (u.type === "days") return daysActiveCount() >= u.target;
+    if (u.type === "date") return progress.firstVisit <= new Date(u.before).getTime();
+    if (u.type === "combo") return u.items.every(id => ownedState(id));
+    return false;
+  }
+
+  function checkUnlocks() {
+    CATALOG.forEach(item => {
+      if (ownedState(item.id) || !item.unlock) return;
+      if (isUnlocked(item)) {
+        inventory.push({ id: item.id, used: false, equipped: false });
+        saveInventory(inventory);
+        showAchievement(item);
+      }
+    });
+  }
+
+  // ===============================================================
+  // NOTIFICAÇÃO DE CONQUISTA — cartão maior no canto superior direito,
+  // com cor da raridade do item, separado do toast simples usado em
+  // ações de equipar/usar. Empilha se vários itens desbloquearem juntos.
+  // ===============================================================
+  function showAchievement(item) {
+    const stack = document.getElementById("achievement-stack");
+    const emoji = item.type === "banner" ? "🖼️" : item.emoji;
+    const el = document.createElement("div");
+    el.className = "achievement-toast";
+    el.style.setProperty("--r-color", RARITY_COLOR[item.rarity]);
+    el.innerHTML = `
+      <div class="achievement-icon">${emoji}</div>
+      <div>
+        <div class="achievement-eyebrow">🏆 Conquista desbloqueada</div>
+        <div class="achievement-name">${item.name}</div>
+        <div class="achievement-rarity">${RARITY_LABEL[item.rarity]} · ${item.type === "banner" ? "Banner" : "Emblema"}</div>
+      </div>`;
+    stack.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+    setTimeout(() => {
+      el.classList.remove("show");
+      setTimeout(() => el.remove(), 350);
+    }, 4200);
+  }
+
+  // ===============================================================
+  // 4) SINCRONIA COM O PERFIL — equipar grava direto na chave que
+  //    perfil-config.html e home.html leem, então o efeito aparece
+  //    nas outras telas sem duplicar lógica.
+  // ===============================================================
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(profileKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) { return {}; }
+  }
+  function patchProfile(patch) {
+    const profile = { ...loadProfile(), ...patch };
+    try { localStorage.setItem(profileKey, JSON.stringify(profile)); } catch (err) { /* silencioso */ }
+  }
+
+  function equipBanner(item) {
+    inventory.filter(i => CATALOG.find(c => c.id === i.id)?.type === "banner").forEach(i => i.equipped = false);
+    ownedState(item.id).equipped = true;
+    saveInventory(inventory);
+    const isGradient = item.value.includes("gradient");
+    patchProfile({
+      bannerMode: isGradient ? "gradient" : "color",
+      bannerGradient: isGradient ? item.value : undefined,
+      bannerColor: isGradient ? undefined : item.value,
+      equippedBannerId: item.id,
+    });
+    showToast(`✓ BANNER "${item.name.toUpperCase()}" EQUIPADO`);
+    render();
+  }
+
+  const MAX_EQUIPPED_BADGES = 3;
+
+  function equipEmblema(item) {
+    const state = ownedState(item.id);
+    const equippedCount = inventory.filter(i => i.equipped && CATALOG.find(c => c.id === i.id)?.type === "emblema").length;
+
+    if (!state.equipped && equippedCount >= MAX_EQUIPPED_BADGES) {
+      showToast(`⚠ VOCÊ SÓ PODE EXIBIR ${MAX_EQUIPPED_BADGES} EMBLEMAS AO MESMO TEMPO`);
+      return;
+    }
+
+    state.equipped = !state.equipped;
+    saveInventory(inventory);
+    syncEquippedBadgesToProfile();
+    showToast(state.equipped
+      ? `✓ EMBLEMA "${item.name.toUpperCase()}" EQUIPADO`
+      : `EMBLEMA "${item.name.toUpperCase()}" REMOVIDO DO PERFIL`);
+    render();
+  }
+
+  // Grava a lista completa de emblemas equipados (não apenas um) na chave
+  // de perfil compartilhada — é isso que home.html/perfil-config.html leem
+  // para exibir os emblemas ao lado do avatar.
+  function syncEquippedBadgesToProfile() {
+    const equippedBadges = inventory
+      .filter(i => i.equipped && CATALOG.find(c => c.id === i.id)?.type === "emblema")
+      .map(i => {
+        const item = CATALOG.find(c => c.id === i.id);
+        return { id: item.id, emoji: item.emoji, name: item.name, rarity: item.rarity };
+      });
+    patchProfile({ equippedBadges, equippedBadgeId: undefined, equippedBadgeEmoji: undefined, equippedBadgeName: undefined });
+  }
+
+  async function useCupom(item) {
+    const ok = await themedConfirm({
+      title: item.name,
+      message: `Usar "${item.name}" agora? Essa ação não pode ser desfeita.`,
+    });
+    if (!ok) return;
+    ownedState(item.id).used = true;
+    saveInventory(inventory);
+    showToast(`✓ CUPOM "${item.name.toUpperCase()}" UTILIZADO`);
+    render();
+  }
+
+  // ===============================================================
+  // MODAL DE CONFIRMAÇÃO TEMÁTICO — substitui window.confirm() nativo,
+  // que quebrava a identidade visual da Arena. Retorna uma Promise<boolean>,
+  // igual ao confirm() original, então basta usar `await themedConfirm(...)`.
+  // ===============================================================
+  function themedConfirm({ title, message }) {
+    const overlay = document.getElementById("confirm-overlay");
+    const okBtn = document.getElementById("confirm-ok");
+    const cancelBtn = document.getElementById("confirm-cancel");
+    const closeBtn = document.getElementById("confirm-close");
+
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-message").textContent = message;
+
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => overlay.classList.add("is-open"));
+
+    return new Promise((resolve) => {
+      function close(result) {
+        overlay.classList.remove("is-open");
+        document.body.style.overflow = "";
+        okBtn.removeEventListener("click", onOk);
+        cancelBtn.removeEventListener("click", onCancel);
+        closeBtn.removeEventListener("click", onCancel);
+        overlay.removeEventListener("click", onBackdrop);
+        document.removeEventListener("keydown", onKey);
+        resolve(result);
+      }
+      function onOk() { close(true); }
+      function onCancel() { close(false); }
+      function onBackdrop(e) { if (e.target === overlay) close(false); }
+      function onKey(e) { if (e.key === "Escape") close(false); }
+
+      okBtn.addEventListener("click", onOk);
+      cancelBtn.addEventListener("click", onCancel);
+      closeBtn.addEventListener("click", onCancel);
+      overlay.addEventListener("click", onBackdrop);
+      document.addEventListener("keydown", onKey);
+    });
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById("inv-toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  // ===============================================================
+  // 5) RENDERIZAÇÃO + FILTROS
+  // ===============================================================
+  let activeFilter = "todos";
+
+  function ownedCatalog() {
+    return CATALOG.filter(it => ownedState(it.id));
+  }
+
+  function render() {
+    const grid = document.getElementById("items-grid");
+    const visible = CATALOG.filter(it => activeFilter === "todos" || it.type === activeFilter);
+    document.getElementById("item-count").textContent = `${ownedCatalog().length}/${CATALOG.length}`;
+
+    document.getElementById("empty-state").classList.toggle("show", visible.length === 0);
+    grid.classList.toggle("hidden", visible.length === 0);
+
+    grid.innerHTML = visible.map(item => {
+      const state = ownedState(item.id);
+      const rarityChip = `<span class="rarity-chip" style="background:${RARITY_COLOR[item.rarity]};">${RARITY_LABEL[item.rarity]}</span>`;
+
+      // ---- ITEM BLOQUEADO: mostra requisito + barra de progresso ----
+      if (!state) {
+        const swatch = item.type === "banner"
+          ? `<div class="item-swatch" style="background:${item.value};"></div>`
+          : `<div class="item-swatch emblema-swatch">${item.emoji}</div>`;
+
+        const val = unlockProgressValue(item);
+        const target = unlockTarget(item);
+        const hasBar = val !== null && target !== null;
+        const pct = hasBar ? Math.min(100, (val / target) * 100) : 0;
+        const progressHtml = hasBar
+          ? `<div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
+             <div class="lock-req mt-1">${val}/${target} — ${item.unlock.label}</div>`
+          : `<div class="lock-req mt-1">${item.unlock.label}</div>`;
+
+        return `
+          <div class="item-card clip-card locked">
+            <div class="relative">${swatch}${rarityChip}<div class="lock-overlay">🔒</div></div>
+            <div class="item-body">
+              <div class="item-name">${item.name}</div>
+              <div class="item-desc">${item.desc}</div>
+              ${progressHtml}
+              <div class="item-action locked-btn">BLOQUEADO</div>
+            </div>
+          </div>`;
+      }
+
+      // ---- ITEM DESBLOQUEADO: comportamento normal ----
+      const swatch = item.type === "banner"
+        ? `<div class="item-swatch" style="background:${item.value};"></div>`
+        : `<div class="item-swatch emblema-swatch">${item.emoji}</div>`;
+
+      const equippedChip = state.equipped ? `<span class="equipped-chip">EQUIPADO</span>` : "";
+
+      let actionHtml;
+      if (item.type === "cupom") {
+        actionHtml = state.used
+          ? `<div class="item-action used">JÁ UTILIZADO</div>`
+          : `<button class="item-action use" data-use="${item.id}">USAR CUPOM</button>`;
+      } else {
+        actionHtml = state.equipped
+          ? `<div class="item-action equipped">✓ EQUIPADO</div>`
+          : `<button class="item-action equip" data-equip="${item.id}">EQUIPAR</button>`;
+      }
+
+      return `
+        <div class="item-card clip-card">
+          <div class="relative">${swatch}${rarityChip}${equippedChip}</div>
+          <div class="item-body">
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.desc}</div>
+            ${actionHtml}
+          </div>
+        </div>`;
+    }).join("");
+
+    grid.querySelectorAll("[data-equip]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = CATALOG.find(c => c.id === btn.dataset.equip);
+        if (item.type === "banner") equipBanner(item);
+        if (item.type === "emblema") equipEmblema(item);
+      });
+    });
+    grid.querySelectorAll("[data-use]").forEach(btn => {
+      btn.addEventListener("click", () => useCupom(CATALOG.find(c => c.id === btn.dataset.use)));
+    });
+  }
+
+  // ===============================================================
+  // PAINEL DEV — dispara os mesmos eventos que outras páginas do
+  // site chamariam em produção (ex: noticia.html → bumpProgress('newsRead')).
+  // ===============================================================
+  document.querySelectorAll("[data-bump]").forEach(btn => {
+    btn.addEventListener("click", () => bumpProgress(btn.dataset.bump));
+  });
+  document.getElementById("dev-advance-day").addEventListener("click", () => {
+    progress.firstVisit -= 86400000;
+    saveProgress(progress);
+    checkUnlocks();
+    render();
+  });
+  document.getElementById("dev-reset").addEventListener("click", async () => {
+    const ok = await themedConfirm({
+      title: "Resetar progresso",
+      message: "Isso apaga seu inventário e progresso de objetivos deste navegador. Continuar?",
+    });
+    if (!ok) return;
+    localStorage.removeItem(inventoryKey);
+    localStorage.removeItem(progressKey);
+    location.reload();
+  });
+
+  document.querySelectorAll(".filter-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  checkUnlocks();
+  syncEquippedBadgesToProfile();
+  render();
+</script>
+
+</body>
+</html>

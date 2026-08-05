@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações do Perfil — Arena</title>
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171E;
+    --panel: #1B1F28;
+    --panel-2: #20242F;
+    --sidebar: #0F1116;
+    --ticker-bg: #0F1116;
+    --border: rgba(255,255,255,0.08);
+    --ink: #D7DAE1;
+    --ink-soft: #AEB3BE;
+    --muted: #7C8394;
+    --live: #34D399;
+    --valorant: #FF4655;
+    --valorant-glow: #241016;
+    --discord-blurple: #5865F2;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+
+  .clip-tag{ clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+  .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+
+  /* ===== SIDEBAR DE NAVEGAÇÃO ===== */
+  #settings-sidebar{ background: var(--sidebar); }
+  .settings-nav-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:9px 14px; font-size:13px; font-weight:600; color: var(--muted);
+    background:transparent; border:none; border-radius:4px; cursor:pointer;
+    transition: background .12s ease, color .12s ease;
+  }
+  .settings-nav-item:hover{ background: rgba(255,255,255,0.04); color: var(--ink); }
+  .settings-nav-item.active{ background: var(--panel-2); color: var(--ink); }
+  .settings-nav-item.active .nav-dot{ background: var(--valorant); }
+  .nav-dot{ width:5px; height:5px; border-radius:9999px; background: transparent; flex-shrink:0; }
+  .settings-nav-group-label{
+    font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:600; letter-spacing:.06em;
+    color: var(--muted); padding: 14px 14px 6px;
+  }
+
+  /* ===== BANNER + AVATAR ===== */
+  #banner-preview{
+    height:150px; position:relative; border:1px solid var(--border);
+    background-size: cover; background-position:center; transition: background .2s ease;
+  }
+  .banner-mode-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:600;
+    padding:6px 12px; border:1px solid var(--border); color: var(--muted); background:transparent;
+    cursor:pointer; transition: all .12s ease;
+  }
+  .banner-mode-btn.active{ border-color: var(--discord-blurple); color: var(--ink); background: color-mix(in srgb, var(--discord-blurple) 16%, transparent); }
+  .color-swatch{
+    width:34px; height:34px; border-radius:9999px; cursor:pointer; border:2px solid transparent; flex-shrink:0;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .color-swatch:hover{ transform: scale(1.08); }
+  .color-swatch.selected{ border-color:#fff; }
+
+  #avatar-frame{
+    position:relative; width:88px; height:88px; border-radius:9999px;
+    border:5px solid var(--panel); background: var(--panel-2); overflow:hidden; cursor:pointer;
+    margin-top:-52px; margin-left:20px;
+  }
+  #avatar-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+  #avatar-frame .avatar-overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background: rgba(10,11,15,0.55); opacity:0; transition: opacity .15s ease; font-size:11px; font-weight:600;
+    text-align:center; color:#fff;
+  }
+  #avatar-frame:hover .avatar-overlay{ opacity:1; }
+  #avatar-status-dot{
+    position:absolute; bottom:4px; right:4px; width:16px; height:16px; border-radius:9999px;
+    background: var(--live); border:3px solid var(--panel);
+  }
+
+  /* ===== CAMPOS DE FORMULÁRIO ===== */
+  .field-label{ font-size:12px; font-weight:700; color: var(--muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; display:block; }
+  .field-input, .field-textarea{
+    width:100%; background: var(--sidebar); border:1px solid var(--border); color: var(--ink);
+    padding:10px 12px; font-size:14px; border-radius:3px; transition: border-color .12s ease;
+  }
+  .field-input:focus, .field-textarea:focus{ outline:none; border-color: var(--discord-blurple); }
+  .field-hint{ font-size:11px; color: var(--muted); margin-top:5px; }
+  .field-textarea{ resize:vertical; min-height:90px; line-height:1.6; }
+
+  /* ===== CARD DE PREVIEW (live preview) ===== */
+  #preview-card{
+    background: var(--panel); border:1px solid var(--border); overflow:hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+  }
+  #preview-banner{ height:90px; background-size:cover; background-position:center; transition: background .2s ease; }
+  #preview-avatar-frame{
+    position:relative; width:76px; height:76px; border-radius:9999px; border:5px solid var(--panel);
+    background: var(--panel-2); overflow:hidden; margin-top:-42px; margin-left:16px;
+  }
+  #preview-avatar-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+  #preview-status-dot{ position:absolute; bottom:2px; right:2px; width:14px; height:14px; border-radius:9999px; background: var(--live); border:3px solid var(--panel); }
+  #preview-bio a{ color: var(--discord-blurple); }
+  #preview-bio strong{ color: var(--ink); }
+  #preview-bio code{ background: var(--sidebar); padding:1px 5px; border-radius:3px; font-family:'JetBrains Mono', monospace; font-size:12px; }
+
+  /* ===== BOTÕES ===== */
+  .btn-primary{
+    background: var(--discord-blurple); color:#fff; font-weight:600; font-size:13px;
+    padding:10px 20px; border-radius:3px; transition: filter .15s ease, transform .1s ease;
+  }
+  .btn-primary:hover{ filter: brightness(1.12); }
+  .btn-primary:active{ transform: translateY(1px); }
+  .btn-ghost{
+    background: transparent; color: var(--ink-soft); font-weight:600; font-size:13px;
+    padding:10px 16px; transition: color .12s ease;
+  }
+  .btn-ghost:hover{ color: var(--ink); text-decoration: underline; }
+
+  /* ===== BARRA "ALTERAÇÕES NÃO SALVAS" (padrão Discord) ===== */
+  #unsaved-bar{
+    position:fixed; left:50%; bottom:20px; transform: translateX(-50%) translateY(120%);
+    z-index:80; background: var(--panel-2); border:1px solid var(--border);
+    padding:10px 10px 10px 18px; display:flex; align-items:center; gap:16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45); transition: transform .22s ease; max-width: calc(100% - 32px);
+  }
+  #unsaved-bar.show{ transform: translateX(-50%) translateY(0); }
+
+  #save-toast{
+    position:fixed; top:20px; left:50%; transform: translateX(-50%) translateY(-140%);
+    z-index:90; background: var(--panel); border:1px solid var(--live); color: var(--live);
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    padding:10px 18px; transition: transform .22s ease;
+  }
+  #save-toast.show{ transform: translateX(-50%) translateY(0); }
+
+  /* ===== LINHAS / CARDS DE CONFIGURAÇÃO (Privacidade, Aparência, Conexões) ===== */
+  .settings-card{ background: var(--panel); border:1px solid var(--border); padding:4px 20px; }
+  .settings-row{ display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 0; }
+  .settings-row + .settings-row{ border-top:1px solid var(--border); }
+  .settings-row-title{ font-size:14px; font-weight:600; color: var(--ink); }
+  .settings-row-desc{ font-size:12px; color: var(--muted); margin-top:3px; max-width:46ch; }
+  .settings-select{
+    background: var(--sidebar); border:1px solid var(--border); color: var(--ink);
+    font-size:13px; padding:8px 10px; border-radius:3px; min-width:170px; flex-shrink:0;
+  }
+  .settings-select:focus{ outline:none; border-color: var(--discord-blurple); }
+
+  /* Toggle switch */
+  .toggle-switch{
+    width:42px; height:24px; border-radius:9999px; position:relative; flex-shrink:0; cursor:pointer;
+    background: var(--sidebar); border:1px solid var(--border); transition: background .15s ease, border-color .15s ease;
+  }
+  .toggle-switch .toggle-knob{
+    position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:9999px;
+    background:#8a8f9c; transition: transform .15s ease, background .15s ease;
+  }
+  .toggle-switch.on{ background: var(--live); border-color: var(--live); }
+  .toggle-switch.on .toggle-knob{ transform: translateX(18px); background:#0B1410; }
+
+  /* Aparência: cor de destaque + tamanho de fonte */
+  .accent-swatch{
+    width:30px; height:30px; border-radius:9999px; cursor:pointer; border:2px solid transparent; flex-shrink:0;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .accent-swatch:hover{ transform: scale(1.1); }
+  .accent-swatch.selected{ border-color:#fff; }
+  .fontsize-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:600;
+    padding:8px 16px; border:1px solid var(--border); color: var(--muted); background:transparent; cursor:pointer;
+  }
+  .fontsize-btn.active{ border-color: var(--discord-blurple); color: var(--ink); background: color-mix(in srgb, var(--discord-blurple) 16%, transparent); }
+  #appearance-text-sample.fs-pequena{ font-size:12px; }
+  #appearance-text-sample.fs-padrao{ font-size:14px; }
+  #appearance-text-sample.fs-grande{ font-size:17px; }
+  body.reduce-motion .pulse-dot{ animation: none !important; }
+
+  /* Conexões */
+  .connection-card{
+    display:flex; align-items:center; gap:14px; padding:16px 20px;
+    background: var(--panel); border:1px solid var(--border);
+  }
+  .connection-icon{
+    width:42px; height:42px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .connection-inline-form{ display:flex; gap:8px; align-items:center; }
+  .connection-inline-form input{
+    background: var(--sidebar); border:1px solid var(--border); color: var(--ink);
+    padding:7px 10px; font-size:12px; border-radius:3px; width:150px;
+  }
+  .connection-inline-form input:focus{ outline:none; border-color: var(--discord-blurple); }
+  .btn-connect{
+    font-size:12px; font-weight:600; padding:7px 14px; border-radius:3px; cursor:pointer; transition: filter .12s ease;
+  }
+  .btn-connect.connect{ background: var(--discord-blurple); color:#fff; }
+  .btn-connect.disconnect{ background:transparent; border:1px solid var(--valorant); color: var(--valorant); }
+  .btn-connect:hover{ filter: brightness(1.12); }
+  .connected-badge{ display:flex; items-center:center; gap:6px; font-size:12px; font-weight:600; color: var(--live); }
+
+  /* ===== EMBLEMAS EQUIPADOS (definidos em inventario.html, lidos de profile.equippedBadges) ===== */
+  #profile-badges-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  #profile-badges-row:empty{ display:none; }
+  .profile-badge-chip{
+    display:flex; align-items:center; gap:7px; padding:7px 12px;
+    background: var(--panel-2); border:1px solid var(--bc-color, var(--discord-blurple));
+    box-shadow: 0 0 10px -3px var(--bc-color, var(--discord-blurple));
+    font-size:12px; font-weight:600;
+  }
+  .profile-badge-chip .emoji{ font-size:15px; }
+  #badges-empty-hint{ font-size:11px; color: var(--muted); margin-top:18px; }
+  #badges-empty-hint a{ color: var(--discord-blurple); }
+
+  #preview-badges{ display:inline-flex; align-items:center; gap:3px; }
+  .preview-badge-dot{
+    width:18px; height:18px; border-radius:9999px; display:flex; align-items:center; justify-content:center;
+    font-size:10px; background: var(--panel-2); border:1px solid var(--bc-color, var(--discord-blurple));
+    box-shadow: 0 0 6px -1px var(--bc-color, var(--discord-blurple));
+  }
+
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-track{ background: var(--bg); }
+  ::-webkit-scrollbar-thumb{ background: var(--panel-2); border-radius:6px; }
+</style>
+</head>
+<body>
+
+<!-- ===================================================== -->
+<!-- CABEÇALHO SIMPLES -->
+<!-- ===================================================== -->
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="home.html" class="font-display text-3xl font-bold tracking-wide" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <a href="home.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">
+      &larr; Voltar para o portal
+    </a>
+  </div>
+</header>
+
+<!-- Aviso de sessão (só aparece se ninguém estiver logado nesta aba) -->
+<div id="no-session-banner" class="hidden" style="background: color-mix(in srgb, var(--valorant) 12%, transparent); border-bottom:1px solid var(--valorant);">
+  <div class="max-w-6xl mx-auto px-4 py-2.5 font-mono text-[12px]" style="color: var(--valorant);">
+    ⚠ Você não está logado — exibindo um perfil de demonstração. Faça login na Home para salvar de verdade.
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- LAYOUT DE DUAS COLUNAS (estilo Discord)                -->
+<!-- ===================================================== -->
+<div class="max-w-6xl mx-auto flex flex-col lg:flex-row" style="min-height: calc(100vh - 65px);">
+
+  <!-- ============ SIDEBAR ESQUERDA ============ -->
+  <aside id="settings-sidebar" class="w-full lg:w-[240px] shrink-0 lg:min-h-full">
+    <nav class="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-1 px-3 py-4 lg:py-6">
+      <div class="hidden lg:block settings-nav-group-label">CONFIGURAÇÕES DA CONTA</div>
+      <button class="settings-nav-item active shrink-0" data-tab="perfil">
+        <span class="nav-dot"></span> Perfil de Usuário
+      </button>
+      <button class="settings-nav-item shrink-0" data-tab="privacidade">
+        <span class="nav-dot"></span> Privacidade
+      </button>
+      <button class="settings-nav-item shrink-0" data-tab="aparencia">
+        <span class="nav-dot"></span> Aparência
+      </button>
+      <button class="settings-nav-item shrink-0" data-tab="conexoes">
+        <span class="nav-dot"></span> Conexões
+      </button>
+    </nav>
+  </aside>
+
+  <!-- ============ ÁREA DE CONTEÚDO ============ -->
+  <main class="flex-1 px-4 sm:px-8 py-8 lg:py-10">
+
+    <!-- ---------- ABA: PERFIL DE USUÁRIO ---------- -->
+    <section id="tab-perfil" class="settings-tab">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-wide mb-1">Perfil de Usuário</h1>
+      <p class="text-[13px] mb-8" style="color: var(--muted);">Personalize como as outras pessoas veem você na Arena.</p>
+
+      <div class="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-10">
+
+        <!-- ===== COLUNA DO FORMULÁRIO ===== -->
+        <div>
+
+          <!-- Banner -->
+          <div class="mb-3 flex items-center justify-between">
+            <span class="field-label mb-0">Banner do perfil</span>
+            <div class="flex gap-2">
+              <button class="banner-mode-btn active" data-banner-mode="color">COR SÓLIDA</button>
+              <button class="banner-mode-btn" data-banner-mode="gradient">DEGRADÊ NEON</button>
+              <button class="banner-mode-btn" data-banner-mode="image">IMAGEM</button>
+            </div>
+          </div>
+
+          <div id="banner-preview" class="clip-card"></div>
+
+          <!-- Avatar sobreposto ao banner -->
+          <div id="avatar-frame" title="Alterar foto de perfil">
+            <img id="avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
+            <div class="avatar-overlay">ALTERAR<br>FOTO</div>
+            <span id="avatar-status-dot"></span>
+          </div>
+          <input type="file" id="avatar-file-input" accept="image/*" class="hidden">
+
+          <!-- Emblemas equipados (definidos no Inventário) -->
+          <div id="profile-badges-row"></div>
+          <p id="badges-empty-hint" class="hidden">Nenhum emblema equipado ainda. Desbloqueie e equipe emblemas no <a href="inventario.html">Meu Inventário</a>.</p>
+
+          <!-- Opções de cada modo de banner -->
+          <div class="mt-4">
+            <div id="banner-mode-color" class="banner-mode-panel flex flex-wrap items-center gap-3">
+              <input type="color" id="banner-color-input" value="#FF4655" class="w-10 h-10 rounded-md cursor-pointer bg-transparent border-0 p-0">
+              <span class="field-hint mt-0">Escolha qualquer cor sólida para o topo do seu perfil.</span>
+            </div>
+
+            <div id="banner-mode-gradient" class="banner-mode-panel hidden flex flex-wrap items-center gap-3">
+              <button class="color-swatch selected" data-gradient="linear-gradient(135deg,#FF4655,#8B5CF6)" style="background:linear-gradient(135deg,#FF4655,#8B5CF6);"></button>
+              <button class="color-swatch" data-gradient="linear-gradient(135deg,#5865F2,#17B8A6)" style="background:linear-gradient(135deg,#5865F2,#17B8A6);"></button>
+              <button class="color-swatch" data-gradient="linear-gradient(135deg,#34D399,#0EA5E9)" style="background:linear-gradient(135deg,#34D399,#0EA5E9);"></button>
+              <button class="color-swatch" data-gradient="linear-gradient(135deg,#F59E0B,#EF4444)" style="background:linear-gradient(135deg,#F59E0B,#EF4444);"></button>
+              <button class="color-swatch" data-gradient="linear-gradient(135deg,#8B5CF6,#EC4899)" style="background:linear-gradient(135deg,#8B5CF6,#EC4899);"></button>
+              <span class="field-hint mt-0">Degradês prontos com a estética neon do portal.</span>
+            </div>
+
+            <div id="banner-mode-image" class="banner-mode-panel hidden flex flex-wrap items-center gap-3">
+              <label for="banner-file-input" class="btn-ghost cursor-pointer border" style="border-color: var(--border); padding:8px 14px;">📁 ESCOLHER IMAGEM</label>
+              <input type="file" id="banner-file-input" accept="image/*" class="hidden">
+              <span id="banner-file-name" class="field-hint mt-0">Nenhum arquivo selecionado.</span>
+            </div>
+          </div>
+
+          <!-- Informações básicas -->
+          <div class="mt-10 pt-8 flex flex-col gap-5" style="border-top:1px solid var(--border);">
+            <div>
+              <label class="field-label" for="input-display-name">Nome de Exibição</label>
+              <input id="input-display-name" type="text" maxlength="32" class="field-input" placeholder="Como você quer ser chamado">
+            </div>
+            <div>
+              <label class="field-label" for="input-username">Nome de Usuário</label>
+              <div class="flex items-center field-input gap-0" style="padding:0;">
+                <span class="pl-3 pr-1" style="color: var(--muted);">@</span>
+                <input id="input-username" type="text" maxlength="24" class="flex-1 bg-transparent border-0 outline-none py-[10px] pr-3" style="color: var(--ink);" placeholder="seu_usuario">
+              </div>
+              <p class="field-hint">Só letras minúsculas, números e underline. Usado no seu link de perfil.</p>
+            </div>
+            <div>
+              <label class="field-label" for="input-bio">Biografia / Sobre Mim</label>
+              <textarea id="input-bio" maxlength="190" class="field-textarea" placeholder="Conte um pouco sobre você, seus jogos favoritos, seu time do coração..."></textarea>
+              <p class="field-hint">Suporta markdown simples: **negrito**, *itálico* e `código`. <span id="bio-char-count">0</span>/190</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===== COLUNA DE PREVIEW (live preview) ===== -->
+        <div class="xl:sticky xl:top-8 self-start">
+          <span class="field-label">Pré-visualização</span>
+          <div id="preview-card" class="clip-card">
+            <div id="preview-banner"></div>
+            <div id="preview-avatar-frame">
+              <img id="preview-avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
+              <span id="preview-status-dot"></span>
+            </div>
+            <div class="px-4 pb-4 pt-2">
+              <h3 class="font-bold text-[16px] leading-tight flex items-center gap-1.5">
+                <span id="preview-display-name">Nome de Exibição</span><span id="preview-badges"></span>
+              </h3>
+              <p id="preview-username" class="font-mono text-[12px]" style="color: var(--muted);">@usuario</p>
+              <div style="border-top:1px solid var(--border);" class="my-3"></div>
+              <p id="preview-bio" class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">Sua biografia aparece aqui em tempo real.</p>
+            </div>
+          </div>
+          <p class="field-hint mt-3">É assim que seu perfil vai aparecer para outros jogadores da Arena — atualizado em tempo real.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ---------- ABA: PRIVACIDADE ---------- -->
+    <section id="tab-privacidade" class="settings-tab hidden">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-wide mb-1">Privacidade</h1>
+      <p class="text-[13px] mb-8" style="color: var(--muted);">Controle quem pode ver suas informações e atividade.</p>
+
+      <div class="settings-card max-w-2xl">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Perfil público</div>
+            <div class="settings-row-desc">Qualquer pessoa pode ver seu perfil na Arena, mesmo sem estar logada.</div>
+          </div>
+          <button class="toggle-switch" data-privacy-toggle="profilePublic"><span class="toggle-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Mostrar status online</div>
+            <div class="settings-row-desc">Exibe a bolinha verde de "online" para outros jogadores.</div>
+          </div>
+          <button class="toggle-switch" data-privacy-toggle="showOnlineStatus"><span class="toggle-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Histórico de partidas visível</div>
+            <div class="settings-row-desc">Permite que outras pessoas vejam suas últimas partidas e estatísticas.</div>
+          </div>
+          <button class="toggle-switch" data-privacy-toggle="showMatchHistory"><span class="toggle-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Mensagens diretas de estranhos</div>
+            <div class="settings-row-desc">Permite receber mensagens de quem ainda não está na sua lista de amigos.</div>
+          </div>
+          <button class="toggle-switch" data-privacy-toggle="allowDmFromStrangers"><span class="toggle-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">Quem pode te adicionar como amigo</div>
+            <div class="settings-row-desc">Define quem consegue te enviar solicitação de amizade.</div>
+          </div>
+          <select id="privacy-who-can-add" class="settings-select">
+            <option value="everyone">Todos</option>
+            <option value="friends_of_friends">Amigos de amigos</option>
+            <option value="nobody">Ninguém</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- ABA: APARÊNCIA ---------- -->
+    <section id="tab-aparencia" class="settings-tab hidden">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-wide mb-1">Aparência</h1>
+      <p class="text-[13px] mb-8" style="color: var(--muted);">Ajuste o visual do portal para o seu gosto.</p>
+
+      <div class="flex flex-col gap-8 max-w-2xl">
+
+        <div class="settings-card py-5">
+          <div class="settings-row-title mb-1">Cor de destaque do perfil</div>
+          <div class="settings-row-desc mb-4">Usada nos detalhes do seu perfil e card de pré-visualização.</div>
+          <div class="flex flex-wrap gap-3">
+            <button class="accent-swatch" data-accent="#FF4655" style="background:#FF4655;"></button>
+            <button class="accent-swatch" data-accent="#5865F2" style="background:#5865F2;"></button>
+            <button class="accent-swatch" data-accent="#34D399" style="background:#34D399;"></button>
+            <button class="accent-swatch" data-accent="#F59E0B" style="background:#F59E0B;"></button>
+            <button class="accent-swatch" data-accent="#EC4899" style="background:#EC4899;"></button>
+          </div>
+        </div>
+
+        <div class="settings-card py-5">
+          <div class="settings-row-title mb-1">Tamanho da fonte</div>
+          <div class="settings-row-desc mb-4">Ajusta o tamanho do texto em telas de perfil e configurações.</div>
+          <div class="flex gap-2 mb-4">
+            <button class="fontsize-btn" data-fontsize="pequena">PEQUENA</button>
+            <button class="fontsize-btn" data-fontsize="padrao">PADRÃO</button>
+            <button class="fontsize-btn" data-fontsize="grande">GRANDE</button>
+          </div>
+          <p id="appearance-text-sample" class="fs-padrao" style="color: var(--ink-soft);">Assim é a amostra do texto com o tamanho escolhido.</p>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-title">Reduzir animações</div>
+              <div class="settings-row-desc">Desativa efeitos como o pulsar do indicador "AO VIVO" e da bolinha de status.</div>
+            </div>
+            <button class="toggle-switch" id="toggle-reduce-motion"><span class="toggle-knob"></span></button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ---------- ABA: CONEXÕES ---------- -->
+    <section id="tab-conexoes" class="settings-tab hidden">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-wide mb-1">Conexões</h1>
+      <p class="text-[13px] mb-8" style="color: var(--muted);">Vincule suas contas de jogos e redes sociais à sua Arena.</p>
+
+      <div class="flex flex-col gap-3 max-w-2xl" id="connections-list">
+        <!-- Cards gerados via JS a partir de CONNECTION_SERVICES -->
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Barra fixa "alterações não salvas" -->
+<div id="unsaved-bar">
+  <span class="font-mono text-[12px]" style="color: var(--ink);">Você tem alterações não salvas!</span>
+  <div class="flex items-center gap-1">
+    <button id="btn-reset" class="btn-ghost">Redefinir</button>
+    <button id="btn-save" class="btn-primary">Salvar Alterações</button>
+  </div>
+</div>
+
+<!-- Toast de confirmação -->
+<div id="save-toast">✓ PERFIL ATUALIZADO COM SUCESSO</div>
+
+<script>
+  // ===============================================================
+  // 1) SESSÃO — descobre quem está logado (setado pelo home.html em
+  //    sessionStorage) e define a chave de armazenamento do perfil.
+  //    Sem sessão, cai num perfil de demonstração local.
+  // ===============================================================
+  function getSessionEmail() {
+    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
+  }
+  const sessionEmail = getSessionEmail();
+  const profileKey = `arena-profile-${sessionEmail || "demo"}`;
+
+  if (!sessionEmail) document.getElementById("no-session-banner").classList.remove("hidden");
+
+  // Nome padrão vindo do cadastro (se existir), pra pré-preencher.
+  function getRegisteredUser(email) {
+    try {
+      const users = JSON.parse(localStorage.getItem("arena-demo-users") || "[]");
+      return users.find(u => u.email === email) || null;
+    } catch (err) { return null; }
+  }
+  const registeredUser = sessionEmail ? getRegisteredUser(sessionEmail) : null;
+
+  const CONNECTION_SERVICES = [
+    { key: "steam", label: "Steam", color: "#1B2838", initial: "S" },
+    { key: "riot", label: "Riot Games", color: "#D13639", initial: "R" },
+    { key: "discord", label: "Discord", color: "#5865F2", initial: "D" },
+    { key: "twitch", label: "Twitch", color: "#9146FF", initial: "T" },
+  ];
+
+  const DEFAULT_PROFILE = {
+    displayName: registeredUser ? registeredUser.name.split(" ")[0] : "Jogador",
+    username: registeredUser ? registeredUser.name.split(" ")[0].toLowerCase() : "jogador_arena",
+    bio: "",
+    avatar: "",
+    bannerMode: "color",
+    bannerColor: "#FF4655",
+    bannerGradient: "linear-gradient(135deg,#FF4655,#8B5CF6)",
+    bannerImage: "",
+    privacy: {
+      profilePublic: true,
+      showOnlineStatus: true,
+      showMatchHistory: true,
+      allowDmFromStrangers: false,
+      whoCanAdd: "everyone",
+    },
+    appearance: {
+      accentColor: "#FF4655",
+      fontSize: "padrao",
+      reduceMotion: false,
+    },
+    connections: { steam: null, riot: null, discord: null, twitch: null },
+    equippedBannerId: null,
+    equippedBadges: [], // [{id, emoji, name, rarity}] — escrito por inventario.html
+  };
+
+  // Faz merge "profundo" (só 1 nível) pra perfis antigos salvos antes
+  // de existirem privacy/appearance/connections não perderem os
+  // valores padrão de campos novos.
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(profileKey);
+      if (!raw) return structuredClone(DEFAULT_PROFILE);
+      const saved = JSON.parse(raw);
+      return {
+        ...DEFAULT_PROFILE,
+        ...saved,
+        privacy: { ...DEFAULT_PROFILE.privacy, ...(saved.privacy || {}) },
+        appearance: { ...DEFAULT_PROFILE.appearance, ...(saved.appearance || {}) },
+        connections: { ...DEFAULT_PROFILE.connections, ...(saved.connections || {}) },
+      };
+    } catch (err) { return structuredClone(DEFAULT_PROFILE); }
+  }
+
+  let savedProfile = loadProfile();               // o que está persistido
+  let draftProfile = structuredClone(savedProfile); // o que está sendo editado agora
+  // (structuredClone é necessário aqui: privacy/appearance/connections são
+  // objetos aninhados — um spread raso deixaria draft e saved apontando
+  // pro MESMO objeto interno, e mudar um toggle "vazaria" pro salvo.)
+
+  // ===============================================================
+  // 2) NAVEGAÇÃO ENTRE ABAS DA SIDEBAR
+  // ===============================================================
+  const navItems = document.querySelectorAll(".settings-nav-item");
+  const tabs = document.querySelectorAll(".settings-tab");
+
+  navItems.forEach(btn => {
+    btn.addEventListener("click", () => {
+      navItems.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const target = btn.dataset.tab;
+      tabs.forEach(tab => tab.classList.toggle("hidden", tab.id !== `tab-${target}`));
+    });
+  });
+
+  // ===============================================================
+  // 3) ELEMENTOS DE FORMULÁRIO
+  // ===============================================================
+  const bannerPreview = document.getElementById("banner-preview");
+  const avatarImg = document.getElementById("avatar-img");
+  const previewBanner = document.getElementById("preview-banner");
+  const previewAvatarImg = document.getElementById("preview-avatar-img");
+  const previewDisplayName = document.getElementById("preview-display-name");
+  const previewUsername = document.getElementById("preview-username");
+  const previewBio = document.getElementById("preview-bio");
+  const unsavedBar = document.getElementById("unsaved-bar");
+  const saveToast = document.getElementById("save-toast");
+
+  const inputDisplayName = document.getElementById("input-display-name");
+  const inputUsername = document.getElementById("input-username");
+  const inputBio = document.getElementById("input-bio");
+  const bioCharCount = document.getElementById("bio-char-count");
+
+  // ---------------------------------------------------------------
+  // Renderiza markdown simples e escapa HTML antes, pra evitar que
+  // a bio vire um vetor de injeção de HTML no preview.
+  // ---------------------------------------------------------------
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  }
+  function renderBioMarkdown(raw) {
+    let safe = escapeHtml(raw || "Sua biografia aparece aqui em tempo real.");
+    safe = safe
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
+    return safe;
+  }
+
+  // ---------------------------------------------------------------
+  // Aplica o estado atual de draftProfile em TODO o formulário e no
+  // preview — é a única função que "desenha" a tela. Qualquer
+  // mudança passa por aqui, então formulário e preview nunca
+  // dessincronizam.
+  // ---------------------------------------------------------------
+  function computeBannerCss(profile) {
+    if (profile.bannerMode === "image" && profile.bannerImage) return `url('${profile.bannerImage}')`;
+    if (profile.bannerMode === "gradient") return profile.bannerGradient;
+    return profile.bannerColor;
+  }
+
+  function render() {
+    const bannerCss = computeBannerCss(draftProfile);
+    const isImageUrl = draftProfile.bannerMode === "image" && draftProfile.bannerImage;
+    [bannerPreview, previewBanner].forEach(el => {
+      el.style.background = isImageUrl ? "var(--panel-2)" : bannerCss;
+      el.style.backgroundImage = isImageUrl ? bannerCss : "none";
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+    });
+
+    const avatarSrc = draftProfile.avatar || "https://placehold.co/200x200/1B1F28/D7DAE1?text=" + (draftProfile.displayName[0] || "U").toUpperCase();
+    avatarImg.src = avatarSrc;
+    previewAvatarImg.src = avatarSrc;
+
+    inputDisplayName.value = draftProfile.displayName;
+    inputUsername.value = draftProfile.username;
+    inputBio.value = draftProfile.bio;
+    bioCharCount.textContent = draftProfile.bio.length;
+
+    previewDisplayName.textContent = draftProfile.displayName || "Nome de Exibição";
+    renderEquippedBadges();
+    previewUsername.textContent = "@" + (draftProfile.username || "usuario");
+    previewBio.innerHTML = renderBioMarkdown(draftProfile.bio);
+
+    // Botões de modo de banner
+    document.querySelectorAll(".banner-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.bannerMode === draftProfile.bannerMode));
+    document.querySelectorAll(".banner-mode-panel").forEach(p => p.classList.add("hidden"));
+    document.getElementById(`banner-mode-${draftProfile.bannerMode}`).classList.remove("hidden");
+    document.getElementById("banner-color-input").value = draftProfile.bannerColor;
+    document.querySelectorAll(".color-swatch").forEach(sw => sw.classList.toggle("selected", sw.dataset.gradient === draftProfile.bannerGradient));
+
+    // ---- Privacidade ----
+    document.querySelectorAll("[data-privacy-toggle]").forEach(btn => {
+      btn.classList.toggle("on", !!draftProfile.privacy[btn.dataset.privacyToggle]);
+    });
+    document.getElementById("privacy-who-can-add").value = draftProfile.privacy.whoCanAdd;
+
+    // ---- Aparência ----
+    document.querySelectorAll(".accent-swatch").forEach(sw => {
+      sw.classList.toggle("selected", sw.dataset.accent === draftProfile.appearance.accentColor);
+    });
+    document.querySelectorAll(".fontsize-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.fontsize === draftProfile.appearance.fontSize);
+    });
+    const sample = document.getElementById("appearance-text-sample");
+    sample.className = "fs-" + draftProfile.appearance.fontSize;
+    document.getElementById("toggle-reduce-motion").classList.toggle("on", draftProfile.appearance.reduceMotion);
+    document.body.classList.toggle("reduce-motion", draftProfile.appearance.reduceMotion);
+    // Aplica a cor de destaque escolhida no card de preview e nos pontinhos ativos da sidebar
+    document.documentElement.style.setProperty("--valorant", draftProfile.appearance.accentColor);
+
+    // ---- Conexões ----
+    renderConnections();
+
+    // Barra de "alterações não salvas" só aparece se draft != saved
+    const dirty = JSON.stringify(draftProfile) !== JSON.stringify(savedProfile);
+    unsavedBar.classList.toggle("show", dirty);
+  }
+
+  const RARITY_COLOR_PROFILE = { comum: "#7C8394", raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B" };
+
+  // Emblemas equipados vêm de inventario.html (chave arena-profile-<email>,
+  // campo equippedBadges) — aqui só desenhamos: um cluster completo perto
+  // do avatar e uma versão compacta ao lado do nome no card de preview.
+  function renderEquippedBadges() {
+    const badges = draftProfile.equippedBadges || [];
+
+    const row = document.getElementById("profile-badges-row");
+    row.innerHTML = badges.map(b => `
+      <span class="profile-badge-chip" style="--bc-color:${RARITY_COLOR_PROFILE[b.rarity] || "var(--discord-blurple)"};">
+        <span class="emoji">${b.emoji}</span> ${b.name}
+      </span>
+    `).join("");
+    document.getElementById("badges-empty-hint").classList.toggle("hidden", badges.length > 0);
+
+    document.getElementById("preview-badges").innerHTML = badges.map(b => `
+      <span class="preview-badge-dot" style="--bc-color:${RARITY_COLOR_PROFILE[b.rarity] || "var(--discord-blurple)"};" title="${b.name}">${b.emoji}</span>
+    `).join("");
+  }
+
+  // ---------------------------------------------------------------
+  // Renderiza os 4 cards de serviço com o estado (conectado/não) e
+  // religa os botões toda vez, já que o HTML é reconstruído.
+  // ---------------------------------------------------------------
+  function renderConnections() {
+    const list = document.getElementById("connections-list");
+    list.innerHTML = CONNECTION_SERVICES.map(svc => {
+      const conn = draftProfile.connections[svc.key];
+      const iconHtml = `<div class="connection-icon" style="background:${svc.color};">${svc.initial}</div>`;
+      const info = `<div class="flex-1 min-w-0">
+          <div class="settings-row-title">${svc.label}</div>
+          ${conn
+            ? `<div class="connected-badge">● Conectado como @${conn.username}</div>`
+            : `<div class="settings-row-desc">Não conectado</div>`}
+        </div>`;
+      const action = conn
+        ? `<button class="btn-connect disconnect" data-disconnect="${svc.key}">DESCONECTAR</button>`
+        : `<button class="btn-connect connect" data-connect-open="${svc.key}">CONECTAR</button>`;
+      return `<div class="connection-card" data-service-card="${svc.key}">${iconHtml}${info}${action}</div>`;
+    }).join("");
+
+    list.querySelectorAll("[data-connect-open]").forEach(btn => {
+      btn.addEventListener("click", () => openConnectForm(btn.dataset.connectOpen));
+    });
+    list.querySelectorAll("[data-disconnect]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.disconnect;
+        if (confirm(`Desconectar sua conta do ${CONNECTION_SERVICES.find(s => s.key === key).label}?`)) {
+          draftProfile.connections[key] = null;
+          render();
+        }
+      });
+    });
+  }
+
+  // Troca o card por um mini-formulário inline (usuário fictício, já
+  // que não há OAuth real nessa demo) e confirma com Enter ou botão.
+  function openConnectForm(key) {
+    const svc = CONNECTION_SERVICES.find(s => s.key === key);
+    const card = document.querySelector(`[data-service-card="${key}"]`);
+    card.innerHTML = `
+      <div class="connection-icon" style="background:${svc.color};">${svc.initial}</div>
+      <div class="flex-1 min-w-0">
+        <div class="settings-row-title mb-2">Conectar ${svc.label}</div>
+        <div class="connection-inline-form">
+          <input type="text" placeholder="seu_usuario" maxlength="24" id="connect-input-${key}">
+          <button class="btn-connect connect" id="connect-confirm-${key}">CONFIRMAR</button>
+        </div>
+      </div>`;
+    const input = document.getElementById(`connect-input-${key}`);
+    input.focus();
+    function confirmConnect() {
+      const username = input.value.trim().replace(/\s+/g, "_");
+      if (!username) { input.focus(); return; }
+      draftProfile.connections[key] = { username };
+      render();
+    }
+    document.getElementById(`connect-confirm-${key}`).addEventListener("click", confirmConnect);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmConnect(); });
+  }
+
+  // ===============================================================
+  // 4) EVENTOS — cada input só atualiza draftProfile e chama render()
+  // ===============================================================
+  document.querySelectorAll(".banner-mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => { draftProfile.bannerMode = btn.dataset.bannerMode; draftProfile.equippedBannerId = null; render(); });
+  });
+  document.getElementById("banner-color-input").addEventListener("input", (e) => {
+    draftProfile.bannerColor = e.target.value; draftProfile.equippedBannerId = null; render();
+  });
+  document.querySelectorAll(".color-swatch").forEach(sw => {
+    sw.addEventListener("click", () => { draftProfile.bannerGradient = sw.dataset.gradient; draftProfile.equippedBannerId = null; render(); });
+  });
+
+  function readFileAsDataUrl(file, cb) {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { alert("Escolha uma imagem de até 3MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => cb(reader.result);
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById("banner-file-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById("banner-file-name").textContent = file.name;
+    readFileAsDataUrl(file, (dataUrl) => { draftProfile.bannerImage = dataUrl; draftProfile.equippedBannerId = null; render(); });
+  });
+
+  document.getElementById("avatar-frame").addEventListener("click", () => document.getElementById("avatar-file-input").click());
+  document.getElementById("avatar-file-input").addEventListener("change", (e) => {
+    readFileAsDataUrl(e.target.files[0], (dataUrl) => { draftProfile.avatar = dataUrl; render(); });
+  });
+
+  // ---- Privacidade ----
+  document.querySelectorAll("[data-privacy-toggle]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.privacyToggle;
+      draftProfile.privacy[key] = !draftProfile.privacy[key];
+      render();
+    });
+  });
+  document.getElementById("privacy-who-can-add").addEventListener("change", (e) => {
+    draftProfile.privacy.whoCanAdd = e.target.value; render();
+  });
+
+  // ---- Aparência ----
+  document.querySelectorAll(".accent-swatch").forEach(sw => {
+    sw.addEventListener("click", () => { draftProfile.appearance.accentColor = sw.dataset.accent; render(); });
+  });
+  document.querySelectorAll(".fontsize-btn").forEach(btn => {
+    btn.addEventListener("click", () => { draftProfile.appearance.fontSize = btn.dataset.fontsize; render(); });
+  });
+  document.getElementById("toggle-reduce-motion").addEventListener("click", () => {
+    draftProfile.appearance.reduceMotion = !draftProfile.appearance.reduceMotion; render();
+  });
+
+  inputDisplayName.addEventListener("input", (e) => { draftProfile.displayName = e.target.value; render(); });
+  inputUsername.addEventListener("input", (e) => {
+    draftProfile.username = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    render();
+  });
+  inputBio.addEventListener("input", (e) => { draftProfile.bio = e.target.value; render(); });
+
+  // ===============================================================
+  // 5) SALVAR / REDEFINIR
+  // ===============================================================
+  document.getElementById("btn-save").addEventListener("click", () => {
+    try {
+      localStorage.setItem(profileKey, JSON.stringify(draftProfile));
+    } catch (err) {
+      alert("Não foi possível salvar (armazenamento local indisponível).");
+      return;
+    }
+    savedProfile = structuredClone(draftProfile);
+    render();
+    saveToast.classList.add("show");
+    setTimeout(() => saveToast.classList.remove("show"), 2200);
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", () => {
+    draftProfile = structuredClone(savedProfile);
+    render();
+  });
+
+  // Primeira renderização
+  render();
+</script>
+
+</body>
+</html>
