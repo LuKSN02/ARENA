@@ -929,7 +929,7 @@
     document.getElementById("user-menu-mobile").classList.toggle("hidden", !isLoggedIn);
     document.getElementById("user-menu-mobile").classList.toggle("flex", isLoggedIn);
     if (isLoggedIn) applyProfileToNav();
-    renderCouponButton();
+    if (typeof window.renderCouponButton === "function") window.renderCouponButton();
   }
 
   (function restoreSession() {
@@ -1386,6 +1386,9 @@
         btn.disabled = false;
       }
     }
+    // Exposta em window para que updateLoginUI() (fora desta IIFE) consiga
+    // chamá-la com segurança ao restaurar a sessão/fazer login ou logout.
+    window.renderCouponButton = renderCouponButton;
 
     function useCoupon() {
       if (couponApplied || isCouponAlreadyUsed()) return;
