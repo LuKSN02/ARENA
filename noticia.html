@@ -69,6 +69,15 @@
   }
 
   .article-p{ line-height:1.85; }
+
+  /* ===== COMENTÁRIOS ===== */
+  .comment-avatar{
+    width:34px; height:34px; border-radius:9999px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--panel); border:1px solid var(--border);
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; color: var(--ink-soft);
+  }
+  #comment-input:focus{ outline:none; border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -115,6 +124,23 @@
     <div id="article-content" class="mt-8 space-y-5 text-[16px] article-p" style="color: var(--ink-soft);"></div>
 
     <div id="article-gallery" class="grid grid-cols-2 gap-4 mt-8"></div>
+
+    <!-- COMENTÁRIOS -->
+    <div class="mt-14 pt-8" style="border-top:1px solid var(--border);">
+      <h3 class="font-mono text-[13px] font-semibold mb-5" style="color: var(--ink);">💬 COMENTÁRIOS (<span id="comment-count">0</span>)</h3>
+      <div id="comments-list" class="flex flex-col gap-5"></div>
+
+      <div class="flex items-start gap-3 mt-6">
+        <div class="comment-avatar">EU</div>
+        <div class="flex-1">
+          <textarea id="comment-input" rows="2" maxlength="280" placeholder="Escreva um comentário..." class="w-full px-3 py-2 text-[13px] resize-none" style="background: var(--panel); border:1px solid var(--border); color: var(--ink);"></textarea>
+          <div class="flex items-center justify-between mt-2">
+            <span class="font-mono text-[10px]" style="color: var(--muted);">Ctrl+Enter para publicar</span>
+            <button id="comment-submit" class="font-mono text-[11px] font-semibold px-4 py-2" style="background: var(--accent); color:#12141A;">PUBLICAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </article>
 
   <!-- CONTEÚDOS RELACIONADOS -->
@@ -127,6 +153,117 @@
 
 <script src="data/noticias.js"></script>
 <script>
+  // ===============================================================
+  // SESSÃO — mesma convenção usada em inventario.html/perfil-config.html:
+  // lê o e-mail salvo pelo home.html no login pra montar a mesma chave
+  // de progresso que o inventário usa (sem isso, ler notícias aqui
+  // nunca contaria pros emblemas de "Caçador de Notícias" etc).
+  // ===============================================================
+  function getSessionEmail() {
+    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
+  }
+  const sessionEmail = getSessionEmail();
+
+  // Evita que texto de comentário vire HTML/JS injetado no innerHTML.
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  }
+
+  // ===============================================================
+  // PROGRESSO DE OBJETIVOS (Inventário/Emblemas) — grava direto na
+  // mesma chave `arena-progress-<email>` que inventario.html lê, então
+  // os emblemas desbloqueiam sozinhos assim que a condição é atingida
+  // (o desbloqueio em si acontece na próxima vez que o inventário
+  // renderizar e chamar checkUnlocks()).
+  // ===============================================================
+  function bumpArenaProgress(key, amount = 1) {
+    try {
+      const progressKey = `arena-progress-${sessionEmail || "demo"}`;
+      const raw = localStorage.getItem(progressKey);
+      const progress = raw ? JSON.parse(raw) : {};
+      if (!progress.firstVisit) progress.firstVisit = Date.now();
+      progress[key] = (progress[key] || 0) + amount;
+      localStorage.setItem(progressKey, JSON.stringify(progress));
+    } catch (err) { /* silencioso */ }
+  }
+
+  // Evita contar a mesma notícia duas vezes (reload da página, voltar
+  // e reler etc.) — só soma progresso na primeira leitura de cada uma.
+  function markArticleRead(articleKey, { isLive } = {}) {
+    try {
+      const readKey = `arena-read-articles-${sessionEmail || "demo"}`;
+      const already = JSON.parse(localStorage.getItem(readKey) || "[]");
+      if (already.includes(articleKey)) return;
+      already.push(articleKey);
+      localStorage.setItem(readKey, JSON.stringify(already));
+      bumpArenaProgress("newsRead");
+      if (isLive) bumpArenaProgress("liveMatchesWatched");
+    } catch (err) { /* silencioso */ }
+  }
+
+  // ===============================================================
+  // COMENTÁRIOS — mesma chave `arena-comments-<email>` usada em
+  // jogo.html, então um comentário feito ali ou aqui aparece nos dois
+  // lugares. Publicar um comentário soma progresso pro emblema
+  // "Comentarista da Arena" (arena-progress → newsComments).
+  // ===============================================================
+  function commentsStoreKey() {
+    return `arena-comments-${sessionEmail || "demo"}`;
+  }
+  function loadStoredComments(articleKey) {
+    try {
+      const all = JSON.parse(localStorage.getItem(commentsStoreKey()) || "{}");
+      return all[articleKey] || [];
+    } catch (err) { return []; }
+  }
+  function saveStoredComment(articleKey, comment) {
+    try {
+      const all = JSON.parse(localStorage.getItem(commentsStoreKey()) || "{}");
+      all[articleKey] = all[articleKey] || [];
+      all[articleKey].push(comment);
+      localStorage.setItem(commentsStoreKey(), JSON.stringify(all));
+    } catch (err) { /* silencioso */ }
+  }
+
+  // Gera comentários "de fábrica" determinísticos por notícia — mesmo
+  // esquema de jogo.html, pra não ficar vazio numa demo sem backend.
+  function hashString(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  const USERNAMES = [
+    "gg_easy", "torcedor_br", "analista_fps", "hypertilt", "zeratoBR",
+    "clutch_king", "vareja_pro", "nx_fan92", "riftwatcher", "coach_sombra",
+  ];
+  const COMMENT_TEMPLATES = [
+    (n, g) => `Que jogo intenso, não esperava esse resultado em ${g}!`,
+    (n, g) => `${g} está cada vez mais forte no cenário brasileiro, muito orgulho.`,
+    (n, g) => `Boa matéria, ${n.author} — só senti falta de mais detalhes sobre a estratégia usada.`,
+    (n) => `Comentei isso com a galera no Discord ontem, ninguém acreditava no resultado.`,
+    (n) => `Alguém sabe se vai ter replay/VOD dessa partida?`,
+    (n) => `Excelente cobertura, dá pra sentir a emoção só de ler.`,
+  ];
+  const TIME_LABELS = ["12 min atrás", "34 min atrás", "1 h atrás", "3 h atrás", "ontem"];
+
+  function buildFallbackComments(n) {
+    const seed = hashString(n.title);
+    const count = 2 + (seed % 3);
+    const comments = [];
+    const usedUsers = new Set();
+    for (let i = 0; i < count; i++) {
+      let uIdx = (seed + i * 7) % USERNAMES.length;
+      while (usedUsers.has(uIdx)) uIdx = (uIdx + 1) % USERNAMES.length;
+      usedUsers.add(uIdx);
+      comments.push({
+        user: USERNAMES[uIdx],
+        time: TIME_LABELS[(seed + i * 5) % TIME_LABELS.length],
+        text: COMMENT_TEMPLATES[(seed + i * 13) % COMMENT_TEMPLATES.length](n, game.label),
+      });
+    }
+    return comments;
+  }
+
   // ===============================================================
   // Roteamento: noticia.html?jogo=valorant&id=0
   // Em produção seria uma rota de verdade: /noticia/valorant/slug-do-titulo
@@ -154,6 +291,12 @@
     liveEl.classList.add("flex");
   }
 
+  // Só conta como "lida" depois de alguns segundos na página — evita
+  // somar progresso pra quem só passou de raspão e fechou na hora.
+  setTimeout(() => {
+    markArticleRead(`${slug}:${id}`, { isLive: !!article.isLive });
+  }, 4000);
+
   // Conteúdo do corpo — em produção viria pronto do CMS (article.content)
   const paragraphs = article.content || [
     article.excerpt,
@@ -163,6 +306,47 @@
     `Para os fãs que acompanham de perto o cenário competitivo, a expectativa agora se volta para os próximos confrontos, que devem definir os rumos da temporada regular e as vagas para a fase eliminatória.`,
   ];
   document.getElementById("article-content").innerHTML = paragraphs.map(p => `<p class="article-p">${p}</p>`).join("");
+
+  // ===============================================================
+  // COMENTÁRIOS — combina os "de fábrica" com os que a pessoa publicou
+  // de verdade (persistidos), e liga o formulário de novo comentário.
+  // ===============================================================
+  const articleKey = `${slug}:${id}`;
+  const baseComments = article.comments || buildFallbackComments(article);
+  const commentCountEl = document.getElementById("comment-count");
+  const commentsListEl = document.getElementById("comments-list");
+  const commentInput = document.getElementById("comment-input");
+
+  function renderComments() {
+    const comments = [...baseComments, ...loadStoredComments(articleKey)];
+    commentCountEl.textContent = comments.length;
+    commentsListEl.innerHTML = comments.map(c => `
+      <div class="flex items-start gap-3">
+        <div class="comment-avatar">${escapeHtml(c.user.slice(0,2).toUpperCase())}</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 font-mono text-[11px]">
+            <span style="color: var(--ink);" class="font-semibold">${escapeHtml(c.user)}</span>
+            <span style="color: var(--muted);">${escapeHtml(c.time)}</span>
+          </div>
+          <p class="text-[13px] mt-1" style="color: var(--ink-soft);">${escapeHtml(c.text)}</p>
+        </div>
+      </div>
+    `).join("");
+  }
+  renderComments();
+
+  function submitComment() {
+    const text = commentInput.value.trim();
+    if (!text) { commentInput.focus(); return; }
+    saveStoredComment(articleKey, { user: "Você", time: "agora", text });
+    bumpArenaProgress("newsComments");
+    commentInput.value = "";
+    renderComments();
+  }
+  document.getElementById("comment-submit").addEventListener("click", submitComment);
+  commentInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submitComment();
+  });
 
   document.getElementById("article-gallery").innerHTML = [1, 2].map(() => `
     <div class="h-40 sm:h-48" style="background: linear-gradient(135deg, var(--glow), var(--panel)); border:1px solid var(--border);"></div>

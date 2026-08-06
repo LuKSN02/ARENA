@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loja Arena | Produtos Oficiais e Itens Digitais</title>
+<meta name="description" content="Camisetas, bonés, canecas e itens digitais exclusivos da Arena — o portal brasileiro de e-sports.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171E;
+    --panel: #1B1F28;
+    --ticker-bg: #0F1116;
+    --border: rgba(255,255,255,0.08);
+    --ink: #D7DAE1;
+    --ink-soft: #AEB3BE;
+    --muted: #7C8394;
+    --live: #34D399;
+    --valorant: #FF4655;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+
+  .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
+  .clip-card-lg{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%); }
+  .clip-tag{ clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+
+  #mobile-menu{ max-height:0; overflow:hidden; transition: max-height .3s ease; }
+  #mobile-menu.open{ max-height: 560px; }
+
+  /* ===== HEADER / NAVBAR (idêntico ao index.html, com LOJA adicionada) ===== */
+  #site-header{ background: rgba(20,23,30,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .nav-link{ color: var(--ink-soft); position:relative; transition: color .15s ease; }
+  .nav-link:hover{ color: var(--ink); }
+  .nav-link.active{ color: var(--ink); }
+  #nav-desktop{ position:relative; }
+  #nav-indicator{
+    position:absolute; bottom:-14px; height:2px; background: var(--valorant);
+    border-radius:1px; transition: left .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1), opacity .15s ease;
+    opacity:0; pointer-events:none;
+  }
+  #nav-indicator.is-visible{ opacity:1; }
+  #mobile-menu .nav-link.active{ color: var(--valorant); position:relative; padding-left:10px; }
+  #mobile-menu .nav-link.active::before{
+    content:""; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:4px; height:4px; border-radius:9999px; background: var(--valorant);
+  }
+  .icon-btn{ color: var(--muted); border:1px solid var(--border); transition: color .15s ease, border-color .15s ease; }
+  .icon-btn:hover{ color: var(--ink); border-color: var(--ink-soft); }
+  .btn-neon{ background: var(--valorant); color:#12141A; box-shadow: 0 0 0 rgba(255,70,85,0); transition: box-shadow .2s ease, transform .15s ease; }
+  .btn-neon:hover{ box-shadow: 0 0 18px color-mix(in srgb, var(--valorant) 65%, transparent), 0 0 40px color-mix(in srgb, var(--valorant) 25%, transparent); transform: translateY(-1px); }
+
+  #user-menu-btn{ background: transparent; }
+  #user-avatar-wrap{ position:relative; width:36px; height:36px; }
+  #user-avatar-img{ width:36px; height:36px; border-radius:9999px; object-fit:cover; border:1px solid var(--border); display:block; }
+  .status-dot{
+    position:absolute; bottom:-1px; right:-1px; width:11px; height:11px; border-radius:9999px;
+    background: var(--live); border:2px solid var(--bg); box-shadow: 0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
+  }
+  #nav-badges{ display:flex; align-items:center; margin-left:2px; }
+  #nav-badges:empty{ display:none; }
+  .nav-badge{
+    width:20px; height:20px; margin-left:-6px; border-radius:9999px;
+    display:flex; align-items:center; justify-content:center; font-size:11px;
+    background: #20242F; border:1.5px solid var(--bg);
+    box-shadow: 0 0 6px -1px var(--nb-color, #5865F2);
+  }
+  #dropdown-badges{ padding:12px 14px; display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--border); }
+  #dropdown-badges:empty{ display:none; }
+  .dropdown-badge{
+    display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono', monospace; font-size:10px;
+    padding:4px 8px; background: #20242F; border:1px solid var(--nb-color, #5865F2); color: var(--ink-soft);
+  }
+  #user-dropdown{
+    position:absolute; right:0; top:calc(100% + 10px); width:230px; z-index:60;
+    background: var(--panel); border:1px solid var(--border);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+    opacity:0; transform: translateY(-6px); pointer-events:none; transition: opacity .15s ease, transform .15s ease;
+  }
+  #user-dropdown.open{ opacity:1; transform: translateY(0); pointer-events:auto; }
+  .dropdown-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:10px 14px; font-size:13px; font-weight:500; color: var(--ink-soft);
+    background:transparent; border:none; cursor:pointer; transition: background .12s ease, color .12s ease;
+  }
+  .dropdown-item:hover{ background: rgba(255,255,255,0.04); color: var(--ink); }
+  .dropdown-item.danger{ color: var(--valorant); }
+  .dropdown-item.danger:hover{ background: color-mix(in srgb, var(--valorant) 12%, transparent); color: var(--valorant); }
+  .dropdown-divider{ border-top:1px solid var(--border); margin:6px 0; }
+
+  #menu-toggle{ background: transparent; }
+  .hamburger-line{ transition: transform .25s ease, opacity .2s ease; transform-origin: center; }
+  #menu-toggle[aria-expanded="true"] .line-1{ transform: translateY(7px) rotate(45deg); }
+  #menu-toggle[aria-expanded="true"] .line-2{ opacity: 0; }
+  #menu-toggle[aria-expanded="true"] .line-3{ transform: translateY(-7px) rotate(-45deg); }
+
+  /* ===== MODAIS (Login/Cadastro/Checkout) ===== */
+  .modal-overlay{
+    position:fixed; inset:0; z-index:200;
+    background: rgba(10,11,15,0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    display:flex; align-items:flex-start; justify-content:center; padding: 90px 16px 16px;
+    opacity:0; pointer-events:none; transition: opacity .18s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal-panel{
+    background: var(--panel); border:1px solid var(--border); width:100%; max-width: 460px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+    transform: translateY(-14px); transition: transform .2s ease;
+  }
+  .modal-overlay.open .modal-panel{ transform: translateY(0); }
+  .modal-close{ color: var(--muted); transition: color .15s ease; }
+  .modal-close:hover{ color: var(--ink); }
+  .modal-input{ background: transparent; border:1px solid var(--border); color: var(--ink); padding: 10px 12px; font-size: 13px; width:100%; }
+  .modal-input:focus{ outline:none; border-color: var(--valorant); }
+  #login-error, #signup-error{ color: var(--valorant); }
+
+  /* ===== FOOTER ===== */
+  .footer-link{ color: var(--muted); transition: color .15s ease; }
+  .footer-link:hover{ color: var(--ink); }
+  #newsletter-input:focus{ outline:none; border-color: var(--valorant); }
+  #newsletter-msg{ color: var(--live); }
+
+  /* ===================================================== */
+  /* LOJA ARENA                                             */
+  /* ===================================================== */
+  .shop-card{
+    background: var(--panel); border:1px solid var(--border); overflow:hidden;
+    display:flex; flex-direction:column; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .shop-card:hover{
+    transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.35);
+    border-color: color-mix(in srgb, var(--valorant) 45%, var(--border));
+  }
+  .shop-card-img{ height:130px; position:relative; overflow:hidden; background: #20242F; }
+  .shop-card-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .shop-tag{
+    position:absolute; top:8px; left:8px; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
+    padding:3px 8px; text-transform:uppercase; letter-spacing:.03em; background: var(--valorant); color:#12141A;
+  }
+  .shop-body{ padding:13px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .shop-name{ font-size:13px; font-weight:700; line-height:1.3; }
+  .shop-desc{ font-size:11px; color: var(--muted); line-height:1.5; flex:1; }
+  .shop-price{ font-family:'JetBrains Mono', monospace; font-size:16px; font-weight:700; margin-top:2px; }
+  .shop-add-btn{
+    margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:9px 0;
+    text-align:center; cursor:pointer; background: transparent; border:1px solid var(--valorant); color: var(--valorant);
+    transition: all .15s ease;
+  }
+  .shop-add-btn:hover{ background: var(--valorant); color:#12141A; box-shadow: 0 0 16px color-mix(in srgb, var(--valorant) 55%, transparent); }
+
+  /* Filtros de categoria do catálogo */
+  #shop-filters{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .shop-filter-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; letter-spacing:.03em;
+    padding:8px 14px; text-transform:uppercase; cursor:pointer; background: var(--panel);
+    border:1px solid var(--border); color: var(--ink-soft); transition: all .15s ease;
+  }
+  .shop-filter-btn:hover{ color: var(--ink); border-color: var(--ink-soft); }
+  .shop-filter-btn.active{ background: var(--valorant); border-color: var(--valorant); color:#12141A; }
+
+  /* Variantes de cor da tag por categoria digital/eletrônicos */
+  .shop-tag.tag-digital{ background: #8B5CF6; color:#12141A; }
+  .shop-tag.tag-eletronicos{ background: #22D3EE; color:#12141A; }
+
+  /* ===============================================================
+     PREVIEW DE ITENS DIGITAIS — gerados via CSS (sem placeholder),
+     usados no lugar do <img> para produtos com tag "DIGITAL".
+     =============================================================== */
+  .dprev{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+
+  /* Molduras de avatar */
+  .dprev-avatar-slot{ position:relative; width:64%; aspect-ratio:1/1; max-width:150px; }
+  .dprev-avatar-core{
+    position:absolute; inset:14%; border-radius:9999px; background:#12141A;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Teko', sans-serif; font-size:28px; color: var(--ink-soft); letter-spacing:1px;
+  }
+  .dprev-ring{ position:absolute; inset:0; border-radius:9999px; }
+  .dprev-ring.ring-cyber{
+    background: conic-gradient(from 0deg, #8B5CF6, #22D3EE, #8B5CF6, #22D3EE, #8B5CF6);
+    animation: dprev-spin 4s linear infinite;
+  }
+  .dprev-ring.ring-cyber::after{ content:""; position:absolute; inset:6px; border-radius:9999px; background:#20242F; }
+  .dprev-ring.ring-ouro{
+    background: conic-gradient(from 90deg, #F5C453, #FFF3C4, #C9962E, #F5C453);
+    box-shadow: 0 0 18px rgba(245,196,83,.55);
+    animation: dprev-pulse 2.2s ease-in-out infinite;
+  }
+  .dprev-ring.ring-ouro::after{ content:""; position:absolute; inset:5px; border-radius:9999px; background:#20242F; }
+  .dprev-ring.ring-glitch{ background:#20242F; }
+  .dprev-ring.ring-glitch::before, .dprev-ring.ring-glitch::after{
+    content:""; position:absolute; inset:0; border-radius:9999px; border:3px solid; box-sizing:border-box;
+  }
+  .dprev-ring.ring-glitch::before{ border-color:#FF4655; animation: dprev-glitch-a 1.6s infinite steps(2); }
+  .dprev-ring.ring-glitch::after{ border-color:#22D3EE; animation: dprev-glitch-b 1.6s infinite steps(2); }
+
+  @keyframes dprev-spin{ to{ transform: rotate(360deg); } }
+  @keyframes dprev-pulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
+  @keyframes dprev-glitch-a{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-3px,1px); } 50%{ transform:translate(2px,-2px); } 75%{ transform:translate(-1px,2px); } }
+  @keyframes dprev-glitch-b{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(3px,-1px); } 50%{ transform:translate(-2px,2px); } 75%{ transform:translate(1px,-2px); } }
+
+  /* Banners de perfil */
+  .dprev-banner{ position:absolute; inset:0; overflow:hidden; }
+  .dprev-banner.banner-nebulosa{
+    background:
+      radial-gradient(circle at 20% 30%, rgba(139,92,246,.55), transparent 45%),
+      radial-gradient(circle at 75% 60%, rgba(34,211,238,.4), transparent 50%),
+      linear-gradient(135deg, #1B1030, #10131C 70%);
+  }
+  .dprev-star{ position:absolute; width:3px; height:3px; border-radius:9999px; background:#fff; animation: dprev-twinkle 2.4s ease-in-out infinite; }
+  @keyframes dprev-twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  .dprev-banner.banner-campeao{
+    background: linear-gradient(135deg, #3A2508, #171006 70%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .dprev-trophy{ font-size:34px; filter: drop-shadow(0 0 10px rgba(245,196,83,.6)); }
+  .dprev-confetti{ position:absolute; top:-10%; width:6px; height:10px; animation: dprev-fall linear infinite; }
+  @keyframes dprev-fall{ 0%{ transform: translateY(-20%) rotate(0deg); opacity:0; } 10%{ opacity:1; } 100%{ transform: translateY(260%) rotate(360deg); opacity:0; } }
+
+  /* Emblema / badge de perfil */
+  .dprev-badge{
+    width:58%; aspect-ratio:1/1; max-width:110px;
+    background: linear-gradient(160deg, #8B5CF6, #4C2E9E);
+    clip-path: polygon(50% 0%, 100% 20%, 100% 70%, 50% 100%, 0% 70%, 0% 20%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 22px rgba(139,92,246,.55);
+    animation: dprev-pulse 2.4s ease-in-out infinite;
+  }
+  .dprev-badge span{ font-family:'Teko', sans-serif; font-weight:700; font-size:20px; color:#F4E9FF; letter-spacing:2px; }
+
+  /* Efeito de nome RGB */
+  .dprev-nameeffect{
+    font-family:'Teko', sans-serif; font-size:34px; font-weight:700; letter-spacing:2px;
+    background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
+    background-size: 300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: dprev-rgb 3.5s linear infinite;
+  }
+  @keyframes dprev-rgb{ to{ background-position: 300% 0; } }
+
+  .coupon-card{
+    background: linear-gradient(135deg, #20242F, var(--panel));
+    border:1px solid var(--valorant);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 0 24px -8px var(--valorant);
+    padding:14px; display:flex; flex-direction:column; gap:7px; margin-bottom:18px;
+  }
+  .coupon-rarity{
+    align-self:flex-start; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
+    padding:3px 8px; border-radius:3px; background:#7C8394; color:#12141A; text-transform:uppercase; letter-spacing:.03em;
+  }
+  .coupon-name{ font-family:'Teko', sans-serif; font-size:21px; font-weight:600; text-transform:uppercase; line-height:1.05; }
+  .coupon-desc{ font-size:11px; color: var(--muted); line-height:1.5; }
+  .coupon-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:9px 0; text-align:center;
+    cursor:pointer; background: var(--valorant); color:#12141A; border:none; transition: filter .15s ease, box-shadow .15s ease;
+  }
+  .coupon-btn:hover{ filter: brightness(1.12); box-shadow: 0 0 16px color-mix(in srgb, var(--valorant) 55%, transparent); }
+  .coupon-btn.applied{ background: transparent; border:1px solid var(--live); color: var(--live); cursor:default; filter:none; box-shadow:none; }
+  .coupon-btn.disabled{ background: transparent; border:1px solid var(--border); color: var(--muted); cursor:not-allowed; filter:none; box-shadow:none; }
+
+  #cart-panel{ background: var(--panel); border:1px solid var(--border); padding:18px; }
+  .cart-item{ display:flex; align-items:center; gap:8px; font-size:12px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .cart-empty{ font-size:12px; color: var(--muted); text-align:center; padding:22px 0; }
+  .cart-total-row{ display:flex; justify-content:space-between; font-size:12px; color: var(--ink-soft); padding:3px 0; }
+  .cart-total-row.discount{ color: var(--valorant); font-weight:600; }
+  .cart-total-final{ display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:10px; border-top:1px solid var(--border); }
+
+  /* ===== CARROSSEL DE DESTAQUES ===== */
+  #shop-carousel{ position:relative; }
+  #carousel-track{ transition: transform .5s cubic-bezier(.4,0,.2,1); }
+  .carousel-slide{ min-width:100%; flex-shrink:0; }
+  .carousel-card{ display:grid; grid-template-columns: 1fr; background: var(--panel); border:1px solid var(--border); overflow:hidden; }
+  @media (min-width: 768px){ .carousel-card{ grid-template-columns: 1.1fr 1fr; } }
+  .carousel-img{ height:230px; position:relative; overflow:hidden; background:#20242F; }
+  @media (min-width: 768px){ .carousel-img{ height:auto; aspect-ratio:1/1; } }
+  .carousel-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .carousel-badge{
+    position:absolute; top:14px; left:14px; font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700;
+    padding:5px 12px; text-transform:uppercase; letter-spacing:.03em; background: var(--valorant); color:#12141A;
+  }
+  .carousel-info{ padding:26px 28px; display:flex; flex-direction:column; gap:10px; justify-content:center; }
+  .carousel-name{ font-family:'Teko', sans-serif; font-size:32px; font-weight:600; text-transform:uppercase; line-height:1.05; }
+  .carousel-desc{ font-size:13px; color: var(--muted); line-height:1.6; max-width:42ch; }
+  .carousel-price{ font-family:'JetBrains Mono', monospace; font-size:24px; font-weight:700; margin-top:2px; }
+  .carousel-add-btn{
+    align-self:flex-start; margin-top:8px; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700;
+    padding:11px 24px; text-align:center; cursor:pointer; background: var(--valorant); color:#12141A; border:none;
+    transition: filter .15s ease, box-shadow .15s ease;
+  }
+  .carousel-add-btn:hover{ filter: brightness(1.12); box-shadow: 0 0 16px color-mix(in srgb, var(--valorant) 55%, transparent); }
+  .carousel-arrow{
+    position:absolute; top:50%; transform:translateY(-50%); width:38px; height:38px; z-index:5;
+    background: var(--panel); border:1px solid var(--border); color: var(--ink);
+    display:flex; align-items:center; justify-content:center; font-size:20px; line-height:1; cursor:pointer;
+    transition: all .15s ease;
+  }
+  .carousel-arrow:hover{ border-color: var(--valorant); color: var(--valorant); }
+  .carousel-arrow.left{ left:-6px; } .carousel-arrow.right{ right:-6px; }
+  @media (min-width: 640px){ .carousel-arrow.left{ left:-18px; } .carousel-arrow.right{ right:-18px; } }
+  .carousel-dot{ width:8px; height:8px; border-radius:9999px; background: var(--border); cursor:pointer; border:none; transition: background .15s ease, transform .15s ease; padding:0; }
+  .carousel-dot.active{ background: var(--valorant); transform:scale(1.3); }
+
+  /* ===== CHECKOUT DA LOJA ARENA ===== */
+  .checkout-panel{ max-width:620px; max-height: calc(100vh - 110px); overflow-y:auto; }
+  .checkout-step{ display:none; }
+  .checkout-step.active{ display:block; }
+  .checkout-progress{ display:flex; align-items:center; gap:6px; padding:14px 20px 0; }
+  .checkout-progress-step{ flex:1; height:3px; background: var(--border); position:relative; }
+  .checkout-progress-step.done, .checkout-progress-step.current{ background: var(--valorant); }
+  .field-group{ margin-bottom:12px; }
+  .field-group label{ font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:600; color: var(--muted); display:block; margin-bottom:5px; letter-spacing:.03em; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row > div{ flex:1; }
+  .cep-row{ display:flex; gap:8px; align-items:flex-end; }
+  .cep-row .field-group{ flex:1; margin-bottom:0; }
+  #cep-status{ font-size:11px; margin-top:5px; min-height:14px; }
+  #cep-status.ok{ color: var(--live); }
+  #cep-status.err{ color: var(--valorant); }
+  .btn-outline-sm{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:10px 16px; white-space:nowrap;
+    background:transparent; border:1px solid var(--border); color: var(--ink-soft); cursor:pointer; transition: all .15s ease;
+  }
+  .btn-outline-sm:hover{ border-color: var(--valorant); color: var(--valorant); }
+  .frete-option{
+    display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--border);
+    cursor:pointer; margin-bottom:8px; transition: border-color .15s ease, background .15s ease;
+  }
+  .frete-option:hover{ border-color: color-mix(in srgb, var(--valorant) 50%, var(--border)); }
+  .frete-option.selected{ border-color: var(--valorant); background: color-mix(in srgb, var(--valorant) 8%, transparent); }
+  .frete-option input{ accent-color: var(--valorant); }
+  .frete-option .frete-name{ font-size:13px; font-weight:600; flex:1; }
+  .frete-option .frete-days{ font-size:11px; color: var(--muted); }
+  .frete-option .frete-price{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:700; }
+  .pay-method-row{ display:flex; gap:8px; margin-bottom:14px; }
+  .pay-method-btn{
+    flex:1; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:10px 6px; text-align:center;
+    border:1px solid var(--border); background:transparent; color: var(--muted); cursor:pointer; transition: all .15s ease;
+  }
+  .pay-method-btn.active{ border-color: var(--valorant); color: var(--valorant); background: color-mix(in srgb, var(--valorant) 10%, transparent); }
+  .pay-panel{ display:none; }
+  .pay-panel.active{ display:block; }
+  .pix-box{ background: var(--ticker-bg); border:1px solid var(--border); padding:16px; text-align:center; }
+  .pix-code{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--ink-soft); word-break:break-all; background: var(--panel); padding:10px; margin-top:10px; border:1px solid var(--border); }
+  .boleto-box{ background: var(--ticker-bg); border:1px solid var(--border); padding:16px; }
+  .checkout-summary{ background: var(--ticker-bg); border:1px solid var(--border); padding:14px; margin-top:4px; }
+  .checkout-summary-row{ display:flex; justify-content:space-between; font-size:12px; color: var(--ink-soft); padding:3px 0; }
+  .checkout-summary-row.discount{ color: var(--valorant); }
+  .checkout-summary-total{ display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:10px; border-top:1px solid var(--border); }
+  .checkout-nav{ display:flex; gap:10px; padding:16px 20px 20px; }
+  .checkout-success{ text-align:center; padding:36px 20px; }
+  .checkout-success-icon{
+    width:64px; height:64px; border-radius:9999px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center;
+    background: color-mix(in srgb, var(--live) 16%, transparent); border:2px solid var(--live); font-size:28px; color: var(--live);
+  }
+  .digital-frame-preview{ width:72px; height:72px; border-radius:9999px; margin:16px auto; position:relative; background: var(--panel); }
+  .digital-frame-preview::before{
+    content:""; position:absolute; inset:-6px; border-radius:9999px;
+    background: conic-gradient(from 0deg, #FF4655, #00E5FF, #8B5CF6, #FF4655);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+    animation: cyberFrameSpinCheckout 3s linear infinite;
+    box-shadow: 0 0 14px -2px #FF4655, 0 0 14px -2px #00E5FF;
+  }
+  @keyframes cyberFrameSpinCheckout{ to{ transform: rotate(360deg); } }
+
+  #shop-toast{
+    position:fixed; top:20px; left:50%; transform: translateX(-50%) translateY(-140%);
+    z-index:90; background: var(--panel); border:1px solid var(--valorant); color: var(--ink);
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    padding:10px 18px; transition: transform .22s ease; max-width:90vw; text-align:center;
+  }
+  #shop-toast.show{ transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ===================================================== -->
+<!-- CABEÇALHO / NAVBAR (fixo no topo, igual ao index.html,   -->
+<!-- com o item LOJA — a página atual fica marcada ativa)    -->
+<!-- ===================================================== -->
+<header id="site-header" class="sticky top-0 z-50" style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+
+    <nav id="nav-desktop" class="hidden lg:flex items-center gap-9 font-mono text-[12px] font-semibold">
+      <a href="index.html" class="nav-link">HOME</a>
+      <a href="index.html?cat=campeonatos" class="nav-link">CAMPEONATOS</a>
+      <a href="index.html?cat=lancamentos" class="nav-link">LANÇAMENTOS</a>
+      <a href="index.html?cat=reviews" class="nav-link">REVIEWS</a>
+      <a href="index.html?cat=agenda" class="nav-link">AGENDA</a>
+      <a href="loja.html" class="nav-link active">LOJA</a>
+      <span id="nav-indicator"></span>
+    </nav>
+
+    <div class="flex items-center gap-2.5 shrink-0">
+      <a href="index.html" aria-label="Buscar no portal" title="Buscar no portal" class="icon-btn hidden sm:flex w-9 h-9 items-center justify-center text-[14px]">🔍</a>
+      <button class="js-open-login btn-neon hidden sm:block font-mono text-[12px] font-semibold px-5 py-2 clip-tag"><span class="js-login-label">LOGIN</span></button>
+
+      <div class="relative hidden sm:block" id="user-menu-wrap">
+        <button id="user-menu-btn" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 py-1 pl-1 pr-2">
+          <span id="user-avatar-wrap">
+            <img id="user-avatar-img" src="https://placehold.co/72x72/1B1F28/D7DAE1?text=U" alt="Foto de perfil">
+            <span class="status-dot"></span>
+          </span>
+          <span id="nav-badges"></span>
+          <span id="user-menu-name" class="hidden lg:block font-mono text-[12px] font-semibold"></span>
+        </button>
+        <div id="user-dropdown" role="menu">
+          <div id="dropdown-badges"></div>
+          <a href="perfil-config.html" class="dropdown-item" role="menuitem">⚙️ Configurações do Perfil</a>
+          <a href="inventario.html" class="dropdown-item" role="menuitem">🎒 Meu Inventário</a>
+          <div class="dropdown-divider"></div>
+          <button id="js-logout" class="dropdown-item danger" role="menuitem">🚪 Sair</button>
+        </div>
+      </div>
+
+      <button id="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu"
+        class="lg:hidden w-9 h-9 flex flex-col items-center justify-center gap-[5px]">
+        <span class="hamburger-line line-1 w-5 h-[2px]" style="background: var(--ink);"></span>
+        <span class="hamburger-line line-2 w-5 h-[2px]" style="background: var(--ink);"></span>
+        <span class="hamburger-line line-3 w-5 h-[2px]" style="background: var(--ink);"></span>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="lg:hidden" style="background: var(--panel); border-top:1px solid var(--border);">
+    <nav class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-1 font-mono text-[13px] font-semibold">
+      <a href="index.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">HOME</a>
+      <a href="index.html?cat=campeonatos" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">CAMPEONATOS</a>
+      <a href="index.html?cat=lancamentos" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">LANÇAMENTOS</a>
+      <a href="index.html?cat=reviews" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">REVIEWS</a>
+      <a href="index.html?cat=agenda" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">AGENDA</a>
+      <a href="loja.html" class="py-2.5 nav-link active" style="border-bottom:1px solid var(--border);">LOJA</a>
+      <div class="flex items-center gap-3 mt-4">
+        <a href="index.html" class="icon-btn flex-1 h-10 flex items-center justify-center gap-2 text-[12px]">🔍 BUSCAR</a>
+        <button class="js-open-login btn-neon flex-1 h-10 font-mono text-[12px] font-semibold clip-tag"><span class="js-login-label">LOGIN</span></button>
+      </div>
+
+      <div id="user-menu-mobile" class="hidden flex-col gap-1 mt-4" style="border-top:1px solid var(--border); padding-top:14px;">
+        <div class="flex items-center gap-3 pb-3">
+          <span id="user-avatar-wrap-mobile" class="relative w-10 h-10 shrink-0">
+            <img id="user-avatar-img-mobile" src="https://placehold.co/72x72/1B1F28/D7DAE1?text=U" alt="Foto de perfil" class="w-10 h-10 rounded-full object-cover" style="border:1px solid var(--border);">
+            <span class="status-dot"></span>
+          </span>
+          <span id="user-menu-name-mobile" class="text-[13px] font-semibold"></span>
+        </div>
+        <a href="perfil-config.html" class="py-2.5" style="border-top:1px solid var(--border);">⚙️ Configurações do Perfil</a>
+        <a href="inventario.html" class="py-2.5" style="border-top:1px solid var(--border);">🎒 Meu Inventário</a>
+        <button id="js-logout-mobile" class="py-2.5 text-left" style="border-top:1px solid var(--border); color: var(--valorant);">🚪 Sair</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ===================================================== -->
+<!-- CONTEÚDO DA LOJA                                        -->
+<!-- ===================================================== -->
+<main class="max-w-6xl mx-auto px-4 py-10">
+
+  <div class="mb-10">
+    <h1 class="font-display text-4xl sm:text-5xl font-semibold uppercase tracking-wide">
+      Loja <span style="color: var(--valorant);">Arena</span>
+    </h1>
+    <p class="text-[13px] mt-2" style="color: var(--muted);">Produtos oficiais e itens digitais exclusivos da comunidade Arena.</p>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- CARROSSEL DE DESTAQUES                                  -->
+  <!-- ===================================================== -->
+  <section class="mb-14">
+    <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
+      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Destaques</h2>
+      <span class="font-mono text-[11px] hidden sm:block" style="color: var(--muted);">selecionados pra você</span>
+    </div>
+
+    <div id="shop-carousel" class="relative">
+      <div class="overflow-hidden">
+        <div id="carousel-track" class="flex"></div>
+      </div>
+      <button id="carousel-prev" class="carousel-arrow left" aria-label="Produto anterior">‹</button>
+      <button id="carousel-next" class="carousel-arrow right" aria-label="Próximo produto">›</button>
+      <div id="carousel-dots" class="flex justify-center gap-2 mt-4"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- CATÁLOGO COMPLETO + CUPOM + CARRINHO                    -->
+  <!-- ===================================================== -->
+  <section id="loja-arena">
+    <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
+      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Catálogo completo</h2>
+      <span class="font-mono text-[11px] hidden sm:block" style="color: var(--muted);">produtos oficiais &amp; itens digitais</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <div class="lg:col-span-2">
+        <div id="shop-filters"><!-- botões gerados dinamicamente via JS a partir das tags de SHOP_PRODUCTS --></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-5" id="shop-grid">
+          <!-- cards gerados dinamicamente via JS a partir de SHOP_PRODUCTS -->
+        </div>
+      </div>
+
+      <aside>
+        <div id="cart-panel">
+          <div class="coupon-card">
+            <span class="coupon-rarity">Comum</span>
+            <h3 class="coupon-name">🎟️ 10% OFF na Loja Arena</h3>
+            <p class="coupon-desc">Válido para qualquer produto da loja oficial.</p>
+            <button id="coupon-btn" class="coupon-btn">USAR CUPOM</button>
+          </div>
+
+          <h3 class="flex items-center gap-2 mb-3 font-mono text-[13px] font-semibold">🛒 SEU CARRINHO</h3>
+          <div id="cart-items"><div class="cart-empty">Seu carrinho está vazio.</div></div>
+
+          <div class="mt-1" id="cart-totals" style="display:none;">
+            <div class="cart-total-row"><span>Subtotal</span><span id="cart-subtotal">R$ 0,00</span></div>
+            <div class="cart-total-row discount" id="cart-discount-row" style="display:none;">
+              <span>Desconto (10%)</span><span id="cart-discount">- R$ 0,00</span>
+            </div>
+            <div class="cart-total-final">
+              <span class="font-mono text-[11px]" style="color: var(--muted);">TOTAL</span>
+              <span class="font-mono text-lg font-bold" id="cart-total-display" style="color: var(--ink);">R$ 0,00</span>
+            </div>
+          </div>
+
+          <button id="checkout-btn" class="shop-add-btn w-full mt-4" style="display:none; border-color: var(--valorant); color: var(--valorant);">FINALIZAR COMPRA</button>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================================================== -->
+<!-- RODAPÉ                                                  -->
+<!-- ===================================================== -->
+<footer style="background: var(--ticker-bg); border-top:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+    <div>
+      <a href="index.html" class="font-display text-3xl font-bold tracking-wide" style="color: var(--ink);">
+        ARENA<span style="color: var(--valorant);">.</span>
+      </a>
+      <p class="text-[13px] mt-3 leading-relaxed max-w-[26ch]" style="color: var(--muted);">
+        O portal brasileiro de notícias, coberturas ao vivo e resultados dos maiores campeonatos de e-sports e games.
+      </p>
+    </div>
+
+    <div>
+      <h4 class="font-mono text-[11px] font-semibold mb-4 tracking-wide" style="color: var(--ink);">NAVEGAÇÃO</h4>
+      <ul class="flex flex-col gap-2.5 text-[13px]">
+        <li><a href="index.html" class="footer-link">Home</a></li>
+        <li><a href="index.html?cat=campeonatos" class="footer-link">Campeonatos</a></li>
+        <li><a href="index.html?cat=lancamentos" class="footer-link">Lançamentos</a></li>
+        <li><a href="index.html?cat=reviews" class="footer-link">Reviews</a></li>
+        <li><a href="index.html?cat=agenda" class="footer-link">Agenda</a></li>
+        <li><a href="loja.html" class="footer-link">Loja</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="font-mono text-[11px] font-semibold mb-4 tracking-wide" style="color: var(--ink);">REDES SOCIAIS</h4>
+      <ul class="flex flex-col gap-2.5 text-[13px]">
+        <li><a href="#" class="footer-link flex items-center gap-2"><span class="w-4 text-center">𝕏</span> Twitter / X</a></li>
+        <li><a href="#" class="footer-link flex items-center gap-2"><span class="w-4 text-center">🎮</span> Twitch</a></li>
+        <li><a href="#" class="footer-link flex items-center gap-2"><span class="w-4 text-center">▶</span> YouTube</a></li>
+        <li><a href="#" class="footer-link flex items-center gap-2"><span class="w-4 text-center">📷</span> Instagram</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="font-mono text-[11px] font-semibold mb-4 tracking-wide" style="color: var(--ink);">RECEBA AS NOVIDADES</h4>
+      <p class="text-[13px] mb-3" style="color: var(--muted);">As principais notícias de e-sports direto no seu e-mail.</p>
+      <form id="newsletter-form" class="flex flex-col gap-2">
+        <input id="newsletter-input" type="email" required placeholder="seu@email.com"
+          class="text-[13px] px-3 py-2 bg-transparent" style="border:1px solid var(--border); color: var(--ink);">
+        <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-4 py-2 clip-tag">INSCREVER</button>
+        <span id="newsletter-msg" class="text-[11px] font-mono hidden">✓ Inscrição confirmada!</span>
+      </form>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);">
+    <div class="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-[11px]" style="color: var(--muted);">
+      <span>&copy; 2026 Arena. Todos os direitos reservados.</span>
+      <div class="flex gap-5">
+        <a href="#" class="footer-link">Política de Privacidade</a>
+        <a href="#" class="footer-link">Termos de Uso</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================================================== -->
+<!-- MODAL DE LOGIN                                          -->
+<!-- ===================================================== -->
+<div id="login-overlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal-panel">
+    <div class="flex items-center justify-between p-5" style="border-bottom:1px solid var(--border);">
+      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Entrar na <span style="color: var(--valorant);">Arena</span></h2>
+      <button class="modal-close js-close-login text-[13px]" aria-label="Fechar login">✕</button>
+    </div>
+    <form id="login-form" class="p-5 flex flex-col gap-3">
+      <div>
+        <label for="login-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
+        <input id="login-email" type="email" required placeholder="seu@email.com" class="modal-input">
+      </div>
+      <div>
+        <label for="login-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
+        <input id="login-password" type="password" required minlength="4" placeholder="••••••••" class="modal-input">
+      </div>
+      <span id="login-error" class="text-[12px] hidden">Preencha e-mail e senha para continuar.</span>
+      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">ENTRAR</button>
+      <p class="text-[11px] text-center mt-1" style="color: var(--muted);">Ainda não tem conta? <a href="#" class="js-open-signup footer-link" style="color: var(--valorant);">Cadastre-se</a></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL DE CADASTRO                                        -->
+<!-- ===================================================== -->
+<div id="signup-overlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal-panel">
+    <div class="flex items-center justify-between p-5" style="border-bottom:1px solid var(--border);">
+      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Criar conta na <span style="color: var(--valorant);">Arena</span></h2>
+      <button class="modal-close js-close-signup text-[13px]" aria-label="Fechar cadastro">✕</button>
+    </div>
+    <form id="signup-form" class="p-5 flex flex-col gap-3">
+      <div>
+        <label for="signup-name" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOME</label>
+        <input id="signup-name" type="text" required placeholder="Seu nome" class="modal-input">
+      </div>
+      <div>
+        <label for="signup-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
+        <input id="signup-email" type="email" required placeholder="seu@email.com" class="modal-input">
+      </div>
+      <div>
+        <label for="signup-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
+        <input id="signup-password" type="password" required minlength="4" placeholder="mín. 4 caracteres" class="modal-input">
+      </div>
+      <div>
+        <label for="signup-password-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR SENHA</label>
+        <input id="signup-password-confirm" type="password" required minlength="4" placeholder="repita a senha" class="modal-input">
+      </div>
+      <span id="signup-error" class="text-[12px] hidden">Confira os dados: nome, e-mail e senhas precisam bater.</span>
+      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">CRIAR CONTA</button>
+      <p class="text-[11px] text-center mt-1" style="color: var(--muted);">Já tem conta? <a href="#" class="js-open-login-from-signup footer-link" style="color: var(--valorant);">Entrar</a></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL DE CHECKOUT DA LOJA ARENA                          -->
+<!-- Físicos: endereço + frete + pagamento. Só Digitais: só pagamento. -->
+<!-- ===================================================== -->
+<div id="checkout-overlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal-panel checkout-panel">
+    <div class="flex items-center justify-between p-5" style="border-bottom:1px solid var(--border);">
+      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide" id="checkout-title">Finalizar <span style="color: var(--valorant);">Compra</span></h2>
+      <button class="modal-close js-close-checkout text-[13px]" aria-label="Fechar checkout">✕</button>
+    </div>
+
+    <div class="checkout-progress" id="checkout-progress"></div>
+
+    <div class="p-5">
+
+      <div class="checkout-step" id="step-address">
+        <p class="text-[11px] font-mono font-semibold mb-3" style="color: var(--muted);">ENDEREÇO DE ENTREGA</p>
+
+        <div class="cep-row">
+          <div class="field-group">
+            <label for="ck-cep">CEP</label>
+            <input id="ck-cep" type="text" inputmode="numeric" maxlength="9" placeholder="00000-000" class="modal-input">
+          </div>
+          <button type="button" id="ck-calc-frete" class="btn-outline-sm">CALCULAR FRETE</button>
+        </div>
+        <div id="cep-status"></div>
+
+        <div class="field-row mt-3">
+          <div class="field-group" style="flex:3;">
+            <label for="ck-rua">RUA</label>
+            <input id="ck-rua" type="text" placeholder="Nome da rua" class="modal-input">
+          </div>
+          <div class="field-group" style="flex:1;">
+            <label for="ck-numero">NÚMERO</label>
+            <input id="ck-numero" type="text" placeholder="123" class="modal-input">
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="ck-complemento">COMPLEMENTO (opcional)</label>
+          <input id="ck-complemento" type="text" placeholder="Apto, bloco, referência..." class="modal-input">
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="ck-bairro">BAIRRO</label>
+            <input id="ck-bairro" type="text" placeholder="Bairro" class="modal-input">
+          </div>
+          <div class="field-group">
+            <label for="ck-cidade">CIDADE</label>
+            <input id="ck-cidade" type="text" placeholder="Cidade" class="modal-input">
+          </div>
+          <div class="field-group" style="flex:0.5;">
+            <label for="ck-uf">UF</label>
+            <input id="ck-uf" type="text" maxlength="2" placeholder="SP" class="modal-input" style="text-transform:uppercase;">
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-[11px] font-mono font-semibold mb-2" style="color: var(--muted);">FRETE</p>
+          <div id="frete-options">
+            <p class="text-[12px]" style="color: var(--muted);">Informe o CEP e clique em "Calcular frete" para ver as opções de entrega.</p>
+          </div>
+        </div>
+
+        <span id="address-error" class="text-[12px] hidden" style="color: var(--valorant); display:block; margin-top:8px;"></span>
+      </div>
+
+      <div class="checkout-step" id="step-payment">
+        <p class="text-[11px] font-mono font-semibold mb-3" style="color: var(--muted);">FORMA DE PAGAMENTO</p>
+
+        <div class="pay-method-row">
+          <button type="button" class="pay-method-btn active" data-pay-method="cartao">💳 CARTÃO</button>
+          <button type="button" class="pay-method-btn" data-pay-method="pix">⚡ PIX</button>
+          <button type="button" class="pay-method-btn" data-pay-method="boleto">📄 BOLETO</button>
+        </div>
+
+        <div class="pay-panel active" id="pay-cartao">
+          <div class="field-group">
+            <label for="ck-card-number">NÚMERO DO CARTÃO</label>
+            <input id="ck-card-number" type="text" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" class="modal-input">
+          </div>
+          <div class="field-group">
+            <label for="ck-card-name">NOME NO CARTÃO</label>
+            <input id="ck-card-name" type="text" placeholder="Como está impresso no cartão" class="modal-input">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="ck-card-exp">VALIDADE</label>
+              <input id="ck-card-exp" type="text" maxlength="5" placeholder="MM/AA" class="modal-input">
+            </div>
+            <div class="field-group">
+              <label for="ck-card-cvv">CVV</label>
+              <input id="ck-card-cvv" type="text" inputmode="numeric" maxlength="4" placeholder="123" class="modal-input">
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="ck-card-parcelas">PARCELAS</label>
+            <select id="ck-card-parcelas" class="modal-input" style="background: var(--panel);">
+              <option value="1">1x sem juros</option>
+              <option value="2">2x sem juros</option>
+              <option value="3">3x sem juros</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pay-panel" id="pay-pix">
+          <div class="pix-box">
+            <p class="text-[13px]" style="color: var(--ink-soft);">Escaneie o QR Code ou copie o código Pix abaixo para pagar.</p>
+            <div style="font-size:64px; margin:12px 0;">▦</div>
+            <div class="pix-code" id="pix-code-text">00020126580014BR.GOV.BCB.PIX0136arena-loja-demo-000000005204000053039865802BR5909ARENALOJA6009SAOPAULO62070503***6304</div>
+            <button type="button" id="ck-copy-pix" class="btn-outline-sm mt-3">COPIAR CÓDIGO PIX</button>
+          </div>
+        </div>
+
+        <div class="pay-panel" id="pay-boleto">
+          <div class="boleto-box">
+            <p class="text-[13px] mb-2" style="color: var(--ink-soft);">O boleto vence em 3 dias úteis. Após o pagamento, a compensação pode levar até 2 dias úteis.</p>
+            <div class="pix-code" id="boleto-code-text">34191.79001 01043.510047 91020.150008 8 96060000000000</div>
+          </div>
+        </div>
+
+        <div class="checkout-summary" id="checkout-summary"></div>
+      </div>
+
+      <div class="checkout-step" id="step-success">
+        <div class="checkout-success">
+          <div class="checkout-success-icon">✓</div>
+          <h3 class="font-display text-2xl uppercase tracking-wide">Compra confirmada!</h3>
+          <p class="text-[13px] mt-2" style="color: var(--ink-soft);" id="checkout-success-msg">Obrigado por comprar na Arena.</p>
+          <div id="checkout-success-frame" class="hidden">
+            <div class="digital-frame-preview"></div>
+            <p class="text-[12px]" style="color: var(--muted);" id="checkout-success-frame-text">Seu item digital já foi liberado na sua conta.</p>
+            <a href="perfil-config.html" class="btn-neon inline-block font-mono text-[11px] font-semibold px-4 py-2.5 clip-tag mt-3">VER MEU PERFIL</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="checkout-nav" id="checkout-nav"></div>
+  </div>
+</div>
+
+<script>
+  // ===============================================================
+  // MENU HAMBÚRGUER (mobile)
+  // ===============================================================
+  const menuToggle = document.getElementById("menu-toggle");
+  const mobileMenu = document.getElementById("mobile-menu");
+  menuToggle.addEventListener("click", () => {
+    const isOpen = mobileMenu.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+  mobileMenu.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      mobileMenu.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+    });
+  });
+
+  // ===============================================================
+  // NAVBAR — barra deslizante sob o item ativo (LOJA) + preview no hover.
+  // Diferente do index.html, aqui os links navegam de verdade (não
+  // filtram in-page), então só cuidamos do destaque visual.
+  // ===============================================================
+  (function initNavIndicator() {
+    const desktopNav = document.getElementById("nav-desktop");
+    const indicator = document.getElementById("nav-indicator");
+    if (!desktopNav) return;
+    const desktopLinks = Array.from(desktopNav.querySelectorAll(".nav-link"));
+
+    function moveIndicatorTo(el) {
+      if (!indicator) return;
+      if (!el) { indicator.classList.remove("is-visible"); return; }
+      const navRect = desktopNav.getBoundingClientRect();
+      const linkRect = el.getBoundingClientRect();
+      indicator.style.left = (linkRect.left - navRect.left) + "px";
+      indicator.style.width = linkRect.width + "px";
+      indicator.classList.add("is-visible");
+    }
+    function getActiveLink() { return desktopNav.querySelector(".nav-link.active") || desktopLinks[0]; }
+
+    desktopLinks.forEach((link) => link.addEventListener("mouseenter", () => moveIndicatorTo(link)));
+    desktopNav.addEventListener("mouseleave", () => moveIndicatorTo(getActiveLink()));
+    window.addEventListener("resize", () => moveIndicatorTo(getActiveLink()));
+    window.addEventListener("load", () => moveIndicatorTo(getActiveLink()));
+    moveIndicatorTo(getActiveLink());
+  })();
+
+  // ===============================================================
+  // NEWSLETTER — captura simples de e-mail (sem backend)
+  // ===============================================================
+  const newsletterForm = document.getElementById("newsletter-form");
+  const newsletterMsg = document.getElementById("newsletter-msg");
+  newsletterForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    newsletterMsg.classList.remove("hidden");
+    newsletterForm.reset();
+    setTimeout(() => newsletterMsg.classList.add("hidden"), 4000);
+  });
+
+  function openModal(overlay) {
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal(overlay) {
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  // ===============================================================
+  // "BANCO" DE USUÁRIOS + SESSÃO — mesma convenção usada em
+  // index.html/perfil-config.html/inventario.html, para manter o
+  // login e o carrinho/cupom sincronizados entre as páginas.
+  // ===============================================================
+  const USERS_KEY = "arena-demo-users";
+  let usersFallback = [];
+  function loadUsers() {
+    try { const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (err) { return usersFallback; }
+  }
+  function saveUsers(users) {
+    try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (err) { usersFallback = users; }
+  }
+
+  const loginOverlay = document.getElementById("login-overlay");
+  const loginForm = document.getElementById("login-form");
+  const loginError = document.getElementById("login-error");
+  const loginLabels = document.querySelectorAll(".js-login-label");
+  let isLoggedIn = false;
+  let userName = "";
+  let userEmail = "";
+
+  const SESSION_KEY = "arena-session-email";
+  function setSession(email) { try { sessionStorage.setItem(SESSION_KEY, email); } catch (err) {} }
+  function clearSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch (err) {} }
+  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
+
+  function loadProfile(email) {
+    try { const raw = localStorage.getItem(`arena-profile-${email}`); return raw ? JSON.parse(raw) : null; }
+    catch (err) { return null; }
+  }
+
+  const RARITY_COLOR_NAV = { comum: "#7C8394", raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B" };
+
+  function applyProfileToNav() {
+    const profile = userEmail ? loadProfile(userEmail) : null;
+    const avatarSrc = profile?.avatar || "https://placehold.co/72x72/1B1F28/D7DAE1?text=" + (userName[0] || "U").toUpperCase();
+    const displayName = profile?.displayName || userName;
+    document.getElementById("user-avatar-img").src = avatarSrc;
+    document.getElementById("user-avatar-img-mobile").src = avatarSrc;
+    document.getElementById("user-menu-name").textContent = displayName.toUpperCase();
+    document.getElementById("user-menu-name-mobile").textContent = displayName;
+
+    const badges = profile?.equippedBadges || [];
+    document.getElementById("nav-badges").innerHTML = badges.map(b => `
+      <span class="nav-badge" style="--nb-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
+    `).join("");
+    document.getElementById("dropdown-badges").innerHTML = badges.map(b => `
+      <span class="dropdown-badge" style="--nb-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};">${b.emoji} ${b.name}</span>
+    `).join("");
+  }
+
+  function updateLoginUI() {
+    loginLabels.forEach(el => { el.textContent = isLoggedIn ? userName.toUpperCase() : "LOGIN"; });
+    document.querySelectorAll(".js-open-login").forEach(btn => btn.classList.toggle("hidden", isLoggedIn));
+    document.getElementById("user-menu-wrap").classList.toggle("hidden", !isLoggedIn);
+    document.getElementById("user-menu-mobile").classList.toggle("hidden", !isLoggedIn);
+    document.getElementById("user-menu-mobile").classList.toggle("flex", isLoggedIn);
+    if (isLoggedIn) applyProfileToNav();
+    renderCouponButton();
+  }
+
+  (function restoreSession() {
+    const email = getSessionEmail();
+    if (!email) return;
+    const match = loadUsers().find(u => u.email === email);
+    if (!match) { clearSession(); return; }
+    isLoggedIn = true;
+    userEmail = email;
+    userName = match.name.split(" ")[0];
+    updateLoginUI();
+  })();
+
+  document.querySelectorAll(".js-open-login").forEach(btn => {
+    btn.addEventListener("click", () => {
+      loginError.classList.add("hidden");
+      openModal(loginOverlay);
+      setTimeout(() => document.getElementById("login-email").focus(), 50);
+    });
+  });
+
+  const userMenuBtn = document.getElementById("user-menu-btn");
+  const userDropdown = document.getElementById("user-dropdown");
+  function closeUserDropdown() {
+    userDropdown.classList.remove("open");
+    userMenuBtn.setAttribute("aria-expanded", "false");
+  }
+  userMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !userDropdown.classList.contains("open");
+    userDropdown.classList.toggle("open", willOpen);
+    userMenuBtn.setAttribute("aria-expanded", String(willOpen));
+  });
+  document.addEventListener("click", (e) => {
+    if (!document.getElementById("user-menu-wrap").contains(e.target)) closeUserDropdown();
+  });
+
+  function doLogout() {
+    isLoggedIn = false;
+    userName = "";
+    userEmail = "";
+    clearSession();
+    closeUserDropdown();
+    updateLoginUI();
+  }
+  document.getElementById("js-logout").addEventListener("click", doLogout);
+  document.getElementById("js-logout-mobile").addEventListener("click", doLogout);
+  document.querySelector(".js-close-login").addEventListener("click", () => closeModal(loginOverlay));
+  loginOverlay.addEventListener("click", (e) => { if (e.target === loginOverlay) closeModal(loginOverlay); });
+
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value.trim().toLowerCase();
+    const password = document.getElementById("login-password").value;
+    if (!email || !password) {
+      loginError.textContent = "Preencha e-mail e senha para continuar.";
+      loginError.classList.remove("hidden");
+      return;
+    }
+    const match = loadUsers().find(u => u.email === email && u.password === password);
+    if (!match) {
+      loginError.textContent = "E-mail ou senha incorretos. Ainda não tem conta? Cadastre-se.";
+      loginError.classList.remove("hidden");
+      return;
+    }
+    loginError.classList.add("hidden");
+    isLoggedIn = true;
+    userName = match.name.split(" ")[0];
+    userEmail = match.email;
+    setSession(userEmail);
+    updateLoginUI();
+    closeModal(loginOverlay);
+    loginForm.reset();
+  });
+
+  const signupOverlay = document.getElementById("signup-overlay");
+  const signupForm = document.getElementById("signup-form");
+  const signupError = document.getElementById("signup-error");
+
+  document.querySelector(".js-open-signup").addEventListener("click", (e) => {
+    e.preventDefault();
+    signupError.classList.add("hidden");
+    closeModal(loginOverlay);
+    openModal(signupOverlay);
+    setTimeout(() => document.getElementById("signup-name").focus(), 50);
+  });
+  document.querySelector(".js-open-login-from-signup").addEventListener("click", (e) => {
+    e.preventDefault();
+    loginError.classList.add("hidden");
+    closeModal(signupOverlay);
+    openModal(loginOverlay);
+    setTimeout(() => document.getElementById("login-email").focus(), 50);
+  });
+  document.querySelector(".js-close-signup").addEventListener("click", () => closeModal(signupOverlay));
+  signupOverlay.addEventListener("click", (e) => { if (e.target === signupOverlay) closeModal(signupOverlay); });
+
+  signupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("signup-name").value.trim();
+    const email = document.getElementById("signup-email").value.trim().toLowerCase();
+    const password = document.getElementById("signup-password").value;
+    const passwordConfirm = document.getElementById("signup-password-confirm").value;
+
+    if (!name || !email || !password || password.length < 4 || password !== passwordConfirm) {
+      signupError.classList.remove("hidden");
+      return;
+    }
+    signupError.classList.add("hidden");
+
+    const users = loadUsers();
+    if (users.find(u => u.email === email)) {
+      signupError.textContent = "Esse e-mail já está cadastrado. Faça login.";
+      signupError.classList.remove("hidden");
+      return;
+    }
+    users.push({ name, email, password });
+    saveUsers(users);
+
+    closeModal(signupOverlay);
+    openModal(loginOverlay);
+    document.getElementById("login-email").value = email;
+    setTimeout(() => document.getElementById("login-password").focus(), 50);
+    signupForm.reset();
+  });
+
+  // ===============================================================
+  // LOJA ARENA — catálogo, carrossel de destaques, carrinho e cupom.
+  // O cupom "10% OFF na Loja Arena" é o mesmo item COMUM cadastrado
+  // em inventario.html (id "cupom-loja-10"): usá-lo aqui grava
+  // used:true na MESMA chave `arena-inventory-<email>` que aquela
+  // página lê, então tudo fica sincronizado entre as telas.
+  // ===============================================================
+  (function () {
+    const SHOP_PRODUCTS = [
+      // ---- VESTUÁRIO ----
+      { id: "camiseta-arena-preta",  name: "Camiseta Arena Preta",     desc: "100% algodão, estampa frontal minimalista.",              price: 89.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Camiseta", featured: true, badge: "MAIS VENDIDO" },
+      { id: "bone-arena-snapback",   name: "Boné Arena Snapback",      desc: "Ajuste snapback, logo bordado em 3D.",                     price: 69.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Bon%C3%A9" },
+      { id: "moletom-arena-cinza",   name: "Moletom Arena Cinza",      desc: "Moletom canguru flanelado, forro felpudo, capuz reforçado.", price: 149.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Moletom", featured: true, badge: "LANÇAMENTO" },
+      { id: "jaqueta-arena-corta-vento", name: "Jaqueta Arena Corta-Vento", desc: "Tecido impermeável leve, zíper YKK, logo refletivo nas costas.", price: 179.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Jaqueta" },
+      { id: "meia-arena-pro",        name: "Meia Arena Pro (par)",     desc: "Cano médio, compressão leve, respirável para maratonas de jogo.", price: 24.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Meia" },
+
+      // ---- CASA ----
+      { id: "caneca-arena-neon",     name: "Caneca Arena Neon",        desc: "Cerâmica 325ml com acabamento neon.",                      price: 49.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Caneca" },
+      { id: "luminaria-arena-logo",  name: "Luminária Arena LED",      desc: "Logo recortado em acrílico com base USB e efeito neon.",  price: 89.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Lumin%C3%A1ria" },
+      { id: "almofada-arena",        name: "Almofada Arena 45x45",     desc: "Estampa dupla-face, enchimento antialérgico.",             price: 59.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Almofada" },
+
+      // ---- SETUP ----
+      { id: "mousepad-arena-xl",     name: "Mousepad Arena XL",        desc: "90x40cm, base emborrachada antiderrapante, costura reforçada.", price: 59.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Mousepad" },
+      { id: "apoio-punho-arena",     name: "Apoio de Punho Arena",     desc: "Espuma viscoelástica, base antiderrapante para teclado e mouse.", price: 34.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Apoio" },
+      { id: "suporte-headset-arena", name: "Suporte de Headset Arena", desc: "Base em metal com braço giratório e organizador de cabos.", price: 79.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Suporte" },
+
+      // ---- ELETRÔNICOS ----
+      { id: "headset-arena-pro",     name: "Headset Arena Pro 7.1",    desc: "Áudio surround virtual, drivers de 50mm, microfone com cancelamento de ruído.", price: 349.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Headset", featured: true, badge: "TOP ELETRÔNICOS" },
+      { id: "mouse-arena-precision", name: "Mouse Arena Precision",    desc: "Sensor óptico 26000 DPI, switches ópticos, 200h de bateria.", price: 279.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Mouse" },
+      { id: "teclado-arena-mecanico", name: "Teclado Mecânico Arena", desc: "Switches hot-swap, RGB por tecla, estrutura em alumínio escovado.", price: 449.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Teclado" },
+      { id: "webcam-arena-stream",   name: "Webcam Arena Stream 1440p", desc: "Foco automático, correção de luz em tempo real, tripé incluso.", price: 399.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Webcam" },
+      { id: "microfone-arena-voice", name: "Microfone Arena Voice USB", desc: "Condensador cardioide, filtro pop incluso, monitoramento em tempo real.", price: 329.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Microfone" },
+      { id: "fone-arena-earbuds",    name: "Fone Arena Earbuds ANC",   desc: "Cancelamento ativo de ruído, latência ultrabaixa para jogos mobile.", price: 219.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Earbuds" },
+
+      // ---- DIGITAL (perfil: molduras, banners e efeitos) ----
+      { id: "moldura-cyber-digital", name: "Moldura Cyber (Digital)",  desc: "Moldura de perfil animada para seu avatar na Arena.",     price: 19.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura", featured: true, badge: "EXCLUSIVO DIGITAL" },
+      { id: "moldura-ouro-elite",    name: "Moldura Ouro Elite",       desc: "Borda dourada com brilho pulsante, para quem chegou ao topo do ranking.", price: 24.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura" },
+      { id: "moldura-neon-glitch",   name: "Moldura Neon Glitch",      desc: "Efeito de distorção neon animado ao redor do avatar.",     price: 22.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura" },
+      { id: "banner-perfil-nebulosa", name: "Banner de Perfil Nebulosa", desc: "Capa animada para o topo do seu perfil, tema espacial roxo/azul.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner", featured: true, badge: "NOVO BANNER" },
+      { id: "banner-perfil-campeao", name: "Banner de Perfil Campeão", desc: "Capa com troféu e confetes animados, ideal pra comemorar vitórias.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner" },
+      { id: "emblema-arena-vip",     name: "Emblema VIP Arena",        desc: "Selo exclusivo ao lado do seu nome em chats e rankings.", price: 34.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema" },
+      { id: "efeito-nome-arena-rgb", name: "Efeito de Nome RGB",       desc: "Seu nome de usuário ganha um degradê RGB animado em toda a plataforma.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Nome+RGB" },
+    ];
+
+    const COUPON_ID = "cupom-loja-10";
+    const DISCOUNT_RATE = 0.10;
+
+    const shopSessionEmail = (typeof getSessionEmail === "function") ? getSessionEmail() : "";
+    const shopInventoryKey = `arena-inventory-${shopSessionEmail || "demo"}`;
+
+    let cart = {};
+    let couponApplied = false;
+
+    function money(v) { return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+
+    function loadShopInventory() {
+      try { const raw = localStorage.getItem(shopInventoryKey); return raw ? JSON.parse(raw) : []; }
+      catch (err) { return []; }
+    }
+    function saveShopInventory(inv) {
+      try { localStorage.setItem(shopInventoryKey, JSON.stringify(inv)); } catch (err) {}
+    }
+    function isCouponAlreadyUsed() {
+      const entry = loadShopInventory().find(i => i.id === COUPON_ID);
+      return !!(entry && entry.used);
+    }
+    function markCouponAsUsed() {
+      const inv = loadShopInventory();
+      const entry = inv.find(i => i.id === COUPON_ID);
+      if (entry) entry.used = true;
+      else inv.push({ id: COUPON_ID, used: true, equipped: false });
+      saveShopInventory(inv);
+    }
+
+    let shopToastTimer;
+    function showShopToast(msg) {
+      let toast = document.getElementById("shop-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "shop-toast";
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      clearTimeout(shopToastTimer);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      shopToastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    // ---- Filtros de categoria ----
+    const SHOP_TAGS = [...new Set(SHOP_PRODUCTS.map(p => p.tag))];
+    let currentFilter = "TODOS";
+
+    function tagClass(tag) {
+      if (tag === "DIGITAL") return "tag-digital";
+      if (tag === "ELETRÔNICOS") return "tag-eletronicos";
+      return "";
+    }
+
+    // ---- Preview gerado dos itens DIGITAIS (substitui a img placeholder) ----
+    function digitalPreviewHTML(p) {
+      if (p.id.startsWith("moldura-")) {
+        const ring = p.id.includes("cyber") ? "ring-cyber" : p.id.includes("ouro") ? "ring-ouro" : "ring-glitch";
+        return `<div class="dprev">
+          <div class="dprev-avatar-slot">
+            <div class="dprev-ring ${ring}"></div>
+            <div class="dprev-avatar-core">A</div>
+          </div>
+        </div>`;
+      }
+      if (p.id.startsWith("banner-perfil-")) {
+        if (p.id.includes("nebulosa")) {
+          const stars = Array.from({ length: 14 }).map(() => {
+            const top = (Math.random() * 100).toFixed(1);
+            const left = (Math.random() * 100).toFixed(1);
+            const delay = (Math.random() * 2).toFixed(2);
+            return `<span class="dprev-star" style="top:${top}%; left:${left}%; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-nebulosa">${stars}</div></div>`;
+        }
+        const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
+        const confetti = Array.from({ length: 16 }).map((_, i) => {
+          const left = (Math.random() * 100).toFixed(1);
+          const dur = (1.6 + Math.random() * 1.4).toFixed(2);
+          const delay = (Math.random() * 2).toFixed(2);
+          return `<span class="dprev-confetti" style="left:${left}%; background:${colors[i % colors.length]}; animation-duration:${dur}s; animation-delay:${delay}s;"></span>`;
+        }).join("");
+        return `<div class="dprev"><div class="dprev-banner banner-campeao">${confetti}<span class="dprev-trophy">🏆</span></div></div>`;
+      }
+      if (p.id === "emblema-arena-vip") {
+        return `<div class="dprev"><div class="dprev-badge"><span>VIP</span></div></div>`;
+      }
+      if (p.id === "efeito-nome-arena-rgb") {
+        return `<div class="dprev"><span class="dprev-nameeffect">ARENA</span></div>`;
+      }
+      return `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
+    }
+    function productMediaHTML(p) {
+      return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
+    }
+
+    function renderFilters() {
+      const wrap = document.getElementById("shop-filters");
+      if (!wrap) return;
+      const tabs = ["TODOS", ...SHOP_TAGS];
+      wrap.innerHTML = tabs.map(t => `
+        <button class="shop-filter-btn${t === currentFilter ? " active" : ""}" data-filter="${t}">${t}</button>
+      `).join("");
+      wrap.querySelectorAll("[data-filter]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentFilter = btn.dataset.filter;
+          renderFilters();
+          renderProducts();
+        });
+      });
+    }
+
+    // ---- Grade de produtos ----
+    function renderProducts() {
+      const grid = document.getElementById("shop-grid");
+      if (!grid) return;
+      const list = currentFilter === "TODOS" ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.tag === currentFilter);
+      grid.innerHTML = list.map(p => `
+        <div class="shop-card clip-card">
+          <div class="shop-card-img">
+            <span class="shop-tag ${tagClass(p.tag)}">${p.tag}</span>
+            ${productMediaHTML(p)}
+          </div>
+          <div class="shop-body">
+            <div class="shop-name">${p.name}</div>
+            <div class="shop-desc">${p.desc}</div>
+            <div class="shop-price">${money(p.price)}</div>
+            <button class="shop-add-btn" data-add="${p.id}">+ ADICIONAR</button>
+          </div>
+        </div>
+      `).join("");
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="text-[12px] font-mono" style="color: var(--muted); grid-column:1/-1;">Nenhum produto nessa categoria por enquanto.</div>`;
+      }
+      grid.querySelectorAll("[data-add]").forEach(btn => {
+        btn.addEventListener("click", () => addToCart(btn.dataset.add));
+      });
+    }
+
+    // ---- Carrossel de destaques ----
+    const FEATURED = SHOP_PRODUCTS.filter(p => p.featured);
+    let carouselIndex = 0;
+    let autoplayTimer = null;
+    const carouselTrack = document.getElementById("carousel-track");
+    const carouselDots = document.getElementById("carousel-dots");
+    const carouselWrap = document.getElementById("shop-carousel");
+
+    function renderCarousel() {
+      if (!carouselTrack || FEATURED.length === 0) return;
+      carouselTrack.innerHTML = FEATURED.map(p => `
+        <div class="carousel-slide">
+          <div class="carousel-card clip-card-lg">
+            <div class="carousel-img">
+              <span class="carousel-badge">${p.badge || "DESTAQUE"}</span>
+              ${productMediaHTML(p)}
+            </div>
+            <div class="carousel-info">
+              <span class="font-mono text-[11px]" style="color: var(--muted);">${p.tag}</span>
+              <h3 class="carousel-name">${p.name}</h3>
+              <p class="carousel-desc">${p.desc}</p>
+              <div class="carousel-price">${money(p.price)}</div>
+              <button class="carousel-add-btn" data-add="${p.id}">+ ADICIONAR AO CARRINHO</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+      carouselDots.innerHTML = FEATURED.map((_, i) => `<button class="carousel-dot" data-dot="${i}" aria-label="Ir para destaque ${i + 1}"></button>`).join("");
+
+      carouselTrack.querySelectorAll("[data-add]").forEach(btn => {
+        btn.addEventListener("click", () => addToCart(btn.dataset.add));
+      });
+      carouselDots.querySelectorAll("[data-dot]").forEach(btn => {
+        btn.addEventListener("click", () => goToSlide(Number(btn.dataset.dot)));
+      });
+      updateCarouselPosition();
+    }
+
+    function updateCarouselPosition() {
+      if (!carouselTrack) return;
+      carouselTrack.style.transform = `translateX(-${carouselIndex * 100}%)`;
+      carouselDots.querySelectorAll(".carousel-dot").forEach((d, i) => d.classList.toggle("active", i === carouselIndex));
+    }
+    function goToSlide(i) {
+      if (FEATURED.length === 0) return;
+      carouselIndex = (i + FEATURED.length) % FEATURED.length;
+      updateCarouselPosition();
+      resetAutoplay();
+    }
+    function nextSlide() { goToSlide(carouselIndex + 1); }
+    function prevSlide() { goToSlide(carouselIndex - 1); }
+    function startAutoplay() {
+      if (FEATURED.length <= 1) return;
+      autoplayTimer = setInterval(nextSlide, 5000);
+    }
+    function resetAutoplay() { clearInterval(autoplayTimer); startAutoplay(); }
+
+    document.getElementById("carousel-next")?.addEventListener("click", nextSlide);
+    document.getElementById("carousel-prev")?.addEventListener("click", prevSlide);
+    carouselWrap?.addEventListener("mouseenter", () => clearInterval(autoplayTimer));
+    carouselWrap?.addEventListener("mouseleave", startAutoplay);
+
+    // ---- Carrinho ----
+    function addToCart(productId) {
+      cart[productId] = (cart[productId] || 0) + 1;
+      renderCart();
+      const p = SHOP_PRODUCTS.find(pr => pr.id === productId);
+      showShopToast(`✓ ${p.name.toUpperCase()} ADICIONADO AO CARRINHO`);
+    }
+    function removeFromCart(productId) {
+      delete cart[productId];
+      renderCart();
+    }
+    function getSubtotal() {
+      return Object.entries(cart).reduce((sum, [id, qty]) => {
+        const p = SHOP_PRODUCTS.find(pr => pr.id === id);
+        return sum + (p ? p.price * qty : 0);
+      }, 0);
+    }
+
+    function renderCart() {
+      const itemsEl = document.getElementById("cart-items");
+      const totalsEl = document.getElementById("cart-totals");
+      const checkoutBtn = document.getElementById("checkout-btn");
+      if (!itemsEl) return;
+      const entries = Object.entries(cart);
+
+      if (entries.length === 0) {
+        itemsEl.innerHTML = `<div class="cart-empty">Seu carrinho está vazio.</div>`;
+        totalsEl.style.display = "none";
+        checkoutBtn.style.display = "none";
+        return;
+      }
+
+      itemsEl.innerHTML = entries.map(([id, qty]) => {
+        const p = SHOP_PRODUCTS.find(pr => pr.id === id);
+        return `
+          <div class="cart-item">
+            <span style="flex:1; color: var(--ink-soft);">${p.name} <span style="color:var(--muted);">x${qty}</span></span>
+            <span class="font-mono">${money(p.price * qty)}</span>
+            <button data-remove="${id}" style="color: var(--muted); background:none; border:none; cursor:pointer; font-size:14px; line-height:1;" title="Remover">✕</button>
+          </div>`;
+      }).join("");
+      itemsEl.querySelectorAll("[data-remove]").forEach(btn => {
+        btn.addEventListener("click", () => removeFromCart(btn.dataset.remove));
+      });
+
+      const subtotal = getSubtotal();
+      const discountRow = document.getElementById("cart-discount-row");
+      const subtotalEl = document.getElementById("cart-subtotal");
+      const discountEl = document.getElementById("cart-discount");
+      const totalDisplay = document.getElementById("cart-total-display");
+
+      if (couponApplied) {
+        const discount = subtotal * DISCOUNT_RATE;
+        subtotalEl.innerHTML = `<span style="text-decoration:line-through; color:var(--muted);">${money(subtotal)}</span>`;
+        discountRow.style.display = "flex";
+        discountEl.textContent = `- ${money(discount)}`;
+        totalDisplay.textContent = money(subtotal - discount);
+        totalDisplay.style.color = "var(--valorant)";
+      } else {
+        subtotalEl.textContent = money(subtotal);
+        discountRow.style.display = "none";
+        totalDisplay.textContent = money(subtotal);
+        totalDisplay.style.color = "var(--ink)";
+      }
+
+      totalsEl.style.display = "block";
+      checkoutBtn.style.display = "block";
+    }
+
+    function renderCouponButton() {
+      const btn = document.getElementById("coupon-btn");
+      if (!btn) return;
+      if (couponApplied) {
+        btn.textContent = "CUPOM APLICADO ✓";
+        btn.className = "coupon-btn applied";
+        btn.disabled = true;
+      } else if (isCouponAlreadyUsed()) {
+        btn.textContent = "CUPOM JÁ UTILIZADO";
+        btn.className = "coupon-btn disabled";
+        btn.disabled = true;
+      } else {
+        btn.textContent = "USAR CUPOM";
+        btn.className = "coupon-btn";
+        btn.disabled = false;
+      }
+    }
+
+    function useCoupon() {
+      if (couponApplied || isCouponAlreadyUsed()) return;
+      couponApplied = true;
+      markCouponAsUsed();
+      renderCouponButton();
+      renderCart();
+      showShopToast(`✓ CUPOM "10% OFF NA LOJA ARENA" APLICADO`);
+    }
+
+    document.getElementById("coupon-btn")?.addEventListener("click", useCoupon);
+    document.getElementById("checkout-btn")?.addEventListener("click", () => openCheckout());
+
+    // ===============================================================
+    // CHECKOUT
+    // ===============================================================
+    const FRETE_OPTIONS = [
+      { id: "normal", name: "Entrega Normal", days: "5 a 8 dias úteis", price: 14.90 },
+      { id: "expressa", name: "Entrega Expressa", days: "1 a 3 dias úteis", price: 29.90 },
+    ];
+
+    let checkoutSteps = [];
+    let checkoutStepIndex = 0;
+    let selectedFreteId = null;
+    let selectedPayMethod = "cartao";
+    let addressFilled = false;
+
+    function cartHasPhysical() {
+      return Object.keys(cart).some(id => SHOP_PRODUCTS.find(p => p.id === id)?.tag !== "DIGITAL");
+    }
+    function cartDigitalProducts() {
+      return Object.keys(cart).map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(p => p && p.tag === "DIGITAL");
+    }
+    function getFreteValue() {
+      const opt = FRETE_OPTIONS.find(f => f.id === selectedFreteId);
+      return opt ? opt.price : 0;
+    }
+    function getFinalTotal() {
+      const subtotal = getSubtotal();
+      const discount = couponApplied ? subtotal * DISCOUNT_RATE : 0;
+      return subtotal - discount + getFreteValue();
+    }
+
+    function openCheckout() {
+      checkoutSteps = cartHasPhysical() ? ["address", "payment", "success"] : ["payment", "success"];
+      checkoutStepIndex = 0;
+      selectedFreteId = null;
+      addressFilled = false;
+      document.getElementById("frete-options").innerHTML = `<p class="text-[12px]" style="color: var(--muted);">Informe o CEP e clique em "Calcular frete" para ver as opções de entrega.</p>`;
+      document.getElementById("address-error").classList.add("hidden");
+      renderCheckoutStep();
+      const overlay = document.getElementById("checkout-overlay");
+      document.body.style.overflow = "hidden";
+      overlay.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => overlay.classList.add("open"));
+    }
+    function closeCheckout() {
+      const overlay = document.getElementById("checkout-overlay");
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+    document.querySelectorAll(".js-close-checkout").forEach(btn => btn.addEventListener("click", closeCheckout));
+    document.getElementById("checkout-overlay").addEventListener("click", (e) => {
+      if (e.target.id === "checkout-overlay") closeCheckout();
+    });
+
+    function renderCheckoutProgress() {
+      const wrap = document.getElementById("checkout-progress");
+      wrap.innerHTML = checkoutSteps.map((s, i) => {
+        const cls = i < checkoutStepIndex ? "done" : (i === checkoutStepIndex ? "current" : "");
+        return `<div class="checkout-progress-step ${cls}"></div>`;
+      }).join("");
+    }
+
+    function renderCheckoutSummary() {
+      const subtotal = getSubtotal();
+      const discount = couponApplied ? subtotal * DISCOUNT_RATE : 0;
+      const frete = cartHasPhysical() ? getFreteValue() : 0;
+      const el = document.getElementById("checkout-summary");
+      el.innerHTML = `
+        <div class="checkout-summary-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+        ${couponApplied ? `<div class="checkout-summary-row discount"><span>Desconto (10%)</span><span>- ${money(discount)}</span></div>` : ""}
+        ${cartHasPhysical() ? `<div class="checkout-summary-row"><span>Frete</span><span>${selectedFreteId ? money(frete) : "a calcular"}</span></div>` : ""}
+        <div class="checkout-summary-total">
+          <span class="font-mono text-[11px]" style="color: var(--muted);">TOTAL</span>
+          <span class="font-mono text-lg font-bold" style="color: var(--valorant);">${money(getFinalTotal())}</span>
+        </div>`;
+    }
+
+    function renderCheckoutStep() {
+      renderCheckoutProgress();
+      const step = checkoutSteps[checkoutStepIndex];
+      document.querySelectorAll(".checkout-step").forEach(s => s.classList.remove("active"));
+      document.getElementById(`step-${step}`).classList.add("active");
+      document.getElementById("checkout-title").innerHTML = step === "address"
+        ? `Endereço de <span style="color: var(--valorant);">Entrega</span>`
+        : step === "payment"
+        ? `Forma de <span style="color: var(--valorant);">Pagamento</span>`
+        : `Compra <span style="color: var(--valorant);">Confirmada</span>`;
+
+      if (step === "payment") renderCheckoutSummary();
+
+      const nav = document.getElementById("checkout-nav");
+      if (step === "success") {
+        nav.innerHTML = `<button type="button" id="ck-finish" class="btn-neon w-full font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag">CONTINUAR NAVEGANDO</button>`;
+        document.getElementById("ck-finish").addEventListener("click", closeCheckout);
+        return;
+      }
+
+      const isFirst = checkoutStepIndex === 0;
+      const isLast = checkoutStepIndex === checkoutSteps.length - 2;
+      nav.innerHTML = `
+        ${!isFirst ? `<button type="button" id="ck-back" class="btn-outline-sm" style="flex:0 0 auto; padding:11px 18px;">VOLTAR</button>` : ""}
+        <button type="button" id="ck-next" class="btn-neon flex-1 font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag">
+          ${isLast ? `CONFIRMAR PAGAMENTO — ${money(getFinalTotal())}` : "CONTINUAR"}
+        </button>`;
+      if (!isFirst) document.getElementById("ck-back").addEventListener("click", () => { checkoutStepIndex--; renderCheckoutStep(); });
+      document.getElementById("ck-next").addEventListener("click", () => handleCheckoutNext(isLast));
+    }
+
+    function handleCheckoutNext(isLast) {
+      const step = checkoutSteps[checkoutStepIndex];
+      if (step === "address") {
+        const rua = document.getElementById("ck-rua").value.trim();
+        const numero = document.getElementById("ck-numero").value.trim();
+        const bairro = document.getElementById("ck-bairro").value.trim();
+        const cidade = document.getElementById("ck-cidade").value.trim();
+        const uf = document.getElementById("ck-uf").value.trim();
+        const errEl = document.getElementById("address-error");
+        if (!rua || !numero || !bairro || !cidade || !uf || !selectedFreteId) {
+          errEl.textContent = !selectedFreteId
+            ? "Calcule o frete e escolha uma opção de entrega para continuar."
+            : "Preencha rua, número, bairro, cidade e UF para continuar.";
+          errEl.classList.remove("hidden");
+          return;
+        }
+        errEl.classList.add("hidden");
+        addressFilled = true;
+      }
+      if (isLast) { processCheckoutPayment(); return; }
+      checkoutStepIndex++;
+      renderCheckoutStep();
+    }
+
+    document.getElementById("ck-calc-frete").addEventListener("click", async () => {
+      const cepRaw = document.getElementById("ck-cep").value.replace(/\D/g, "");
+      const statusEl = document.getElementById("cep-status");
+      if (cepRaw.length !== 8) {
+        statusEl.textContent = "Digite um CEP válido (8 dígitos).";
+        statusEl.className = "err";
+        return;
+      }
+      statusEl.textContent = "Calculando frete...";
+      statusEl.className = "";
+
+      try {
+        const resp = await fetch(`https://viacep.com.br/ws/${cepRaw}/json/`);
+        const data = await resp.json();
+        if (!data.erro) {
+          document.getElementById("ck-rua").value = document.getElementById("ck-rua").value || data.logradouro || "";
+          document.getElementById("ck-bairro").value = document.getElementById("ck-bairro").value || data.bairro || "";
+          document.getElementById("ck-cidade").value = data.localidade || "";
+          document.getElementById("ck-uf").value = data.uf || "";
+        }
+      } catch (err) { /* segue sem preencher automaticamente */ }
+
+      statusEl.textContent = "✓ Frete calculado para o CEP " + cepRaw.replace(/(\d{5})(\d{3})/, "$1-$2");
+      statusEl.className = "ok";
+
+      const freteWrap = document.getElementById("frete-options");
+      freteWrap.innerHTML = FRETE_OPTIONS.map(f => `
+        <label class="frete-option ${selectedFreteId === f.id ? "selected" : ""}" data-frete-id="${f.id}">
+          <input type="radio" name="frete" value="${f.id}" ${selectedFreteId === f.id ? "checked" : ""}>
+          <span class="frete-name">${f.name}<br><span class="frete-days">${f.days}</span></span>
+          <span class="frete-price">${money(f.price)}</span>
+        </label>
+      `).join("");
+      freteWrap.querySelectorAll(".frete-option").forEach(el => {
+        el.addEventListener("click", () => {
+          selectedFreteId = el.dataset.freteId;
+          freteWrap.querySelectorAll(".frete-option").forEach(o => o.classList.remove("selected"));
+          el.classList.add("selected");
+          el.querySelector("input").checked = true;
+        });
+      });
+      if (!selectedFreteId) selectedFreteId = FRETE_OPTIONS[0].id;
+      freteWrap.querySelector(`[data-frete-id="${selectedFreteId}"]`)?.classList.add("selected");
+    });
+
+    document.querySelectorAll("[data-pay-method]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedPayMethod = btn.dataset.payMethod;
+        document.querySelectorAll("[data-pay-method]").forEach(b => b.classList.toggle("active", b === btn));
+        document.querySelectorAll(".pay-panel").forEach(p => p.classList.remove("active"));
+        document.getElementById(`pay-${selectedPayMethod}`).classList.add("active");
+      });
+    });
+    document.getElementById("ck-copy-pix").addEventListener("click", () => {
+      const text = document.getElementById("pix-code-text").textContent;
+      navigator.clipboard?.writeText(text).catch(() => {});
+      showShopToast("✓ CÓDIGO PIX COPIADO");
+    });
+
+    function grantDigitalPurchases() {
+      const digitalProducts = cartDigitalProducts();
+      if (digitalProducts.length === 0) return [];
+
+      const equippedNames = [];
+
+      try {
+        const raw = localStorage.getItem(shopInventoryKey);
+        const inv = raw ? JSON.parse(raw) : [];
+        const profileKey = `arena-profile-${shopSessionEmail || "demo"}`;
+        const rawProfile = localStorage.getItem(profileKey);
+        const profile = rawProfile ? JSON.parse(rawProfile) : {};
+
+        digitalProducts.forEach(p => {
+          // Registra a posse do item digital na conta (inventário), igual a qualquer outro item.
+          let entry = inv.find(i => i.id === p.id);
+          if (!entry) {
+            entry = { id: p.id, used: false, equipped: false };
+            inv.push(entry);
+          }
+
+          // Itens de personalização de perfil já são equipados automaticamente na compra.
+          if (p.id.startsWith("moldura-")) {
+            entry.equipped = true;
+            profile.equippedFrame = p.id;
+            equippedNames.push(p.name);
+          } else if (p.id.startsWith("banner-perfil-")) {
+            entry.equipped = true;
+            profile.equippedBanner = p.id;
+            equippedNames.push(p.name);
+          } else if (p.id === "emblema-arena-vip") {
+            entry.equipped = true;
+            profile.equippedBadge = p.id;
+            equippedNames.push(p.name);
+          } else if (p.id === "efeito-nome-arena-rgb") {
+            entry.equipped = true;
+            profile.equippedNameEffect = p.id;
+            equippedNames.push(p.name);
+          }
+        });
+
+        localStorage.setItem(shopInventoryKey, JSON.stringify(inv));
+        localStorage.setItem(profileKey, JSON.stringify(profile));
+      } catch (err) { /* silencioso */ }
+
+      return equippedNames;
+    }
+
+    function processCheckoutPayment() {
+      const equippedNames = grantDigitalPurchases();
+      const gotDigitalCosmetic = equippedNames.length > 0;
+
+      document.getElementById("checkout-success-msg").textContent = cartHasPhysical()
+        ? "Seu pedido foi confirmado e já está sendo preparado para envio."
+        : "Seu item digital já está liberado na sua conta.";
+
+      if (gotDigitalCosmetic) {
+        const text = equippedNames.length === 1
+          ? `Seu item "${equippedNames[0]}" já foi equipado no seu perfil.`
+          : `Seus itens (${equippedNames.join(", ")}) já foram equipados no seu perfil.`;
+        document.getElementById("checkout-success-frame-text").textContent = text;
+      }
+      document.getElementById("checkout-success-frame").classList.toggle("hidden", !gotDigitalCosmetic);
+
+      cart = {};
+      couponApplied = false;
+      renderCouponButton();
+      renderCart();
+
+      checkoutStepIndex = checkoutSteps.length - 1;
+      renderCheckoutStep();
+    }
+
+    renderFilters();
+    renderProducts();
+    renderCarousel();
+    startAutoplay();
+    renderCouponButton();
+    renderCart();
+  })();
+</script>
+
+</body>
+</html>

@@ -47,6 +47,18 @@
   .item-card:hover{ transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.35); }
   .item-swatch{ height:88px; position:relative; }
   .item-swatch.emblema-swatch{ display:flex; align-items:center; justify-content:center; font-size:34px; background: var(--panel-2); }
+  /* Moldura Cyber (Digital) — mesmo anel giratório usado em perfil-config.html */
+  .item-swatch.moldura-swatch{ display:flex; align-items:center; justify-content:center; background: var(--panel-2); }
+  @keyframes cyberFrameSpinInv{ to{ transform: rotate(360deg); } }
+  .moldura-ring{
+    width:52px; height:52px; border-radius:9999px;
+    background: conic-gradient(from 0deg, #FF4655, #00E5FF, #8B5CF6, #FF4655);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+    animation: cyberFrameSpinInv 3s linear infinite;
+    box-shadow: 0 0 14px -2px #FF4655, 0 0 14px -2px #00E5FF;
+  }
+  .item-card.locked .moldura-ring{ animation: none; }
   .rarity-chip{
     position:absolute; top:8px; left:8px; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
     padding:3px 8px; border-radius:3px; color:#12141A; text-transform:uppercase; letter-spacing:.03em;
@@ -212,6 +224,7 @@
     <button class="filter-pill active" data-filter="todos">TODOS</button>
     <button class="filter-pill" data-filter="banner">🖼 BANNERS</button>
     <button class="filter-pill" data-filter="emblema">🏅 EMBLEMAS</button>
+    <button class="filter-pill" data-filter="moldura">🪐 MOLDURAS</button>
     <button class="filter-pill" data-filter="cupom">🎟 CUPONS</button>
   </div>
 
@@ -228,6 +241,7 @@
     <summary>🧪 Simular progresso (ferramenta de teste)</summary>
     <div class="px-4 pb-4 flex flex-wrap gap-2">
       <button class="dev-btn" data-bump="newsRead">+1 notícia lida</button>
+      <button class="dev-btn" data-bump="newsComments">+1 comentário em notícia</button>
       <button class="dev-btn" data-bump="chatMessages">+1 mensagem no chat</button>
       <button class="dev-btn" data-bump="liveMatchesWatched">+1 partida assistida</button>
       <button class="dev-btn" data-bump="campaignsJoined">+1 campanha concluída</button>
@@ -300,6 +314,9 @@
     { id: "emblema-cacador-noticias", type: "emblema", name: "Caçador de Notícias", desc: "Leu 10 matérias no portal.", rarity: "raro",
       emoji: "📰",
       unlock: { type: "counter", key: "newsRead", target: 10, label: "Leia 10 notícias no portal" } },
+    { id: "emblema-comentarista", type: "emblema", name: "Comentarista da Arena", desc: "Compartilhou sua opinião nas notícias do portal.", rarity: "raro",
+      emoji: "💬",
+      unlock: { type: "counter", key: "newsComments", target: 5, label: "Escreva 5 comentários em notícias da Arena" } },
     { id: "emblema-estrategista", type: "emblema", name: "Estrategista", desc: "Concluiu sua primeira campanha de RPG.", rarity: "raro",
       emoji: "🧠",
       unlock: { type: "counter", key: "campaignsJoined", target: 1, label: "Conclua 1 campanha de RPG" } },
@@ -312,6 +329,10 @@
     { id: "emblema-fa-fundador", type: "emblema", name: "Fã Fundador", desc: "Esteve entre os primeiros usuários da Arena.", rarity: "lendario",
       emoji: "🏆",
       unlock: { type: "date", before: "2026-09-01", label: "Exclusivo para contas criadas antes do lançamento oficial" } },
+
+    { id: "moldura-cyber-digital", type: "moldura", name: "Moldura Cyber (Digital)", desc: "Moldura de perfil animada para seu avatar na Arena.", rarity: "epico",
+      value: "cyber",
+      unlock: { type: "purchase", label: "Compre na Loja Arena (item Digital)" } },
 
     { id: "cupom-loja-10", type: "cupom", name: "10% OFF na Loja Arena", desc: "Válido para qualquer produto da loja oficial.", rarity: "comum",
       emoji: "🎟️" },
@@ -369,6 +390,7 @@
     progress.chatMessages ??= 0;
     progress.campaignsJoined ??= 0;
     progress.liveMatchesWatched ??= 0;
+    progress.newsComments ??= 0;
     saveProgress(progress);
     return progress;
   }
@@ -483,6 +505,18 @@
       equippedBannerId: item.id,
     });
     showToast(`✓ BANNER "${item.name.toUpperCase()}" EQUIPADO`);
+    render();
+  }
+
+  // Molduras equipam do mesmo jeito que banners: só uma por vez, e
+  // grava `equippedFrame` na chave de perfil — é o mesmo campo que
+  // perfil-config.html lê pra desenhar o anel giratório no avatar.
+  function equipMoldura(item) {
+    inventory.filter(i => CATALOG.find(c => c.id === i.id)?.type === "moldura").forEach(i => i.equipped = false);
+    ownedState(item.id).equipped = true;
+    saveInventory(inventory);
+    patchProfile({ equippedFrame: item.id });
+    showToast(`✓ MOLDURA "${item.name.toUpperCase()}" EQUIPADA`);
     render();
   }
 
@@ -604,6 +638,8 @@
       if (!state) {
         const swatch = item.type === "banner"
           ? `<div class="item-swatch" style="background:${item.value};"></div>`
+          : item.type === "moldura"
+          ? `<div class="item-swatch moldura-swatch"><div class="moldura-ring"></div></div>`
           : `<div class="item-swatch emblema-swatch">${item.emoji}</div>`;
 
         const val = unlockProgressValue(item);
@@ -630,6 +666,8 @@
       // ---- ITEM DESBLOQUEADO: comportamento normal ----
       const swatch = item.type === "banner"
         ? `<div class="item-swatch" style="background:${item.value};"></div>`
+        : item.type === "moldura"
+        ? `<div class="item-swatch moldura-swatch"><div class="moldura-ring"></div></div>`
         : `<div class="item-swatch emblema-swatch">${item.emoji}</div>`;
 
       const equippedChip = state.equipped ? `<span class="equipped-chip">EQUIPADO</span>` : "";
@@ -661,6 +699,7 @@
         const item = CATALOG.find(c => c.id === btn.dataset.equip);
         if (item.type === "banner") equipBanner(item);
         if (item.type === "emblema") equipEmblema(item);
+        if (item.type === "moldura") equipMoldura(item);
       });
     });
     grid.querySelectorAll("[data-use]").forEach(btn => {

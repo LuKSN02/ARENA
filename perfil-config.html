@@ -66,10 +66,10 @@
   .color-swatch:hover{ transform: scale(1.08); }
   .color-swatch.selected{ border-color:#fff; }
 
+  .avatar-frame-wrap{ position:relative; width:88px; height:88px; margin-top:-52px; margin-left:20px; }
   #avatar-frame{
     position:relative; width:88px; height:88px; border-radius:9999px;
     border:5px solid var(--panel); background: var(--panel-2); overflow:hidden; cursor:pointer;
-    margin-top:-52px; margin-left:20px;
   }
   #avatar-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
   #avatar-frame .avatar-overlay{
@@ -80,7 +80,7 @@
   #avatar-frame:hover .avatar-overlay{ opacity:1; }
   #avatar-status-dot{
     position:absolute; bottom:4px; right:4px; width:16px; height:16px; border-radius:9999px;
-    background: var(--live); border:3px solid var(--panel);
+    background: var(--live); border:3px solid var(--panel); z-index:2;
   }
 
   /* ===== CAMPOS DE FORMULÁRIO ===== */
@@ -99,12 +99,13 @@
     box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   }
   #preview-banner{ height:90px; background-size:cover; background-position:center; transition: background .2s ease; }
+  .preview-avatar-frame-wrap{ position:relative; width:76px; height:76px; margin-top:-42px; margin-left:16px; }
   #preview-avatar-frame{
     position:relative; width:76px; height:76px; border-radius:9999px; border:5px solid var(--panel);
-    background: var(--panel-2); overflow:hidden; margin-top:-42px; margin-left:16px;
+    background: var(--panel-2); overflow:hidden;
   }
   #preview-avatar-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
-  #preview-status-dot{ position:absolute; bottom:2px; right:2px; width:14px; height:14px; border-radius:9999px; background: var(--live); border:3px solid var(--panel); }
+  #preview-status-dot{ position:absolute; bottom:2px; right:2px; width:14px; height:14px; border-radius:9999px; background: var(--live); border:3px solid var(--panel); z-index:2; }
   #preview-bio a{ color: var(--discord-blurple); }
   #preview-bio strong{ color: var(--ink); }
   #preview-bio code{ background: var(--sidebar); padding:1px 5px; border-radius:3px; font-family:'JetBrains Mono', monospace; font-size:12px; }
@@ -226,6 +227,92 @@
   ::-webkit-scrollbar{ width:10px; }
   ::-webkit-scrollbar-track{ background: var(--bg); }
   ::-webkit-scrollbar-thumb{ background: var(--panel-2); border-radius:6px; }
+
+  /* ===== MOLDURAS DE AVATAR (equipáveis) ===== */
+  .avatar-frame-overlay{
+    position:absolute; inset:-9px; pointer-events:none; border-radius:9999px;
+    border:3px solid var(--fc-color, transparent);
+    box-shadow: 0 0 14px -2px var(--fc-color, transparent), inset 0 0 8px -3px var(--fc-color, transparent);
+  }
+  #preview-avatar-frame-overlay{ inset:-7px; border-width:2px; }
+  .frame-swatch{
+    position:relative; width:46px; height:46px; border-radius:9999px; cursor:pointer; flex-shrink:0;
+    background: var(--panel-2); border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .frame-swatch:hover{ transform: scale(1.06); }
+  .frame-swatch.selected{ border-color:#fff; }
+  .frame-swatch .frame-ring{
+    position:absolute; inset:-4px; border-radius:9999px; border:3px solid var(--fc-color, transparent);
+    box-shadow: 0 0 10px -2px var(--fc-color, transparent);
+  }
+  .frame-swatch .frame-label{ font-family:'JetBrains Mono', monospace; font-size:8px; color: var(--muted); }
+  .frame-swatch.is-none .frame-label{ color: var(--ink-soft); }
+
+  /* ===== MOLDURA CYBER (item digital da Loja Arena) =====
+     Em vez de cor sólida, é um anel conic-gradient girando,
+     recortado em forma de anel via mask — dá o efeito "animado"
+     de verdade, sem precisar de nenhuma imagem/asset externo. */
+  @keyframes cyberFrameSpin{ to{ transform: rotate(360deg); } }
+  .avatar-frame-overlay.is-cyber,
+  .frame-swatch .frame-ring.is-cyber{
+    border: none;
+    background: conic-gradient(from 0deg, #FF4655, #00E5FF, #8B5CF6, #FF4655);
+    animation: cyberFrameSpin 3s linear infinite;
+    box-shadow: 0 0 14px -2px #FF4655, 0 0 14px -2px #00E5FF;
+  }
+  .avatar-frame-overlay.is-cyber{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  }
+  #preview-avatar-frame-overlay.is-cyber{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  }
+  .frame-swatch .frame-ring.is-cyber{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  }
+  .frame-swatch.is-cyber .frame-label{ color:#FF4655; }
+
+  /* ===== STATUS PERSONALIZADO ===== */
+  #status-emoji-input{ width:46px; text-align:center; font-size:16px; padding:10px 0; }
+  #preview-status-line{ display:flex; align-items:center; gap:6px; font-size:12px; color: var(--ink-soft); margin-top:2px; }
+  #preview-status-line:empty{ display:none; }
+
+  /* ===== ABA DESTAQUES ===== */
+  .stat-tile{ background: var(--panel); border:1px solid var(--border); padding:14px 10px; text-align:center; }
+  .stat-value{ display:block; font-family:'Teko', sans-serif; font-size:30px; line-height:1; color: var(--ink); }
+  .stat-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); letter-spacing:.05em; margin-top:4px; display:block; }
+
+  .achv-card{
+    position:relative; display:flex; align-items:center; gap:12px; padding:14px 16px;
+    background: var(--panel); border:1px solid var(--border); cursor:pointer;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .achv-card:hover{ border-color: var(--ac-color, var(--discord-blurple)); }
+  .achv-card.selected{ border-color: var(--ac-color, var(--discord-blurple)); background: var(--panel-2); }
+  .achv-card .achv-icon{
+    width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:18px; background: var(--panel-2); border:1px solid var(--ac-color, var(--border));
+    box-shadow: 0 0 8px -3px var(--ac-color, transparent); flex-shrink:0;
+  }
+  .achv-card .achv-name{ font-size:13px; font-weight:600; color: var(--ink); }
+  .achv-card .achv-desc{ font-size:11px; color: var(--muted); margin-top:1px; }
+  .achv-check{
+    position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:9999px;
+    border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:transparent; background: var(--sidebar); flex-shrink:0;
+  }
+  .achv-card.selected .achv-check{ background: var(--ac-color, var(--discord-blurple)); border-color: var(--ac-color, var(--discord-blurple)); color:#fff; }
+
+  #showcase-preview-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  #showcase-preview-row:empty::after{ content:"Nenhuma conquista em destaque ainda."; font-size:12px; color: var(--muted); }
+  .showcase-chip{
+    display:flex; align-items:center; gap:8px; padding:8px 12px;
+    background: var(--panel-2); border:1px solid var(--ac-color, var(--discord-blurple));
+    box-shadow: 0 0 10px -3px var(--ac-color, var(--discord-blurple)); font-size:12px; font-weight:600;
+  }
 </style>
 </head>
 <body>
@@ -262,6 +349,9 @@
       <div class="hidden lg:block settings-nav-group-label">CONFIGURAÇÕES DA CONTA</div>
       <button class="settings-nav-item active shrink-0" data-tab="perfil">
         <span class="nav-dot"></span> Perfil de Usuário
+      </button>
+      <button class="settings-nav-item shrink-0" data-tab="destaques">
+        <span class="nav-dot"></span> Destaques
       </button>
       <button class="settings-nav-item shrink-0" data-tab="privacidade">
         <span class="nav-dot"></span> Privacidade
@@ -301,16 +391,26 @@
           <div id="banner-preview" class="clip-card"></div>
 
           <!-- Avatar sobreposto ao banner -->
-          <div id="avatar-frame" title="Alterar foto de perfil">
-            <img id="avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
-            <div class="avatar-overlay">ALTERAR<br>FOTO</div>
-            <span id="avatar-status-dot"></span>
+          <div class="avatar-frame-wrap">
+            <div id="avatar-frame" title="Alterar foto de perfil">
+              <img id="avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
+              <div class="avatar-overlay">ALTERAR<br>FOTO</div>
+              <span id="avatar-status-dot"></span>
+            </div>
+            <span id="avatar-frame-overlay" class="avatar-frame-overlay"></span>
           </div>
           <input type="file" id="avatar-file-input" accept="image/*" class="hidden">
 
           <!-- Emblemas equipados (definidos no Inventário) -->
           <div id="profile-badges-row"></div>
           <p id="badges-empty-hint" class="hidden">Nenhum emblema equipado ainda. Desbloqueie e equipe emblemas no <a href="inventario.html">Meu Inventário</a>.</p>
+
+          <!-- Molduras de avatar -->
+          <div class="mt-8">
+            <span class="field-label">Moldura de avatar</span>
+            <div class="flex flex-wrap gap-3" id="frames-row"></div>
+            <p class="field-hint">Desbloqueadas nas mesmas conquistas dos emblemas — equipe a que combinar com seu estilo.</p>
+          </div>
 
           <!-- Opções de cada modo de banner -->
           <div class="mt-4">
@@ -354,6 +454,22 @@
               <textarea id="input-bio" maxlength="190" class="field-textarea" placeholder="Conte um pouco sobre você, seus jogos favoritos, seu time do coração..."></textarea>
               <p class="field-hint">Suporta markdown simples: **negrito**, *itálico* e `código`. <span id="bio-char-count">0</span>/190</p>
             </div>
+            <div>
+              <label class="field-label">Status personalizado</label>
+              <div class="flex gap-2">
+                <input id="status-emoji-input" type="text" maxlength="2" class="field-input" placeholder="🎮">
+                <input id="status-text-input" type="text" maxlength="60" class="field-input flex-1" placeholder="Ex: Rankeando pra Imortal...">
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="field-hint mt-0">Limpar depois de:</span>
+                <select id="status-expiry-select" class="settings-select" style="min-width:140px;">
+                  <option value="never">Nunca</option>
+                  <option value="today">Hoje</option>
+                  <option value="4h">4 horas</option>
+                  <option value="1h">1 hora</option>
+                </select>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -363,15 +479,19 @@
           <span class="field-label">Pré-visualização</span>
           <div id="preview-card" class="clip-card">
             <div id="preview-banner"></div>
-            <div id="preview-avatar-frame">
-              <img id="preview-avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
-              <span id="preview-status-dot"></span>
+            <div class="preview-avatar-frame-wrap">
+              <div id="preview-avatar-frame">
+                <img id="preview-avatar-img" src="https://placehold.co/200x200/1B1F28/D7DAE1?text=U" alt="Avatar">
+                <span id="preview-status-dot"></span>
+              </div>
+              <span id="preview-avatar-frame-overlay" class="avatar-frame-overlay"></span>
             </div>
             <div class="px-4 pb-4 pt-2">
               <h3 class="font-bold text-[16px] leading-tight flex items-center gap-1.5">
                 <span id="preview-display-name">Nome de Exibição</span><span id="preview-badges"></span>
               </h3>
               <p id="preview-username" class="font-mono text-[12px]" style="color: var(--muted);">@usuario</p>
+              <p id="preview-status-line"></p>
               <div style="border-top:1px solid var(--border);" class="my-3"></div>
               <p id="preview-bio" class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">Sua biografia aparece aqui em tempo real.</p>
             </div>
@@ -379,6 +499,38 @@
           <p class="field-hint mt-3">É assim que seu perfil vai aparecer para outros jogadores da Arena — atualizado em tempo real.</p>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ---------- ABA: DESTAQUES ---------- -->
+    <section id="tab-destaques" class="settings-tab hidden">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-wide mb-1">Destaques</h1>
+      <p class="text-[13px] mb-8" style="color: var(--muted);">Escolha até 3 conquistas pra exibir no topo do seu perfil e veja suas estatísticas gerais.</p>
+
+      <!-- Vitrine de conquistas -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-1">
+          <span class="settings-row-title">Vitrine de conquistas</span>
+          <span class="font-mono text-[11px]" style="color: var(--muted);"><span id="showcase-count">0</span>/3 selecionadas</span>
+        </div>
+        <p class="settings-row-desc mb-4">Clique nos cards para fixar suas conquistas favoritas no topo do seu perfil público.</p>
+
+        <div class="grid sm:grid-cols-2 gap-3 mb-5" id="achievements-grid"></div>
+
+        <span class="field-label">Pré-visualização da vitrine</span>
+        <div id="showcase-preview-row"></div>
+      </div>
+
+      <!-- Estatísticas -->
+      <div>
+        <div class="settings-row-title mb-1">Estatísticas gerais</div>
+        <p class="settings-row-desc mb-4">Dados de exemplo — em produção, viriam do histórico real de partidas.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="stat-tile"><span class="stat-value">312</span><span class="stat-label">PARTIDAS</span></div>
+          <div class="stat-tile"><span class="stat-value">58%</span><span class="stat-label">TAXA DE VITÓRIA</span></div>
+          <div class="stat-tile"><span class="stat-value">1.34</span><span class="stat-label">K/D RATIO</span></div>
+          <div class="stat-tile"><span class="stat-value">27</span><span class="stat-label">DIAS SEGUIDOS</span></div>
+        </div>
       </div>
     </section>
 
@@ -521,6 +673,44 @@
   }
   const registeredUser = sessionEmail ? getRegisteredUser(sessionEmail) : null;
 
+  // Molduras de avatar equipáveis — desenhadas 100% em CSS (sem
+  // assets), então cada uma é só um id + cor(es) + rótulo.
+  const AVATAR_FRAMES = [
+    { id: null, label: "Nenhuma", color: "transparent" },
+    { id: "raro", label: "Raro", color: "#5865F2" },
+    { id: "epico", label: "Épico", color: "#8B5CF6" },
+    { id: "lendario", label: "Lendário", color: "#F59E0B" },
+  ];
+
+  // ---------------------------------------------------------------
+  // Moldura Cyber (Digital) — item comprado na Loja Arena. Só entra
+  // na lista se o item "moldura-cyber-digital" existir no inventário
+  // do usuário (mesma chave `arena-inventory-<email>` que
+  // inventario.html e a loja usam). Diferente das molduras acima,
+  // é `animated:true`, então recebe o anel giratório em vez de cor sólida.
+  // ---------------------------------------------------------------
+  function ownsCyberFrame() {
+    try {
+      const raw = localStorage.getItem(`arena-inventory-${sessionEmail || "demo"}`);
+      const inv = raw ? JSON.parse(raw) : [];
+      return inv.some(i => i.id === "moldura-cyber-digital");
+    } catch (err) { return false; }
+  }
+  if (ownsCyberFrame()) {
+    AVATAR_FRAMES.push({ id: "moldura-cyber-digital", label: "Cyber", color: "#FF4655", animated: true });
+  }
+
+  // Conquistas disponíveis pra vitrine (demo — em produção viriam do
+  // mesmo backend de emblemas/inventário).
+  const ACHIEVEMENTS = [
+    { id: "ace", emoji: "🔥", name: "Ace Perfeito", desc: "Eliminou o time inimigo inteiro sozinho.", rarity: "lendario" },
+    { id: "clutch", emoji: "🎯", name: "Clutch Master", desc: "Venceu 10 rounds em desvantagem 1v3+.", rarity: "epico" },
+    { id: "veterano", emoji: "🛡️", name: "Veterano", desc: "Completou 300 partidas na Arena.", rarity: "raro" },
+    { id: "streak", emoji: "⚡", name: "Sequência Imortal", desc: "7 dias seguidos jogando.", rarity: "raro" },
+    { id: "mvp", emoji: "🏆", name: "MVP da Temporada", desc: "Eleito o melhor jogador da temporada.", rarity: "lendario" },
+    { id: "social", emoji: "🤝", name: "Bem Relacionado", desc: "Conectou todas as contas de jogo.", rarity: "comum" },
+  ];
+
   const CONNECTION_SERVICES = [
     { key: "steam", label: "Steam", color: "#1B2838", initial: "S" },
     { key: "riot", label: "Riot Games", color: "#D13639", initial: "R" },
@@ -552,6 +742,9 @@
     connections: { steam: null, riot: null, discord: null, twitch: null },
     equippedBannerId: null,
     equippedBadges: [], // [{id, emoji, name, rarity}] — escrito por inventario.html
+    equippedFrame: null, // id de AVATAR_FRAMES
+    status: { emoji: "", text: "", expiry: "never" },
+    showcase: [], // até 3 ids de ACHIEVEMENTS
   };
 
   // Faz merge "profundo" (só 1 nível) pra perfis antigos salvos antes
@@ -568,6 +761,8 @@
         privacy: { ...DEFAULT_PROFILE.privacy, ...(saved.privacy || {}) },
         appearance: { ...DEFAULT_PROFILE.appearance, ...(saved.appearance || {}) },
         connections: { ...DEFAULT_PROFILE.connections, ...(saved.connections || {}) },
+        status: { ...DEFAULT_PROFILE.status, ...(saved.status || {}) },
+        showcase: saved.showcase || [],
       };
     } catch (err) { return structuredClone(DEFAULT_PROFILE); }
   }
@@ -661,6 +856,9 @@
 
     previewDisplayName.textContent = draftProfile.displayName || "Nome de Exibição";
     renderEquippedBadges();
+    renderFrames();
+    renderStatus();
+    renderAchievements();
     previewUsername.textContent = "@" + (draftProfile.username || "usuario");
     previewBio.innerHTML = renderBioMarkdown(draftProfile.bio);
 
@@ -718,6 +916,97 @@
     document.getElementById("preview-badges").innerHTML = badges.map(b => `
       <span class="preview-badge-dot" style="--bc-color:${RARITY_COLOR_PROFILE[b.rarity] || "var(--discord-blurple)"};" title="${b.name}">${b.emoji}</span>
     `).join("");
+  }
+
+  // ---------------------------------------------------------------
+  // Molduras de avatar: desenha o seletor de chips e aplica a
+  // moldura equipada nos dois avatares (formulário + preview).
+  // ---------------------------------------------------------------
+  function renderFrames() {
+    const row = document.getElementById("frames-row");
+    row.innerHTML = AVATAR_FRAMES.map(f => `
+      <button class="frame-swatch ${f.id === null ? "is-none" : ""} ${f.animated ? "is-cyber" : ""} ${draftProfile.equippedFrame === f.id ? "selected" : ""}"
+              data-frame-id="${f.id ?? ""}" title="${f.label}" style="--fc-color:${f.color};">
+        ${f.id === null ? '<span class="frame-label">NENHUMA</span>' : `<span class="frame-ring ${f.animated ? "is-cyber" : ""}"></span>`}
+      </button>
+    `).join("");
+    row.querySelectorAll("[data-frame-id]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        draftProfile.equippedFrame = btn.dataset.frameId || null;
+        render();
+      });
+    });
+
+    const equipped = AVATAR_FRAMES.find(f => f.id === draftProfile.equippedFrame) || AVATAR_FRAMES[0];
+    [document.getElementById("avatar-frame-overlay"), document.getElementById("preview-avatar-frame-overlay")].forEach(el => {
+      el.style.setProperty("--fc-color", equipped.color);
+      el.classList.toggle("is-cyber", !!equipped.animated);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Status personalizado: mantém os inputs sincronizados com
+  // draftProfile.status e monta a linha compacta do preview.
+  // ---------------------------------------------------------------
+  function renderStatus() {
+    document.getElementById("status-emoji-input").value = draftProfile.status.emoji;
+    document.getElementById("status-text-input").value = draftProfile.status.text;
+    document.getElementById("status-expiry-select").value = draftProfile.status.expiry;
+
+    const line = document.getElementById("preview-status-line");
+    if (draftProfile.status.text) {
+      line.innerHTML = `${draftProfile.status.emoji ? escapeHtml(draftProfile.status.emoji) + " " : ""}${escapeHtml(draftProfile.status.text)}`;
+    } else {
+      line.innerHTML = "";
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Vitrine de conquistas: grid selecionável (máx. 3) + fileira de
+  // pré-visualização com as escolhidas.
+  // ---------------------------------------------------------------
+  function renderAchievements() {
+    const grid = document.getElementById("achievements-grid");
+    if (!grid) return; // aba pode não existir em versões antigas do DOM cacheado
+    grid.innerHTML = ACHIEVEMENTS.map(a => {
+      const selected = draftProfile.showcase.includes(a.id);
+      const color = RARITY_COLOR_PROFILE[a.rarity] || "var(--discord-blurple)";
+      return `
+        <div class="achv-card ${selected ? "selected" : ""}" data-achv-id="${a.id}" style="--ac-color:${color};">
+          <span class="achv-check">✓</span>
+          <div class="achv-icon">${a.emoji}</div>
+          <div>
+            <div class="achv-name">${a.name}</div>
+            <div class="achv-desc">${a.desc}</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    grid.querySelectorAll("[data-achv-id]").forEach(card => {
+      card.addEventListener("click", () => {
+        const id = card.dataset.achvId;
+        const idx = draftProfile.showcase.indexOf(id);
+        if (idx >= 0) {
+          draftProfile.showcase.splice(idx, 1);
+        } else {
+          if (draftProfile.showcase.length >= 3) {
+            draftProfile.showcase.shift(); // tira a mais antiga pra abrir espaço, igual "reordenar" do Discord
+          }
+          draftProfile.showcase.push(id);
+        }
+        render();
+      });
+    });
+
+    document.getElementById("showcase-count").textContent = draftProfile.showcase.length;
+
+    const preview = document.getElementById("showcase-preview-row");
+    preview.innerHTML = draftProfile.showcase.map(id => {
+      const a = ACHIEVEMENTS.find(x => x.id === id);
+      if (!a) return "";
+      const color = RARITY_COLOR_PROFILE[a.rarity] || "var(--discord-blurple)";
+      return `<span class="showcase-chip" style="--ac-color:${color};">${a.emoji} ${a.name}</span>`;
+    }).join("");
   }
 
   // ---------------------------------------------------------------
@@ -843,6 +1132,17 @@
     render();
   });
   inputBio.addEventListener("input", (e) => { draftProfile.bio = e.target.value; render(); });
+
+  // ---- Status personalizado ----
+  document.getElementById("status-emoji-input").addEventListener("input", (e) => {
+    draftProfile.status.emoji = e.target.value; render();
+  });
+  document.getElementById("status-text-input").addEventListener("input", (e) => {
+    draftProfile.status.text = e.target.value; render();
+  });
+  document.getElementById("status-expiry-select").addEventListener("change", (e) => {
+    draftProfile.status.expiry = e.target.value; render();
+  });
 
   // ===============================================================
   // 5) SALVAR / REDEFINIR
