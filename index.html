@@ -60,7 +60,14 @@
   .filter-btn.active[data-game="eafc"]{ border-color: var(--eafc); color: var(--eafc); background: color-mix(in srgb, var(--eafc) 10%, transparent); }
   .filter-btn.active[data-game="todos"]{ border-color: var(--ink-soft); color: var(--ink); }
 
-  .card[data-hidden="true"]{ display:none; }
+  @keyframes searchFadeIn{ from{ opacity:0; transform: translateY(-2px); } to{ opacity:1; transform:none; } }
+  .card{ opacity:1; transition: opacity .25s ease; }
+  .card[data-hidden="true"]{ display:none; opacity:0; }
+
+  /* ===== BUSCA — sugestões (autocomplete) ===== */
+  #search-hint{ padding:14px 16px; font-size:12px; color: var(--muted); }
+  .search-result-thumb{ width:40px; height:40px; border-radius:4px; object-fit:cover; flex-shrink:0; background: var(--panel); }
+  #search-results a{ opacity:0; animation: searchFadeIn .18s ease forwards; }
 
   #filter-bar{
     scrollbar-width: none;      /* Firefox */
@@ -77,8 +84,19 @@
   .nav-link{ color: var(--ink-soft); position:relative; transition: color .15s ease; }
   .nav-link:hover{ color: var(--ink); }
   .nav-link.active{ color: var(--ink); }
-  .nav-link.active::after{
-    content:""; position:absolute; left:0; right:0; bottom:-14px; height:2px; background: var(--valorant);
+  #nav-desktop{ position:relative; }
+  #nav-indicator{
+    position:absolute; bottom:-14px; height:2px; background: var(--valorant);
+    border-radius:1px; transition: left .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1), opacity .15s ease;
+    opacity:0; pointer-events:none;
+  }
+  #nav-indicator.is-visible{ opacity:1; }
+  /* No menu mobile não há barra deslizante (não faz sentido em coluna),
+     então o estado ativo é indicado por cor + acento lateral. */
+  #mobile-menu .nav-link.active{ color: var(--valorant); position:relative; padding-left:10px; }
+  #mobile-menu .nav-link.active::before{
+    content:""; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:4px; height:4px; border-radius:9999px; background: var(--valorant);
   }
   .icon-btn{
     color: var(--muted); border:1px solid var(--border); transition: color .15s ease, border-color .15s ease;
@@ -192,12 +210,13 @@
     </a>
 
     <!-- Navegação desktop -->
-    <nav class="hidden lg:flex items-center gap-9 font-mono text-[12px] font-semibold">
-      <a href="index.html" class="nav-link active">HOME</a>
-      <a href="#" class="nav-link">CAMPEONATOS</a>
-      <a href="#" class="nav-link">LANÇAMENTOS</a>
-      <a href="#" class="nav-link">REVIEWS</a>
-      <a href="#" class="nav-link">AGENDA</a>
+    <nav id="nav-desktop" class="hidden lg:flex items-center gap-9 font-mono text-[12px] font-semibold">
+      <a href="index.html" data-filter="todos" class="nav-link active">HOME</a>
+      <a href="#" data-filter="campeonatos" class="nav-link">CAMPEONATOS</a>
+      <a href="#" data-filter="lancamentos" class="nav-link">LANÇAMENTOS</a>
+      <a href="#" data-filter="reviews" class="nav-link">REVIEWS</a>
+      <a href="#" data-filter="agenda" class="nav-link">AGENDA</a>
+      <span id="nav-indicator"></span>
     </nav>
 
     <!-- Ações -->
@@ -237,11 +256,11 @@
   <!-- Menu mobile -->
   <div id="mobile-menu" class="lg:hidden" style="background: var(--panel); border-top:1px solid var(--border);">
     <nav class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-1 font-mono text-[13px] font-semibold">
-      <a href="index.html" class="py-2.5" style="color: var(--ink); border-bottom:1px solid var(--border);">HOME</a>
-      <a href="#" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">CAMPEONATOS</a>
-      <a href="#" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">LANÇAMENTOS</a>
-      <a href="#" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">REVIEWS</a>
-      <a href="#" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">AGENDA</a>
+      <a href="index.html" data-filter="todos" class="py-2.5 nav-link active" style="border-bottom:1px solid var(--border);">HOME</a>
+      <a href="#" data-filter="campeonatos" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">CAMPEONATOS</a>
+      <a href="#" data-filter="lancamentos" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">LANÇAMENTOS</a>
+      <a href="#" data-filter="reviews" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">REVIEWS</a>
+      <a href="#" data-filter="agenda" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">AGENDA</a>
       <div class="flex items-center gap-3 mt-4">
         <button aria-label="Buscar" class="js-open-search icon-btn flex-1 h-10 flex items-center justify-center gap-2 text-[12px]">🔍 BUSCAR</button>
         <button class="js-open-login btn-neon flex-1 h-10 font-mono text-[12px] font-semibold clip-tag"><span class="js-login-label">LOGIN</span></button>
@@ -346,7 +365,7 @@
     <!-- DESTAQUES DO DIA -->
     <div class="lg:col-span-2">
       <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
-        <h2 class="font-display text-3xl font-semibold uppercase tracking-wide">
+        <h2 id="highlights-title" class="font-display text-3xl font-semibold uppercase tracking-wide">
           Destaques <span style="color: var(--valorant);">do Dia</span>
         </h2>
         <span class="font-mono text-[11px] hidden sm:block" style="color: var(--muted);">atualizado há 12 min</span>
@@ -359,51 +378,10 @@
 
     <!-- SIDEBAR -->
     <aside>
-      <div class="p-5" style="background: var(--panel); border:1px solid var(--border);">
+      <div id="agenda-widget" class="p-5" style="background: var(--panel); border:1px solid var(--border);">
         <h3 class="flex items-center gap-2 mb-4 font-mono text-[13px] font-semibold">📅 AGENDA DA SEMANA</h3>
-        <div class="flex flex-col">
-          <div class="flex items-center justify-between py-3">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">QUI</div><div class="font-mono text-[12px] font-semibold">07/08</div></div>
-              <div><div class="text-[13px] font-medium">LOUD x Sentinels</div><span class="font-mono text-[10px] font-semibold" style="color: var(--valorant);">VALORANT</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">20h00</span>
-          </div>
-          <div class="flex items-center justify-between py-3" style="border-top:1px solid var(--border);">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">SEX</div><div class="font-mono text-[12px] font-semibold">08/08</div></div>
-              <div><div class="text-[13px] font-medium">FURIA x G2</div><span class="font-mono text-[10px] font-semibold" style="color: var(--cs2);">CS2</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">13h00</span>
-          </div>
-          <div class="flex items-center justify-between py-3" style="border-top:1px solid var(--border);">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">SÁB</div><div class="font-mono text-[12px] font-semibold">09/08</div></div>
-              <div><div class="text-[13px] font-medium">paiN x RED</div><span class="font-mono text-[10px] font-semibold" style="color: var(--lol);">LEAGUE OF LEGENDS</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">17h30</span>
-          </div>
-          <div class="flex items-center justify-between py-3" style="border-top:1px solid var(--border);">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">DOM</div><div class="font-mono text-[12px] font-semibold">10/08</div></div>
-              <div><div class="text-[13px] font-medium">Team Liquid x OG</div><span class="font-mono text-[10px] font-semibold" style="color: var(--dota2);">DOTA 2</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">15h00</span>
-          </div>
-          <div class="flex items-center justify-between py-3" style="border-top:1px solid var(--border);">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">DOM</div><div class="font-mono text-[12px] font-semibold">10/08</div></div>
-              <div><div class="text-[13px] font-medium">Final regional — Free Fire</div><span class="font-mono text-[10px] font-semibold" style="color: var(--freefire);">FREE FIRE</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">19h00</span>
-          </div>
-          <div class="flex items-center justify-between py-3" style="border-top:1px solid var(--border);">
-            <div class="flex items-center gap-3">
-              <div class="text-center w-10 shrink-0"><div class="font-mono text-[10px]" style="color: var(--muted);">SEG</div><div class="font-mono text-[12px] font-semibold">11/08</div></div>
-              <div><div class="text-[13px] font-medium">FNCS — Grande Final</div><span class="font-mono text-[10px] font-semibold" style="color: var(--fortnite);">FORTNITE</span></div>
-            </div>
-            <span class="font-mono text-[12px]" style="color: var(--muted);">16h00</span>
-          </div>
+        <div class="flex flex-col" id="agenda-list">
+          <!-- Gerado dinamicamente via JS a partir de GAMES.<jogo>.matches -->
         </div>
       </div>
 
@@ -498,8 +476,8 @@
 <div id="search-overlay" class="modal-overlay" aria-hidden="true">
   <div class="modal-panel">
     <div class="flex items-center gap-3 p-4" style="border-bottom:1px solid var(--border);">
-      <span class="text-[15px]" style="color: var(--muted);">🔍</span>
-      <input id="search-input" type="text" placeholder="Buscar notícias, jogos, times..." autocomplete="off"
+      <button id="search-submit" class="text-[15px]" style="color: var(--muted);" aria-label="Buscar">🔍</button>
+      <input id="search-input" type="text" placeholder="Buscar notícias, jogos, times... (mín. 3 letras)" autocomplete="off"
         class="flex-1 bg-transparent text-[14px]" style="color: var(--ink); outline:none;">
       <button class="modal-close js-close-search text-[13px]" aria-label="Fechar busca">✕</button>
     </div>
@@ -568,57 +546,169 @@
 <script src="data/noticias.js"></script>
 <script>
   // ===============================================================
-  // Renderiza TODOS os cards de notícia (de todos os jogos) dentro
-  // de #highlights-grid. Cada notícia nova adicionada em
-  // data/noticias.js aparece aqui automaticamente, sem precisar
-  // mexer no HTML.
+  // MONTA A LISTA ÚNICA DE NOTÍCIAS (todos os jogos) ANTES de
+  // renderizar os cards, para que cada notícia já saia com sua
+  // categoria de navbar (Campeonatos / Lançamentos) atribuída — tanto
+  // os cards quanto a busca usam essa mesma lista, então tudo fica
+  // sempre em sincronia.
+  //
+  // A categoria vem do campo `category` de cada notícia lá em
+  // data/noticias.js (ex.: category: "campeonatos"). Uma notícia sem
+  // esse campo continua aparecendo normalmente em "HOME" (TODOS), só
+  // não aparece em nenhuma aba de categoria específica — isso é
+  // proposital: melhor não mostrar nada do que classificar errado.
+  // Hoje o data set não tem nenhuma notícia com category: "reviews",
+  // então essa aba fica vazia até existir conteúdo desse tipo (o card
+  // de "nenhuma notícia encontrada" cobre esse caso). "Agenda" não
+  // filtra os cards — ela rola a página até o widget "AGENDA DA
+  // SEMANA" na sidebar, que é o conteúdo que faz sentido pra ela.
+  // ===============================================================
+  const ALL_NEWS = [];
+  Object.entries(GAMES).forEach(([slug, g]) => {
+    g.news.forEach((n, idx) => {
+      ALL_NEWS.push({ ...n, slug, gameLabel: g.label, idx, category: n.category || null });
+    });
+  });
+
+  // ===============================================================
+  // Renderiza TODOS os cards de notícia dentro de #highlights-grid,
+  // a partir de ALL_NEWS (já com data-game e data-category prontos
+  // para os filtros da navbar de jogos e da navbar de categorias).
   // ===============================================================
   const highlightsGrid = document.getElementById("highlights-grid");
-  const cardsHtml = [];
+  const highlightsEmpty = document.createElement("p");
+  highlightsEmpty.id = "highlights-empty";
+  highlightsEmpty.className = "sm:col-span-2 py-10 text-center font-mono text-[12px]";
+  highlightsEmpty.style.color = "var(--muted)";
+  highlightsEmpty.style.display = "none";
+  highlightsEmpty.textContent = "Nenhuma notícia encontrada para este filtro.";
 
-  Object.entries(GAMES).forEach(([slug, game]) => {
-    game.news.forEach((n, idx) => {
-      cardsHtml.push(`
-        <a href="noticia.html?jogo=${slug}&id=${idx}" class="card clip-card block" data-game="${slug}" style="background: var(--panel); border:1px solid var(--border);">
-          <div class="relative h-36" style="background: linear-gradient(to bottom right, var(--${slug}-glow), var(--panel));">
-            <span class="clip-tag absolute top-0 left-0 font-mono text-[11px] font-semibold px-4 py-1" style="background: var(--${slug}); color:#12141A;">${game.label.toUpperCase()}</span>
-            ${n.isLive ? `<span class="absolute top-2 right-3 flex items-center gap-1 font-mono text-[10px] font-semibold" style="color: var(--live);">
-              <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO
-            </span>` : ""}
-          </div>
-          <div class="p-4">
-            <h3 class="font-semibold text-[15px] leading-snug">${n.title}</h3>
-            <p class="text-[13px] mt-2 line-clamp-2" style="color: var(--ink-soft);">${n.excerpt}</p>
-            <div class="flex items-center justify-between mt-4 font-mono text-[11px]" style="color: var(--muted);">
-              <span>${n.author}</span><span>${n.readTimeMin} min</span>
-            </div>
-          </div>
-        </a>
-      `);
-    });
-  });
+  const cardsHtml = ALL_NEWS.map((n) => `
+    <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="card clip-card block" data-game="${n.slug}" data-category="${n.category || ""}" style="background: var(--panel); border:1px solid var(--border);">
+      <div class="relative h-36" style="background: linear-gradient(to bottom right, var(--${n.slug}-glow), var(--panel));">
+        <span class="clip-tag absolute top-0 left-0 font-mono text-[11px] font-semibold px-4 py-1" style="background: var(--${n.slug}); color:#12141A;">${n.gameLabel.toUpperCase()}</span>
+        ${n.isLive ? `<span class="absolute top-2 right-3 flex items-center gap-1 font-mono text-[10px] font-semibold" style="color: var(--live);">
+          <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO
+        </span>` : ""}
+      </div>
+      <div class="p-4">
+        <h3 class="font-semibold text-[15px] leading-snug">${n.title}</h3>
+        <p class="text-[13px] mt-2 line-clamp-2" style="color: var(--ink-soft);">${n.excerpt}</p>
+        <div class="flex items-center justify-between mt-4 font-mono text-[11px]" style="color: var(--muted);">
+          <span>${n.author}</span><span>${n.readTimeMin} min</span>
+        </div>
+      </div>
+    </a>
+  `);
 
   highlightsGrid.innerHTML = cardsHtml.join("");
+  highlightsGrid.appendChild(highlightsEmpty);
 
   // ===============================================================
-  // FILTRO POR JOGO (mesma lógica de antes, agora sobre os cards
-  // gerados dinamicamente acima)
+  // MOTOR DE FILTRO DOS CARDS — combina dois filtros independentes
+  // que convivem na mesma página:
+  //   • currentGameFilter     -> tira da faixa "TODOS / VALORANT / ..."
+  //   • currentCategoryFilter -> vem dos links da navbar (CAMPEONATOS,
+  //                              LANÇAMENTOS, REVIEWS, AGENDA, HOME)
+  // Um card só fica visível se atender aos dois filtros ao mesmo tempo.
+  // A troca de visibilidade é sempre animada (fade-out -> display:none
+  // -> fade-in), nunca "pisca" trocando de estado abruptamente.
   // ===============================================================
-  const buttons = document.querySelectorAll('.filter-btn');
-  const cards = document.querySelectorAll('.card');
+  const gameButtons = document.querySelectorAll(".filter-btn");
+  const allCards = () => document.querySelectorAll(".card");
+  let currentGameFilter = "todos";
+  let currentCategoryFilter = "todos";
+  const CARD_FADE_MS = 220;
 
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  function cardShouldShow(card) {
+    const gameOk = currentGameFilter === "todos" || card.dataset.game === currentGameFilter;
+    const catOk = currentCategoryFilter === "todos" || card.dataset.category === currentCategoryFilter;
+    return gameOk && catOk;
+  }
 
-      const game = btn.dataset.game;
-      cards.forEach(card => {
-        const show = game === 'todos' || card.dataset.game === game;
-        card.dataset.hidden = show ? 'false' : 'true';
-      });
+  function refreshCardVisibility() {
+    let visibleCount = 0;
+    allCards().forEach((card) => {
+      const show = cardShouldShow(card);
+      if (show) visibleCount++;
+
+      if (show && card.dataset.hidden !== "false") {
+        // Estava escondido -> volta a aparecer: primeiro exibe (opacidade 0),
+        // depois no próximo frame sobe a opacidade para animar o fade-in.
+        card.dataset.hidden = "false";
+        card.style.opacity = "0";
+        requestAnimationFrame(() => { card.style.opacity = "1"; });
+      } else if (!show && card.dataset.hidden !== "true") {
+        // Estava visível -> vai sumir: primeiro faz fade-out da opacidade,
+        // só then aplica display:none (via data-hidden), pra transição rodar.
+        card.style.opacity = "0";
+        setTimeout(() => {
+          if (!cardShouldShow(card)) card.dataset.hidden = "true";
+        }, CARD_FADE_MS);
+      } else if (show) {
+        card.style.opacity = "1";
+      }
+    });
+
+    highlightsEmpty.style.display = visibleCount === 0 ? "block" : "none";
+  }
+
+  // Faixa de jogos (TODOS / VALORANT / LOL / ...)
+  gameButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      gameButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentGameFilter = btn.dataset.game;
+      refreshCardVisibility();
     });
   });
+
+  // ===============================================================
+  // AGENDA DA SEMANA (widget da sidebar) — antes era HTML fixo,
+  // escolhido manualmente. Agora é gerado a partir do array `matches`
+  // de cada jogo em data/noticias.js: adicionar/editar uma partida lá
+  // já aparece aqui automaticamente, ordenada por data/hora, sem
+  // precisar tocar neste HTML.
+  // ===============================================================
+  const ALL_MATCHES = [];
+  Object.entries(GAMES).forEach(([slug, g]) => {
+    (g.matches || []).forEach((m) => ALL_MATCHES.push({ ...m, slug, gameLabel: g.label }));
+  });
+
+  // Transforma "DD/MM" + "HHhMM" numa chave numérica pra ordenar as
+  // partidas cronologicamente (mais próxima primeiro). Não depende do
+  // ano, então cobre corretamente uma janela de "agenda da semana".
+  function matchSortKey(m) {
+    const [day, month] = (m.date || "0/0").split("/").map(Number);
+    const timeParts = /^(\d{1,2})h(\d{2})$/.exec(m.time || "");
+    const hour = timeParts ? Number(timeParts[1]) : 0;
+    const minute = timeParts ? Number(timeParts[2]) : 0;
+    return ((month * 100 + day) * 10000) + (hour * 100 + minute);
+  }
+  ALL_MATCHES.sort((a, b) => matchSortKey(a) - matchSortKey(b));
+
+  const agendaList = document.getElementById("agenda-list");
+  if (agendaList) {
+    if (ALL_MATCHES.length === 0) {
+      agendaList.innerHTML = `<p class="text-[13px] py-6 text-center" style="color: var(--muted);">Nenhuma partida confirmada esta semana.</p>`;
+    } else {
+      agendaList.innerHTML = ALL_MATCHES.map((m, i) => `
+        <div class="flex items-center justify-between py-3"${i > 0 ? ' style="border-top:1px solid var(--border);"' : ""}>
+          <div class="flex items-center gap-3">
+            <div class="text-center w-10 shrink-0">
+              <div class="font-mono text-[10px]" style="color: var(--muted);">${m.day}</div>
+              <div class="font-mono text-[12px] font-semibold">${m.date}</div>
+            </div>
+            <div>
+              <div class="text-[13px] font-medium">${m.match}</div>
+              <span class="font-mono text-[10px] font-semibold" style="color: var(--${m.slug});">${m.gameLabel.toUpperCase()}</span>
+            </div>
+          </div>
+          <span class="font-mono text-[12px]" style="color: var(--muted);">${m.time}</span>
+        </div>
+      `).join("");
+    }
+  }
 
   // ===============================================================
   // MENU HAMBÚRGUER (mobile)
@@ -653,35 +743,103 @@
   });
 
   // ===============================================================
-  // BUSCA — junta as notícias de todos os jogos numa lista única
-  // e filtra em tempo real por título/resumo.
+  // BUSCA — autocomplete com debounce sobre ALL_NEWS (já montada lá
+  // em cima, junto com os cards). Regras:
+  //   • menos de 3 caracteres  -> mostra dica, não consulta nada
+  //   • 3+ caracteres          -> dispara a "consulta" (debounced)
+  //   • Enter ou clique na lupa -> dispara a busca imediatamente,
+  //     pulando o debounce (o usuário já decidiu, não faz sentido esperar)
   // ===============================================================
-  const ALL_NEWS = [];
-  Object.entries(GAMES).forEach(([slug, g]) => {
-    g.news.forEach((n, idx) => ALL_NEWS.push({ ...n, slug, gameLabel: g.label, idx }));
-  });
+  const SEARCH_MIN_CHARS = 3;
+  const SEARCH_DEBOUNCE_MS = 300;
 
   const searchOverlay = document.getElementById("search-overlay");
   const searchInput = document.getElementById("search-input");
   const searchResults = document.getElementById("search-results");
+  const searchSubmitBtn = document.getElementById("search-submit");
 
-  function renderSearchResults(query) {
-    const q = query.trim().toLowerCase();
-    const list = q
-      ? ALL_NEWS.filter(n => n.title.toLowerCase().includes(q) || n.excerpt.toLowerCase().includes(q) || n.gameLabel.toLowerCase().includes(q))
-      : ALL_NEWS.slice(0, 6);
+  // Utilitário genérico de debounce: adia a execução de `fn` até que
+  // `delay` ms tenham se passado sem uma nova chamada — evita "buscar"
+  // a cada tecla digitada.
+  function debounce(fn, delay) {
+    let timer = null;
+    return function debounced(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
 
+  // Pega a cor do jogo direto da variável CSS (:root) pra gerar a
+  // mini-imagem de cada sugestão sem precisar duplicar as cores em JS.
+  function getGameColorHex(slug) {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(`--${slug}`).trim();
+    return raw ? raw.replace("#", "") : "5865F2";
+  }
+
+  function gameInitials(label) {
+    return label.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  }
+
+  // Simula uma consulta assíncrona (ex.: chamada a uma API de busca).
+  // Hoje resolve na hora contra ALL_NEWS, mas já fica pronta para,
+  // no futuro, virar um fetch('/api/busca?q=...') sem mudar quem chama.
+  function queryNews(q) {
+    return new Promise((resolve) => {
+      const term = q.toLowerCase();
+      const list = ALL_NEWS.filter(n =>
+        n.title.toLowerCase().includes(term) ||
+        n.excerpt.toLowerCase().includes(term) ||
+        n.gameLabel.toLowerCase().includes(term)
+      );
+      resolve(list);
+    });
+  }
+
+  function renderResultsList(list, emptyMessage) {
     if (list.length === 0) {
-      searchResults.innerHTML = `<p class="text-[13px] py-8 text-center" style="color: var(--muted);">Nenhum resultado para "${query}".</p>`;
+      searchResults.innerHTML = `<p class="text-[13px] py-8 text-center" style="color: var(--muted);">${emptyMessage}</p>`;
+      return;
+    }
+    searchResults.innerHTML = list.slice(0, 8).map(n => {
+      const thumb = `https://placehold.co/64x64/1B1F28/${getGameColorHex(n.slug)}?text=${encodeURIComponent(gameInitials(n.gameLabel))}`;
+      return `
+        <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
+          <img src="${thumb}" alt="" class="search-result-thumb" loading="lazy">
+          <div class="flex-1 min-w-0">
+            <span class="font-mono text-[9px] font-semibold" style="color: var(--${n.slug});">${n.gameLabel.toUpperCase()}</span>
+            <p class="text-[13px] leading-snug line-clamp-2">${n.title}</p>
+          </div>
+        </a>
+      `;
+    }).join("");
+  }
+
+  // Renderização "crua": decide o que mostrar (dica, destaques ou lista
+  // filtrada) sem se preocupar com debounce — usada tanto no caminho
+  // com debounce (digitação) quanto no caminho imediato (Enter/lupa).
+  async function renderSearchResults(query) {
+    const q = query.trim();
+
+    if (q.length === 0) {
+      renderResultsList(ALL_NEWS.slice(0, 6), "Nenhum resultado.");
+      return;
+    }
+    if (q.length < SEARCH_MIN_CHARS) {
+      searchResults.innerHTML = `<p id="search-hint">Digite pelo menos ${SEARCH_MIN_CHARS} caracteres para buscar…</p>`;
       return;
     }
 
-    searchResults.innerHTML = list.slice(0, 8).map(n => `
-      <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
-        <span class="font-mono text-[9px] font-semibold shrink-0 px-2 py-1" style="background: var(--${n.slug}); color:#12141A;">${n.gameLabel.toUpperCase()}</span>
-        <span class="text-[13px] leading-snug line-clamp-2 flex-1">${n.title}</span>
-      </a>
-    `).join("");
+    const results = await queryNews(q);
+    renderResultsList(results, `Nenhum resultado para "${q}".`);
+  }
+
+  // Versão com debounce: é a chamada em cada input do usuário.
+  const renderSearchResultsDebounced = debounce(renderSearchResults, SEARCH_DEBOUNCE_MS);
+
+  // Dispara a busca "na hora", ignorando debounce — usada no Enter
+  // e no clique do ícone de lupa.
+  function triggerImmediateSearch() {
+    renderSearchResults(searchInput.value);
   }
 
   function openModal(overlay) {
@@ -703,7 +861,15 @@
     });
   });
   document.querySelector(".js-close-search").addEventListener("click", () => closeModal(searchOverlay));
-  searchInput.addEventListener("input", (e) => renderSearchResults(e.target.value));
+
+  searchInput.addEventListener("input", (e) => renderSearchResultsDebounced(e.target.value));
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      triggerImmediateSearch();
+    }
+  });
+  searchSubmitBtn.addEventListener("click", triggerImmediateSearch);
   searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeModal(searchOverlay); });
 
   // ===============================================================
@@ -957,6 +1123,138 @@
       closeUserDropdown();
     }
   });
+
+  // ===============================================================
+  // NAVEGAÇÃO POR CATEGORIA + ESTADO ATIVO (barra deslizante no
+  // desktop, acento colorido no mobile) — tudo integrado num só lugar:
+  //   1) clique num link com [data-filter] filtra os cards (fade)
+  //   2) o link correspondente (desktop E mobile) fica marcado .active
+  //   3) a URL reflete o filtro (?cat=...), com suporte a voltar/avançar
+  //   4) o título da seção "Destaques do Dia" muda pra refletir o filtro
+  // Depende de `currentCategoryFilter` e `refreshCardVisibility()`,
+  // já declarados mais acima junto com os cards.
+  // ===============================================================
+  (function initCategoryNav() {
+    const desktopNav = document.getElementById("nav-desktop");
+    const indicator = document.getElementById("nav-indicator");
+    const filterLinks = Array.from(document.querySelectorAll("[data-filter]")); // desktop + mobile
+    const desktopLinks = desktopNav ? Array.from(desktopNav.querySelectorAll(".nav-link")) : [];
+    const highlightsTitle = document.getElementById("highlights-title");
+    if (filterLinks.length === 0) return;
+
+    const CATEGORY_TITLE_HTML = {
+      todos: 'Destaques <span style="color: var(--valorant);">do Dia</span>',
+      campeonatos: 'Notícias de <span style="color: var(--valorant);">Campeonatos</span>',
+      lancamentos: 'Notícias de <span style="color: var(--valorant);">Lançamentos</span>',
+      reviews: 'Notícias de <span style="color: var(--valorant);">Reviews</span>',
+      agenda: 'Notícias sobre a <span style="color: var(--valorant);">Agenda</span>',
+    };
+
+    function moveIndicatorTo(el) {
+      if (!indicator || !desktopNav) return;
+      if (!el) { indicator.classList.remove("is-visible"); return; }
+      const navRect = desktopNav.getBoundingClientRect();
+      const linkRect = el.getBoundingClientRect();
+      indicator.style.left = (linkRect.left - navRect.left) + "px";
+      indicator.style.width = linkRect.width + "px";
+      indicator.classList.add("is-visible");
+    }
+
+    function getActiveDesktopLink() {
+      return desktopNav ? (desktopNav.querySelector(".nav-link.active") || desktopLinks[0]) : null;
+    }
+
+    // Aplica a classe .active em TODOS os links que apontam pra essa
+    // categoria (desktop e mobile ficam sempre em sincronia).
+    function markActiveLinks(filterKey) {
+      filterLinks.forEach((link) => link.classList.toggle("active", link.dataset.filter === filterKey));
+      moveIndicatorTo(getActiveDesktopLink());
+    }
+
+    // Dá um destaque temporário (glow na borda) no widget de agenda,
+    // pra deixar claro que o clique em "AGENDA" levou o usuário até ali.
+    function pulseAgendaWidget() {
+      const widget = document.getElementById("agenda-widget");
+      if (!widget) return;
+      widget.style.transition = "box-shadow .3s ease, border-color .3s ease";
+      widget.style.boxShadow = "0 0 0 1px var(--valorant), 0 0 24px -4px var(--valorant)";
+      widget.style.borderColor = "var(--valorant)";
+      setTimeout(() => {
+        widget.style.boxShadow = "";
+        widget.style.borderColor = "";
+      }, 1200);
+    }
+
+    // Função central: estado + cards (fade) + links ativos + título + URL.
+    //
+    // "agenda" é um caso especial: não existe (nem faria sentido existir)
+    // notícia com category:"agenda" — agenda é sobre PARTIDAS (o array
+    // `matches` de cada jogo), não sobre notícias. Por isso, ao clicar em
+    // AGENDA, os cards NÃO são filtrados (continuam mostrando tudo); em
+    // vez disso a página rola até o widget "AGENDA DA SEMANA" da sidebar,
+    // que é o conteúdo correto pra essa aba.
+    function setActiveCategory(filterKey, { pushHistory = true } = {}) {
+      if (!CATEGORY_TITLE_HTML[filterKey]) filterKey = "todos";
+      const isAgenda = filterKey === "agenda";
+
+      currentCategoryFilter = isAgenda ? "todos" : filterKey;
+      refreshCardVisibility();
+      markActiveLinks(filterKey);
+      if (highlightsTitle) highlightsTitle.innerHTML = CATEGORY_TITLE_HTML[isAgenda ? "todos" : filterKey];
+
+      if (pushHistory) {
+        const url = new URL(window.location.href);
+        if (filterKey === "todos") url.searchParams.delete("cat");
+        else url.searchParams.set("cat", filterKey);
+        window.history.pushState({ cat: filterKey }, "", url);
+
+        // Rola até o destino certo (agenda -> widget da sidebar; demais
+        // categorias -> grade de notícias) só numa ação real do usuário
+        // (não no carregamento inicial da página).
+        if (isAgenda) {
+          document.getElementById("agenda-widget")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          pulseAgendaWidget();
+        } else {
+          document.getElementById("highlights-grid")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    }
+
+    // Clique nos links com data-filter -> filtra dinamicamente em vez
+    // de navegar de forma estática para "#".
+    filterLinks.forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        setActiveCategory(link.dataset.filter);
+      });
+    });
+
+    // Preview da barra no hover (só faz sentido no desktop, a barra
+    // deslizante não existe no menu mobile).
+    desktopLinks.forEach((link) => {
+      link.addEventListener("mouseenter", () => moveIndicatorTo(link));
+    });
+    if (desktopNav) {
+      desktopNav.addEventListener("mouseleave", () => moveIndicatorTo(getActiveDesktopLink()));
+    }
+
+    // Botão voltar/avançar do navegador -> reaplica o filtro da URL
+    // sem empilhar uma nova entrada no histórico.
+    window.addEventListener("popstate", () => {
+      const cat = new URLSearchParams(window.location.search).get("cat") || "todos";
+      setActiveCategory(cat, { pushHistory: false });
+    });
+
+    // Estado inicial: respeita ?cat= na URL, permitindo compartilhar
+    // um link direto já filtrado (ex.: index.html?cat=reviews).
+    const initialCat = new URLSearchParams(window.location.search).get("cat") || "todos";
+    setActiveCategory(initialCat, { pushHistory: false });
+
+    // Reposiciona a barra quando a janela muda de tamanho ou quando a
+    // fonte termina de carregar (medidas de texto podem mudar).
+    window.addEventListener("resize", () => moveIndicatorTo(getActiveDesktopLink()));
+    window.addEventListener("load", () => moveIndicatorTo(getActiveDesktopLink()));
+  })();
 </script>
 
 </body>
