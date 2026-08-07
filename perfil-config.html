@@ -80,7 +80,7 @@
 
   /* ===== BANNER + AVATAR ===== */
   #banner-preview{
-    height:150px; position:relative; border:1px solid var(--border);
+    height:150px; position:relative; border:1px solid var(--border); overflow:hidden;
     background-size: cover; background-position:center; transition: background .2s ease;
   }
   .banner-mode-btn{
@@ -128,7 +128,48 @@
     background: var(--panel); border:1px solid var(--border); overflow:hidden;
     box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   }
-  #preview-banner{ height:90px; background-size:cover; background-position:center; transition: background .2s ease; }
+  #preview-banner{ height:90px; position:relative; overflow:hidden; background-size:cover; background-position:center; transition: background .2s ease; }
+
+  /* ===== BANNERS ANIMADOS DA LOJA — mesma arte de loja.html, aplicada de
+     verdade quando o item é equipado (antes virava um degradê estático). ===== */
+  .fx-vaporwave{ background: linear-gradient(180deg, #2B1055 0%, #6B2A8C 45%, #C23C7E 100%); }
+  .fx-sun{
+    position:absolute; left:50%; bottom:14%; border-radius:9999px;
+    transform:translateX(-50%); background: linear-gradient(180deg,#FFD166,#FF4655);
+    box-shadow:0 0 26px rgba(255,209,102,.6);
+  }
+  .fx-gridline{ position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,.35); animation: fx-grid-move 2.2s linear infinite; }
+  @keyframes fx-grid-move{ 0%{ transform: translateY(0); opacity:.6; } 100%{ transform: translateY(14px); opacity:0; } }
+
+  .fx-nebulosa{
+    background:
+      radial-gradient(circle at 20% 30%, rgba(139,92,246,.55), transparent 45%),
+      radial-gradient(circle at 75% 60%, rgba(34,211,238,.4), transparent 50%),
+      linear-gradient(135deg, #1B1030, #10131C 70%);
+  }
+  .fx-star{ position:absolute; width:3px; height:3px; border-radius:9999px; background:#fff; animation: fx-twinkle 2.4s ease-in-out infinite; }
+  @keyframes fx-twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+
+  .fx-tempestade{ background: linear-gradient(160deg, #0B1220, #1B1030 70%); }
+  .fx-bolt{ position:absolute; top:6%; width:2px; background:#fff; opacity:0; filter: drop-shadow(0 0 6px #8B5CF6); animation: fx-flash 3.2s infinite; }
+  @keyframes fx-flash{ 0%,88%,100%{ opacity:0; } 89%{ opacity:1; } 90%{ opacity:.15; } 91%{ opacity:1; } 93%{ opacity:0; } }
+
+  .fx-campeao{ background: linear-gradient(135deg, #3A2508, #171006 70%); display:flex; align-items:center; justify-content:center; }
+  .fx-trophy{ font-size:34px; filter: drop-shadow(0 0 10px rgba(245,196,83,.6)); }
+  .fx-confetti{ position:absolute; top:-10%; width:6px; height:10px; animation: fx-fall linear infinite; }
+  @keyframes fx-fall{ 0%{ transform: translateY(-20%) rotate(0deg); opacity:0; } 10%{ opacity:1; } 100%{ transform: translateY(260%) rotate(360deg); opacity:0; } }
+
+  /* O sol/troféu precisam de um tamanho diferente no editor grande (150px de
+     altura) e no card de prévia menor (90px), senão fica desproporcional. */
+  #banner-preview .fx-sun{ width:70px; height:70px; }
+  #preview-banner .fx-sun{ width:46px; height:46px; }
+  #banner-preview .fx-trophy{ font-size:44px; }
+  #preview-banner .fx-trophy{ font-size:30px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .fx-gridline, .fx-star, .fx-bolt, .fx-confetti{ animation:none; }
+  }
+  body.reduce-motion .fx-gridline, body.reduce-motion .fx-star, body.reduce-motion .fx-bolt, body.reduce-motion .fx-confetti{ animation:none; }
   .preview-avatar-frame-wrap{ position:relative; width:76px; height:76px; margin-top:-42px; margin-left:16px; }
   #preview-avatar-frame{
     position:relative; width:76px; height:76px; border-radius:9999px; border:5px solid var(--panel);
@@ -932,17 +973,76 @@
     return profile.bannerColor;
   }
 
+  // Banners "premium" da loja (vaporwave, nebulosa, tempestade, campeão) não são
+  // um simples degradê: no card de venda eles têm sol, grade animada, estrelas
+  // piscando, raios ou confete. Esse mapa liga o ID do item comprado à classe
+  // CSS + markup que recriam a MESMA arte animada aqui no perfil.
+  const SPECIAL_BANNER_FX = {
+    "banner-perfil-vaporwave": "fx-vaporwave",
+    "banner-perfil-nebulosa": "fx-nebulosa",
+    "banner-perfil-tempestade": "fx-tempestade",
+    "banner-perfil-campeao": "fx-campeao",
+  };
+
+  function bannerFxMarkup(fxClass) {
+    if (fxClass === "fx-vaporwave") {
+      const lines = Array.from({ length: 5 }).map((_, i) =>
+        `<span class="fx-gridline" style="bottom:${8 + i * 9}%; animation-delay:${(i * 0.3).toFixed(2)}s;"></span>`
+      ).join("");
+      return `<div class="fx-sun"></div>${lines}`;
+    }
+    if (fxClass === "fx-nebulosa") {
+      return Array.from({ length: 14 }).map(() => {
+        const top = (Math.random() * 100).toFixed(1);
+        const left = (Math.random() * 100).toFixed(1);
+        const delay = (Math.random() * 2).toFixed(2);
+        return `<span class="fx-star" style="top:${top}%; left:${left}%; animation-delay:${delay}s;"></span>`;
+      }).join("");
+    }
+    if (fxClass === "fx-tempestade") {
+      return Array.from({ length: 3 }).map((_, i) => {
+        const left = (18 + i * 30).toFixed(0);
+        const height = (36 + Math.random() * 26).toFixed(0);
+        const delay = (i * 0.55).toFixed(2);
+        return `<span class="fx-bolt" style="left:${left}%; height:${height}px; animation-delay:${delay}s;"></span>`;
+      }).join("");
+    }
+    if (fxClass === "fx-campeao") {
+      const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
+      const confetti = Array.from({ length: 16 }).map((_, i) => {
+        const left = (Math.random() * 100).toFixed(1);
+        const dur = (1.6 + Math.random() * 1.4).toFixed(2);
+        const delay = (Math.random() * 2).toFixed(2);
+        return `<span class="fx-confetti" style="left:${left}%; background:${colors[i % colors.length]}; animation-duration:${dur}s; animation-delay:${delay}s;"></span>`;
+      }).join("");
+      return `${confetti}<span class="fx-trophy">🏆</span>`;
+    }
+    return "";
+  }
+
   function render() {
     const bannerCss = computeBannerCss(draftProfile);
     const isImageUrl = draftProfile.bannerMode === "image" && draftProfile.bannerImage;
     const isGradient = draftProfile.bannerMode === "gradient";
+    const fxClass = SPECIAL_BANNER_FX[draftProfile.equippedBannerId];
     [bannerPreview, previewBanner].forEach(el => {
-      // Cada modo mexe apenas nas propriedades que precisa, evitando que uma
-      // sobrescreva o que a outra acabou de setar (era isso que zerava o degradê).
-      el.style.backgroundColor = isImageUrl ? "var(--panel-2)" : (isGradient ? "transparent" : bannerCss);
-      el.style.backgroundImage = (isImageUrl || isGradient) ? bannerCss : "none";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
+      Object.values(SPECIAL_BANNER_FX).forEach(c => el.classList.remove(c));
+      if (fxClass) {
+        // Banner especial da loja: recria a arte animada de verdade em vez de
+        // um degradê estático parado.
+        el.classList.add(fxClass);
+        el.style.backgroundColor = "";
+        el.style.backgroundImage = "";
+        el.innerHTML = bannerFxMarkup(fxClass);
+      } else {
+        // Cada modo mexe apenas nas propriedades que precisa, evitando que uma
+        // sobrescreva o que a outra acabou de setar (era isso que zerava o degradê).
+        el.innerHTML = "";
+        el.style.backgroundColor = isImageUrl ? "var(--panel-2)" : (isGradient ? "transparent" : bannerCss);
+        el.style.backgroundImage = (isImageUrl || isGradient) ? bannerCss : "none";
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+      }
     });
 
     const avatarSrc = draftProfile.avatar || "https://placehold.co/200x200/1B1F28/D7DAE1?text=" + (draftProfile.displayName[0] || "U").toUpperCase();
