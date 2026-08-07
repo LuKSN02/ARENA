@@ -194,6 +194,15 @@
   .modal-input:focus{ outline:none; border-color: var(--valorant); }
   #search-results a:last-child{ border-bottom: none; }
   #login-error, #signup-error{ color: var(--valorant); }
+
+  /* Efeito de Nome RGB — item comprável na Loja Arena (efeito-nome-arena-rgb). */
+  .name-rgb-effect{
+    background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameRgbAnim 3.5s linear infinite;
+  }
+  @keyframes nameRgbAnim{ to{ background-position: 300% 0; } }
 </style>
 </head>
 <body>
@@ -950,8 +959,11 @@
     const displayName = profile?.displayName || userName;
     document.getElementById("user-avatar-img").src = avatarSrc;
     document.getElementById("user-avatar-img-mobile").src = avatarSrc;
+    const hasNameEffect = profile?.equippedNameEffect === "efeito-nome-arena-rgb";
     document.getElementById("user-menu-name").textContent = displayName.toUpperCase();
     document.getElementById("user-menu-name-mobile").textContent = displayName;
+    document.getElementById("user-menu-name").classList.toggle("name-rgb-effect", hasNameEffect);
+    document.getElementById("user-menu-name-mobile").classList.toggle("name-rgb-effect", hasNameEffect);
 
     // Emblemas equipados (definidos em inventario.html) — um mini-cluster
     // grudado no avatar e a lista completa no topo do dropdown.

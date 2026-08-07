@@ -6,7 +6,7 @@
 <title>Configurações do Perfil — Arena</title>
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #14171E;
@@ -176,6 +176,17 @@
     padding:8px 16px; border:1px solid var(--border); color: var(--muted); background:transparent; cursor:pointer;
   }
   .fontsize-btn.active{ border-color: var(--discord-blurple); color: var(--ink); background: color-mix(in srgb, var(--discord-blurple) 16%, transparent); }
+
+  /* Efeito de Nome RGB — item comprável na Loja Arena (efeito-nome-arena-rgb).
+     Mesmo degradê animado usado no preview de loja.html; aqui é aplicado de
+     verdade no nome de exibição quando profile.equippedNameEffect === o id do item. */
+  .name-rgb-effect{
+    background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameRgbAnim 3.5s linear infinite;
+  }
+  @keyframes nameRgbAnim{ to{ background-position: 300% 0; } }
   #appearance-text-sample.fs-pequena{ font-size:12px; }
   #appearance-text-sample.fs-padrao{ font-size:14px; }
   #appearance-text-sample.fs-grande{ font-size:17px; }
@@ -751,6 +762,7 @@
     equippedBannerId: null,
     equippedBadges: [], // [{id, emoji, name, rarity}] — escrito por inventario.html
     equippedFrame: null, // id de AVATAR_FRAMES
+    equippedNameEffect: null, // id do item comprado na Loja Arena (ex: "efeito-nome-arena-rgb")
     status: { emoji: "", text: "", expiry: "never" },
     showcase: [], // até 3 ids de ACHIEVEMENTS
   };
@@ -846,9 +858,12 @@
   function render() {
     const bannerCss = computeBannerCss(draftProfile);
     const isImageUrl = draftProfile.bannerMode === "image" && draftProfile.bannerImage;
+    const isGradient = draftProfile.bannerMode === "gradient";
     [bannerPreview, previewBanner].forEach(el => {
-      el.style.background = isImageUrl ? "var(--panel-2)" : bannerCss;
-      el.style.backgroundImage = isImageUrl ? bannerCss : "none";
+      // Cada modo mexe apenas nas propriedades que precisa, evitando que uma
+      // sobrescreva o que a outra acabou de setar (era isso que zerava o degradê).
+      el.style.backgroundColor = isImageUrl ? "var(--panel-2)" : (isGradient ? "transparent" : bannerCss);
+      el.style.backgroundImage = (isImageUrl || isGradient) ? bannerCss : "none";
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
     });
@@ -863,6 +878,7 @@
     bioCharCount.textContent = draftProfile.bio.length;
 
     previewDisplayName.textContent = draftProfile.displayName || "Nome de Exibição";
+    previewDisplayName.classList.toggle("name-rgb-effect", draftProfile.equippedNameEffect === "efeito-nome-arena-rgb");
     renderEquippedBadges();
     renderFrames();
     renderStatus();

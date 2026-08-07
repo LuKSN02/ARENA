@@ -242,6 +242,15 @@
   }
   @keyframes dprev-rgb{ to{ background-position: 300% 0; } }
 
+  /* Mesmo efeito, mas aplicado de verdade ao nome na navbar quando o item
+     está equipado (dprev-nameeffect acima é só a prévia dentro do card). */
+  .name-rgb-effect{
+    background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: dprev-rgb 3.5s linear infinite;
+  }
+
   .coupon-card{
     background: linear-gradient(135deg, #20242F, var(--panel));
     border:1px solid var(--valorant);
@@ -910,8 +919,11 @@
     const displayName = profile?.displayName || userName;
     document.getElementById("user-avatar-img").src = avatarSrc;
     document.getElementById("user-avatar-img-mobile").src = avatarSrc;
+    const hasNameEffect = profile?.equippedNameEffect === "efeito-nome-arena-rgb";
     document.getElementById("user-menu-name").textContent = displayName.toUpperCase();
     document.getElementById("user-menu-name-mobile").textContent = displayName;
+    document.getElementById("user-menu-name").classList.toggle("name-rgb-effect", hasNameEffect);
+    document.getElementById("user-menu-name-mobile").classList.toggle("name-rgb-effect", hasNameEffect);
 
     const badges = profile?.equippedBadges || [];
     document.getElementById("nav-badges").innerHTML = badges.map(b => `
@@ -1671,6 +1683,9 @@
     function processCheckoutPayment() {
       const equippedNames = grantDigitalPurchases();
       const gotDigitalCosmetic = equippedNames.length > 0;
+      // Reflete na hora o item recém-equipado (moldura/banner/emblema/nome RGB)
+      // na navbar, sem precisar recarregar a página.
+      if (gotDigitalCosmetic && isLoggedIn) applyProfileToNav();
 
       document.getElementById("checkout-success-msg").textContent = cartHasPhysical()
         ? "Seu pedido foi confirmado e já está sendo preparado para envio."
