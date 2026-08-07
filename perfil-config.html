@@ -8,6 +8,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
+  /* ===== TRANSIÇÃO ENTRE PÁGINAS (estilo Discord: crossfade + leve subida) ===== */
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
   :root{
     --bg: #14171E;
     --panel: #1B1F28;
@@ -47,6 +58,25 @@
     font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:600; letter-spacing:.06em;
     color: var(--muted); padding: 14px 14px 6px;
   }
+
+  /* ===== ANIMAÇÃO DE TROCA DE ABA (estilo Discord: fade + leve subida) =====
+     O painel .settings-tab só existe visível no DOM quando não tem .hidden.
+     Voltar de display:none pra visível reinicia a animação CSS sozinho —
+     não precisa de JS pra "replayar" nada. */
+  .settings-tab{ animation: settingsTabIn .18s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes settingsTabIn{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform:none; }
+  }
+  body.reduce-motion .settings-tab{ animation:none; }
+  @media (prefers-reduced-motion: reduce){ .settings-tab{ animation:none; } }
+
+  /* Item ativo da sidebar ganha uma leve "mola" ao ser clicado, como os
+     ícones de servidor do Discord — reforça que algo trocou. */
+  .settings-nav-item{ transform: translateX(0); }
+  .settings-nav-item.active{ animation: navItemPop .16s ease; }
+  @keyframes navItemPop{ from{ transform: translateX(-3px); } to{ transform: translateX(0); } }
+  body.reduce-motion .settings-nav-item.active{ animation:none; }
 
   /* ===== BANNER + AVATAR ===== */
   #banner-preview{

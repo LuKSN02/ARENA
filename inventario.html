@@ -8,6 +8,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
+  /* ===== TRANSIÇÃO ENTRE PÁGINAS (estilo Discord: crossfade + leve subida) ===== */
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
   :root{
     --bg: #14171E;
     --panel: #1B1F28;
@@ -43,8 +54,12 @@
   .item-card{
     background: var(--panel); border:1px solid var(--border); overflow:hidden;
     display:flex; flex-direction:column; transition: transform .15s ease, box-shadow .15s ease;
+    animation: itemCardIn .22s cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: var(--card-delay, 0s);
   }
   .item-card:hover{ transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.35); }
+  @keyframes itemCardIn{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .item-card{ animation:none; } }
   .item-swatch{ height:88px; position:relative; }
   .item-swatch.emblema-swatch{ display:flex; align-items:center; justify-content:center; font-size:34px; background: var(--panel-2); }
   /* Moldura Cyber (Digital) — mesmo anel giratório usado em perfil-config.html */
@@ -684,7 +699,8 @@
     document.getElementById("empty-state").classList.toggle("show", visible.length === 0);
     grid.classList.toggle("hidden", visible.length === 0);
 
-    grid.innerHTML = visible.map(item => {
+    grid.innerHTML = visible.map((item, idx) => {
+      const cardDelay = `style="--card-delay:${Math.min(idx * 0.03, 0.3)}s"`;
       const state = ownedState(item.id);
       const rarityChip = `<span class="rarity-chip" style="background:${RARITY_COLOR[item.rarity]};">${RARITY_LABEL[item.rarity]}</span>`;
 
@@ -706,7 +722,7 @@
           : `<div class="lock-req mt-1">${item.unlock.label}</div>`;
 
         return `
-          <div class="item-card clip-card locked">
+          <div class="item-card clip-card locked" ${cardDelay}>
             <div class="relative">${swatch}${rarityChip}<div class="lock-overlay">🔒</div></div>
             <div class="item-body">
               <div class="item-name">${item.name}</div>
@@ -738,7 +754,7 @@
       }
 
       return `
-        <div class="item-card clip-card">
+        <div class="item-card clip-card" ${cardDelay}>
           <div class="relative">${swatch}${rarityChip}${equippedChip}</div>
           <div class="item-body">
             <div class="item-name">${item.name}</div>

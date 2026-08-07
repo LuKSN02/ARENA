@@ -9,6 +9,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+  /* ===== TRANSIÇÃO ENTRE PÁGINAS (estilo Discord: crossfade + leve subida) ===== */
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
   :root{
     --bg: #14171E;
     --panel: #1B1F28;
@@ -34,6 +45,50 @@
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
+
+  /* ===================================================== */
+  /* INTRO DE CARREGAMENTO — splash da logo ao entrar no    */
+  /* site, no estilo "app abrindo" (Discord etc). A logo    */
+  /* aparece com um leve zoom+blur e some em seguida,       */
+  /* revelando o site por trás.                             */
+  /* ===================================================== */
+  body.intro-active{ overflow:hidden; }
+  #site-intro{
+    position:fixed; inset:0; z-index:9999;
+    background: var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    transition: opacity .55s ease;
+  }
+  #site-intro.is-hiding{ opacity:0; pointer-events:none; }
+  #site-intro-glow{
+    position:absolute; width:280px; height:280px; border-radius:9999px;
+    background: radial-gradient(circle, var(--valorant-glow) 0%, transparent 70%);
+    opacity:0; animation: introGlowIn 1.8s ease-out forwards;
+  }
+  #site-intro-logo{
+    position:relative; font-size:56px; font-weight:700; letter-spacing:1px; color: var(--ink);
+    opacity:0; transform: scale(.82); filter: blur(6px);
+    animation: introLogoIn 900ms cubic-bezier(.2,.8,.2,1) forwards,
+               introLogoOut 1200ms ease-in-out 1000ms forwards;
+  }
+  @keyframes introLogoIn{
+    0%{ opacity:0; transform: scale(.82); filter: blur(6px); }
+    60%{ opacity:1; transform: scale(1.05); filter: blur(0); }
+    100%{ opacity:1; transform: scale(1); filter: blur(0); }
+  }
+  @keyframes introLogoOut{
+    0%{ opacity:1; transform: scale(1); }
+    100%{ opacity:0; transform: scale(1.08); }
+  }
+  @keyframes introGlowIn{
+    0%{ opacity:0; transform: scale(.6); }
+    50%{ opacity:1; transform: scale(1); }
+    100%{ opacity:0; transform: scale(1.3); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #site-intro-logo{ animation: none; opacity:1; transform:none; filter:none; }
+    #site-intro-glow{ display:none; }
+  }
   .font-mono{ font-family:'JetBrains Mono', monospace; }
 
   .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
@@ -220,6 +275,38 @@
 </style>
 </head>
 <body>
+
+<!-- ===================================================== -->
+<!-- INTRO DE CARREGAMENTO — logo ARENA aparecendo/sumindo   -->
+<!-- ao entrar no site (mostra 1x por sessão do navegador). -->
+<!-- ===================================================== -->
+<div id="site-intro" aria-hidden="true">
+  <div id="site-intro-glow"></div>
+  <div id="site-intro-logo" class="font-display">ARENA<span style="color:#FF4655;">.</span></div>
+</div>
+<script>
+  (function(){
+    var intro = document.getElementById("site-intro");
+    if (!intro) return;
+    // Mostra só uma vez por sessão de navegador, pra não repetir
+    // toda vez que o usuário navega de volta pra home.
+    try {
+      if (sessionStorage.getItem("arena-intro-shown")) {
+        intro.remove();
+        return;
+      }
+      sessionStorage.setItem("arena-intro-shown", "1");
+    } catch (err) { /* segue sem sessionStorage (ex: modo privado bloqueado) */ }
+
+    document.body.classList.add("intro-active");
+    var hideDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 500 : 2150;
+    setTimeout(function(){
+      intro.classList.add("is-hiding");
+      document.body.classList.remove("intro-active");
+    }, hideDelay);
+    intro.addEventListener("transitionend", function(){ intro.remove(); });
+  })();
+</script>
 
 <!-- ===================================================== -->
 <!-- CABEÇALHO / NAVBAR (fixo no topo)                       -->
