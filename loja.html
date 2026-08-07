@@ -1593,6 +1593,19 @@
       showShopToast("✓ CÓDIGO PIX COPIADO");
     });
 
+    // Valores visuais dos itens digitais — precisam bater exatamente com o
+    // que inventario.html cadastra no CATALOG para o mesmo id, senão
+    // perfil-config.html não sabe como desenhar o item.
+    const SHOP_FRAME_COLOR = {
+      "moldura-cyber-digital": "#FF4655",
+      "moldura-ouro-elite": "#F59E0B",
+      "moldura-neon-glitch": "#22D3EE",
+    };
+    const SHOP_BANNER_GRADIENT = {
+      "banner-perfil-nebulosa": "linear-gradient(135deg,#5865F2,#22D3EE)",
+      "banner-perfil-campeao": "linear-gradient(135deg,#F59E0B,#FF4655)",
+    };
+
     function grantDigitalPurchases() {
       const digitalProducts = cartDigitalProducts();
       if (digitalProducts.length === 0) return [];
@@ -1614,18 +1627,32 @@
             inv.push(entry);
           }
 
-          // Itens de personalização de perfil já são equipados automaticamente na compra.
+          // Itens de personalização de perfil já são equipados automaticamente na
+          // compra — usando os MESMOS campos que inventario.html grava ao equipar
+          // manualmente (equippedFrame / bannerMode+bannerGradient+equippedBannerId /
+          // equippedBadges), pra perfil-config.html e a navbar refletirem na hora.
           if (p.id.startsWith("moldura-")) {
+            // Só uma moldura equipada por vez.
+            inv.filter(i => i.id.startsWith("moldura-")).forEach(i => i.equipped = false);
             entry.equipped = true;
             profile.equippedFrame = p.id;
             equippedNames.push(p.name);
           } else if (p.id.startsWith("banner-perfil-")) {
+            // Só um banner equipado por vez.
+            inv.filter(i => i.id.startsWith("banner-perfil-")).forEach(i => i.equipped = false);
             entry.equipped = true;
-            profile.equippedBanner = p.id;
+            profile.bannerMode = "gradient";
+            profile.bannerGradient = SHOP_BANNER_GRADIENT[p.id];
+            profile.bannerColor = undefined;
+            profile.equippedBannerId = p.id;
             equippedNames.push(p.name);
           } else if (p.id === "emblema-arena-vip") {
             entry.equipped = true;
-            profile.equippedBadge = p.id;
+            const badges = Array.isArray(profile.equippedBadges) ? profile.equippedBadges.slice() : [];
+            if (!badges.some(b => b.id === p.id)) {
+              badges.push({ id: p.id, emoji: "👑", name: p.name, rarity: "lendario" });
+            }
+            profile.equippedBadges = badges;
             equippedNames.push(p.name);
           } else if (p.id === "efeito-nome-arena-rgb") {
             entry.equipped = true;

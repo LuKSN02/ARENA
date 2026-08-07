@@ -689,15 +689,23 @@
   // inventario.html e a loja usam). Diferente das molduras acima,
   // é `animated:true`, então recebe o anel giratório em vez de cor sólida.
   // ---------------------------------------------------------------
-  function ownsCyberFrame() {
+  function ownsShopItem(itemId) {
     try {
       const raw = localStorage.getItem(`arena-inventory-${sessionEmail || "demo"}`);
       const inv = raw ? JSON.parse(raw) : [];
-      return inv.some(i => i.id === "moldura-cyber-digital");
+      return inv.some(i => i.id === itemId);
     } catch (err) { return false; }
   }
-  if (ownsCyberFrame()) {
+  if (ownsShopItem("moldura-cyber-digital")) {
     AVATAR_FRAMES.push({ id: "moldura-cyber-digital", label: "Cyber", color: "#FF4655", animated: true });
+  }
+  // Molduras "Ouro Elite" e "Neon Glitch" também vêm da Loja Arena —
+  // mesma lógica da Cyber acima, só que sem o anel animado.
+  if (ownsShopItem("moldura-ouro-elite")) {
+    AVATAR_FRAMES.push({ id: "moldura-ouro-elite", label: "Ouro Elite", color: "#F59E0B" });
+  }
+  if (ownsShopItem("moldura-neon-glitch")) {
+    AVATAR_FRAMES.push({ id: "moldura-neon-glitch", label: "Neon Glitch", color: "#22D3EE" });
   }
 
   // Conquistas disponíveis pra vitrine (demo — em produção viriam do
