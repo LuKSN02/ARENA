@@ -266,6 +266,14 @@
   .dprev-gridline{ position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,.35); animation: dprev-grid-move 2.2s linear infinite; }
   @keyframes dprev-grid-move{ 0%{ transform: translateY(0); opacity:.6; } 100%{ transform: translateY(14px); opacity:0; } }
 
+  .dprev-banner.banner-oceano{ background: linear-gradient(180deg,#0B3B66 0%,#0EA5E9 100%); }
+  .dprev-bubble{ position:absolute; bottom:-10%; border-radius:9999px; background:rgba(255,255,255,.55); animation: dprev-bubble-rise linear infinite; }
+  @keyframes dprev-bubble-rise{ from{ transform: translateY(0); opacity:.8; } to{ transform: translateY(-120%); opacity:0; } }
+
+  .dprev-banner.banner-aurora{ background: linear-gradient(180deg,#0B1220 0%,#0F2E22 55%,#0B1220 100%); }
+  .dprev-auroraband{ position:absolute; top:-20%; bottom:-20%; width:22%; filter: blur(6px); opacity:.55; animation: dprev-aurora-sway 3.6s ease-in-out infinite; }
+  @keyframes dprev-aurora-sway{ 0%,100%{ transform: translateX(0) skewX(-8deg); } 50%{ transform: translateX(10%) skewX(6deg); } }
+
   /* Emblema / badge de perfil */
   .dprev-badge{
     width:58%; aspect-ratio:1/1; max-width:110px;
@@ -1145,16 +1153,25 @@
       { id: "moletom-arena-cinza",   name: "Moletom Arena Cinza",      desc: "Moletom canguru flanelado, forro felpudo, capuz reforçado.", price: 149.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Moletom", featured: true, badge: "LANÇAMENTO" },
       { id: "jaqueta-arena-corta-vento", name: "Jaqueta Arena Corta-Vento", desc: "Tecido impermeável leve, zíper YKK, logo refletivo nas costas.", price: 179.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Jaqueta" },
       { id: "meia-arena-pro",        name: "Meia Arena Pro (par)",     desc: "Cano médio, compressão leve, respirável para maratonas de jogo.", price: 24.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Meia" },
+      { id: "camiseta-arena-branca",  name: "Camiseta Arena Branca",    desc: "100% algodão, corte unissex, estampa nas costas.",         price: 89.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Camiseta" },
+      { id: "regata-arena-performance", name: "Regata Arena Performance", desc: "Tecido dry-fit leve, ideal para treino ou dia a dia.",   price: 74.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Regata" },
+      { id: "shorts-arena-training",  name: "Shorts Arena Training",   desc: "Elástico ajustável, bolsos com zíper, tecido respirável.",  price: 79.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Shorts" },
 
       // ---- CASA ----
       { id: "caneca-arena-neon",     name: "Caneca Arena Neon",        desc: "Cerâmica 325ml com acabamento neon.",                      price: 49.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Caneca" },
       { id: "luminaria-arena-logo",  name: "Luminária Arena LED",      desc: "Logo recortado em acrílico com base USB e efeito neon.",  price: 89.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Lumin%C3%A1ria" },
       { id: "almofada-arena",        name: "Almofada Arena 45x45",     desc: "Estampa dupla-face, enchimento antialérgico.",             price: 59.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Almofada" },
+      { id: "tapete-arena-gamer",    name: "Tapete Arena Gamer",       desc: "Base emborrachada antiderrapante, 60x40cm, logo em relevo.", price: 69.90, tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Tapete" },
+      { id: "squeeze-arena-termico", name: "Squeeze Arena Térmico",    desc: "Aço inox 500ml, mantém a temperatura por até 12h.",        price: 54.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Squeeze" },
+      { id: "porta-copo-arena-led",  name: "Porta-Copo Arena LED",     desc: "Base com luz de presença, logo iluminado ao apoiar o copo.", price: 39.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Porta-Copo" },
 
       // ---- SETUP ----
       { id: "mousepad-arena-xl",     name: "Mousepad Arena XL",        desc: "90x40cm, base emborrachada antiderrapante, costura reforçada.", price: 59.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Mousepad" },
       { id: "apoio-punho-arena",     name: "Apoio de Punho Arena",     desc: "Espuma viscoelástica, base antiderrapante para teclado e mouse.", price: 34.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Apoio" },
       { id: "suporte-headset-arena", name: "Suporte de Headset Arena", desc: "Base em metal com braço giratório e organizador de cabos.", price: 79.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Suporte" },
+      { id: "organizador-cabos-arena", name: "Organizador de Cabos Arena", desc: "Kit com 8 clipes adesivos para manter a mesa livre de fiação.", price: 29.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Cabos" },
+      { id: "suporte-notebook-arena", name: "Suporte para Notebook Arena", desc: "Alumínio dobrável, 6 níveis de altura, ventilação por baixo.", price: 99.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Suporte" },
+      { id: "hub-usb-arena-4p",      name: "Hub USB Arena 4 Portas",   desc: "USB 3.0, cabo de 30cm, encaixe compacto para o setup.",    price: 44.90,  tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Hub+USB" },
 
       // ---- ELETRÔNICOS ----
       { id: "headset-arena-pro",     name: "Headset Arena Pro 7.1",    desc: "Áudio surround virtual, drivers de 50mm, microfone com cancelamento de ruído.", price: 349.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Headset", featured: true, badge: "TOP ELETRÔNICOS" },
@@ -1163,6 +1180,9 @@
       { id: "webcam-arena-stream",   name: "Webcam Arena Stream 1440p", desc: "Foco automático, correção de luz em tempo real, tripé incluso.", price: 399.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Webcam" },
       { id: "microfone-arena-voice", name: "Microfone Arena Voice USB", desc: "Condensador cardioide, filtro pop incluso, monitoramento em tempo real.", price: 329.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Microfone" },
       { id: "fone-arena-earbuds",    name: "Fone Arena Earbuds ANC",   desc: "Cancelamento ativo de ruído, latência ultrabaixa para jogos mobile.", price: 219.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Earbuds" },
+      { id: "carregador-arena-gan-65w", name: "Carregador Arena GaN 65W", desc: "Compacto, 2 portas (USB-C + USB-A), carga rápida para notebook e celular.", price: 129.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Carregador" },
+      { id: "controle-arena-wireless", name: "Controle Arena Wireless", desc: "Sem fio, bateria de 20h, compatível com PC e principais consoles.", price: 259.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Controle", featured: true, badge: "NOVO" },
+      { id: "ssd-arena-portatil-1tb", name: "SSD Portátil Arena 1TB", desc: "Leitura até 1050MB/s, USB-C, case resistente a quedas.", price: 449.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=SSD" },
 
       // ---- DIGITAL (perfil: molduras, banners e efeitos) ----
       { id: "moldura-cyber-digital", name: "Moldura Cyber (Digital)",  desc: "Moldura de perfil animada para seu avatar na Arena.",     price: 19.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura", featured: true, badge: "EXCLUSIVO DIGITAL" },
@@ -1180,6 +1200,10 @@
       { id: "emblema-fundador-cosmico", name: "Emblema Fundador Cósmico", desc: "O selo mais raro da Arena — brilho estelar exclusivo ao lado do seu nome.", price: 44.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema", featured: true, badge: "RARÍSSIMO" },
       { id: "efeito-nome-fogo",      name: "Efeito de Nome Fogo",      desc: "Seu nome pega fogo com um degradê animado de vermelho a amarelo.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FF4655?text=Nome+Fogo" },
       { id: "efeito-nome-holograma", name: "Efeito de Nome Holograma", desc: "Seu nome ganha um brilho holográfico que varre ciano, branco e magenta.", price: 32.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Nome+Holo", featured: true, badge: "REVOLUCIONÁRIO" },
+      { id: "banner-perfil-oceano-digital", name: "Banner de Perfil Oceano Digital", desc: "Capa animada com bolhas subindo por um degradê azul profundo.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/0EA5E9?text=Banner" },
+      { id: "banner-perfil-aurora-verde", name: "Banner de Perfil Aurora Verde", desc: "Capa com faixas de aurora boreal esverdeada balançando sobre o céu noturno.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/34D399?text=Banner", featured: true, badge: "NOVO BANNER" },
+      { id: "emblema-mestre-arena",  name: "Emblema Mestre da Arena",  desc: "Selo dourado para quem domina múltiplos jogos da plataforma.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FFD166?text=Emblema", featured: true, badge: "NOVO EMBLEMA" },
+      { id: "emblema-fenix-renascida", name: "Emblema Fênix Renascida", desc: "Selo animado para quem já virou o jogo em partidas decisivas.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FF4655?text=Emblema" },
     ];
 
     const COUPON_ID = "cupom-loja-10";
@@ -1242,6 +1266,8 @@
       "emblema-arena-vip":        { label: "VIP", emoji: "👑", rarity: "lendario", color1: "#8B5CF6", color2: "#4C2E9E", glow: "rgba(139,92,246,.55)" },
       "emblema-cacador-lendas":   { label: "LND", emoji: "🐉", rarity: "epico",    color1: "#F59E0B", color2: "#7C2D12", glow: "rgba(245,158,11,.5)" },
       "emblema-fundador-cosmico": { label: "FND", emoji: "🌌", rarity: "lendario", color1: "#22D3EE", color2: "#4C2E9E", glow: "rgba(34,211,238,.55)" },
+      "emblema-mestre-arena":     { label: "MST", emoji: "🎯", rarity: "lendario", color1: "#FFD166", color2: "#7C2D12", glow: "rgba(255,209,102,.55)" },
+      "emblema-fenix-renascida":  { label: "FNX", emoji: "🔥", rarity: "epico",    color1: "#FF4655", color2: "#7C2D12", glow: "rgba(255,70,85,.55)" },
     };
 
     // ---- Preview gerado dos itens DIGITAIS (substitui a img placeholder) ----
@@ -1284,6 +1310,22 @@
             `<span class="dprev-gridline" style="bottom:${8 + i * 9}%; animation-delay:${(i * 0.3).toFixed(2)}s;"></span>`
           ).join("");
           return `<div class="dprev"><div class="dprev-banner banner-vaporwave"><div class="dprev-sun"></div>${lines}</div></div>`;
+        }
+        if (p.id.includes("oceano")) {
+          const bubbles = Array.from({ length: 12 }).map(() => {
+            const left = (Math.random() * 100).toFixed(1);
+            const size = (4 + Math.random() * 6).toFixed(0);
+            const dur = (2.2 + Math.random() * 1.6).toFixed(2);
+            const delay = (Math.random() * 2).toFixed(2);
+            return `<span class="dprev-bubble" style="left:${left}%; width:${size}px; height:${size}px; animation-duration:${dur}s; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-oceano">${bubbles}</div></div>`;
+        }
+        if (p.id.includes("aurora")) {
+          const bands = ["#34D399", "#22D3EE", "#5865F2"].map((c, i) =>
+            `<span class="dprev-auroraband" style="left:${20 + i * 28}%; background:linear-gradient(180deg, transparent, ${c}, transparent); animation-delay:${(i * 0.4).toFixed(2)}s;"></span>`
+          ).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-aurora">${bands}</div></div>`;
         }
         const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
         const confetti = Array.from({ length: 16 }).map((_, i) => {

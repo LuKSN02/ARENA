@@ -42,6 +42,28 @@
   @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.45; transform:scale(.75); } }
   .line-clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
+  /* ===== CARROSSEL (trilho horizontal com scroll-snap) — mesmo padrão
+     usado na home, pra notícias não empilharem verticalmente. ===== */
+  .carousel-track{
+    display:flex; gap:1.1rem; overflow-x:auto; padding-bottom:6px;
+    scroll-snap-type:x proximity; scroll-behavior:smooth;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .carousel-track::-webkit-scrollbar{ display:none; }
+  .carousel-track > *{ scroll-snap-align:start; flex-shrink:0; width:270px; }
+  .carousel-track > .carousel-empty{ width:100%; }
+
+  .carousel-head{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.1rem; }
+  .carousel-arrows{ display:flex; gap:6px; flex-shrink:0; }
+  .carousel-arrow{
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); background:transparent; color: var(--ink-soft);
+    font-size:13px; line-height:1; cursor:pointer; transition: border-color .15s ease, color .15s ease, opacity .15s ease;
+  }
+  .carousel-arrow:hover{ border-color: var(--ink-soft); color: var(--ink); }
+  .carousel-arrow:disabled{ opacity:.35; cursor:default; }
+  .carousel-arrow:disabled:hover{ border-color: var(--border); color: var(--ink-soft); }
+
   /* ===== MODAL DE NOTÍCIA ===== */
   #news-backdrop{
     position:fixed; inset:0; z-index:60;
@@ -111,10 +133,14 @@
 
     <!-- NOTÍCIAS DO JOGO -->
     <div class="lg:col-span-2">
-      <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
+      <div class="carousel-head pb-3" style="border-bottom:1px solid var(--border);">
         <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Últimas notícias</h2>
+        <div class="carousel-arrows">
+          <button type="button" class="carousel-arrow js-carousel-prev" data-target="news-grid" aria-label="Anterior">‹</button>
+          <button type="button" class="carousel-arrow js-carousel-next" data-target="news-grid" aria-label="Próximo">›</button>
+        </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5" id="news-grid"></div>
+      <div class="carousel-track" id="news-grid"></div>
     </div>
 
     <!-- SIDEBAR: PRÓXIMAS PARTIDAS -->
@@ -264,7 +290,7 @@
 
   const newsGrid = document.getElementById("news-grid");
   if (game.news.length === 0) {
-    newsGrid.innerHTML = `<p class="font-mono text-[12px]" style="color: var(--muted);">Nenhuma notícia publicada ainda para ${game.label}.</p>`;
+    newsGrid.innerHTML = `<p class="carousel-empty font-mono text-[12px] py-10 text-center" style="color: var(--muted);">Nenhuma notícia publicada ainda para ${game.label}.</p>`;
   } else {
     game.news.forEach((n, idx) => {
       const card = document.createElement("a");
@@ -290,6 +316,32 @@
       newsGrid.appendChild(card);
     });
   }
+
+  // ===============================================================
+  // SETAS DO CARROSSEL — mesmo padrão da home: rola pela largura de
+  // um card por clique e desabilita sozinha no início/fim do scroll.
+  // ===============================================================
+  function initCarouselArrows(track) {
+    if (!track) return;
+    const prevBtns = document.querySelectorAll(`.js-carousel-prev[data-target="${track.id}"]`);
+    const nextBtns = document.querySelectorAll(`.js-carousel-next[data-target="${track.id}"]`);
+    function step() {
+      const firstCard = track.firstElementChild;
+      return (firstCard ? firstCard.getBoundingClientRect().width : 260) + 18;
+    }
+    function updateArrowState() {
+      const maxScroll = track.scrollWidth - track.clientWidth - 2;
+      prevBtns.forEach((b) => (b.disabled = track.scrollLeft <= 2));
+      nextBtns.forEach((b) => (b.disabled = track.scrollLeft >= maxScroll));
+    }
+    prevBtns.forEach((b) => b.addEventListener("click", () => track.scrollBy({ left: -step(), behavior: "smooth" })));
+    nextBtns.forEach((b) => b.addEventListener("click", () => track.scrollBy({ left: step(), behavior: "smooth" })));
+    track.addEventListener("scroll", updateArrowState);
+    window.addEventListener("resize", updateArrowState);
+    updateArrowState();
+    setTimeout(updateArrowState, 50);
+  }
+  initCarouselArrows(newsGrid);
 
   const matchesList = document.getElementById("matches-list");
   if (game.matches.length === 0) {

@@ -134,6 +134,35 @@
 
   .line-clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
+  /* ===== CARROSSÉIS (trilhos horizontais com scroll-snap) =====
+     Substitui grids/listas verticais que cresciam sem limite: agora
+     cada bloco temático (ao vivo, destaques, agenda) rola na horizontal
+     dentro de uma faixa de altura fixa, em vez de empilhar tudo. */
+  .carousel-track{
+    display:flex; gap:1.1rem; overflow-x:auto; padding-bottom:6px;
+    scroll-snap-type:x proximity; scroll-behavior:smooth;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .carousel-track::-webkit-scrollbar{ display:none; }
+  .carousel-track > *{ scroll-snap-align:start; flex-shrink:0; }
+  .carousel-track .card{ width:270px; }
+  #highlights-empty.carousel-empty{ flex:1 1 100%; width:100%; }
+
+  .carousel-head{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.1rem; }
+  .carousel-arrows{ display:flex; gap:6px; flex-shrink:0; }
+  .carousel-arrow{
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); background:transparent; color: var(--ink-soft);
+    font-size:13px; line-height:1; cursor:pointer; transition: border-color .15s ease, color .15s ease, opacity .15s ease;
+  }
+  .carousel-arrow:hover{ border-color: var(--ink-soft); color: var(--ink); }
+  .carousel-arrow:disabled{ opacity:.35; cursor:default; }
+  .carousel-arrow:disabled:hover{ border-color: var(--border); color: var(--ink-soft); }
+
+  /* Cards do carrossel "AO VIVO AGORA" — mesma pegada visual dos
+     cards de destaque, só um pouco mais enxutos. */
+  .carousel-track .card.live-card{ width:250px; }
+
   /* ===== HEADER / NAVBAR ===== */
   #site-header{ background: rgba(20,23,30,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .nav-link{ color: var(--ink-soft); position:relative; transition: color .15s ease; }
@@ -472,18 +501,40 @@
     <button class="filter-btn font-mono text-[12px] font-semibold px-3 py-1.5 rounded-sm shrink-0" data-game="eafc">EA FC</button>
   </div>
 
+  <!-- AO VIVO AGORA — trilho separado, agrupando só o que está rolando
+       ao vivo em qualquer jogo. Fica de fora do grid de destaques pra
+       não competir por espaço com o resto das notícias. -->
+  <div class="mb-10" id="live-carousel-section" style="display:none;">
+    <div class="carousel-head">
+      <h3 class="flex items-center gap-2 font-mono text-[13px] font-semibold" style="color: var(--live);">
+        <span class="w-2 h-2 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO AGORA
+      </h3>
+      <div class="carousel-arrows">
+        <button type="button" class="carousel-arrow js-carousel-prev" data-target="live-carousel" aria-label="Anterior">‹</button>
+        <button type="button" class="carousel-arrow js-carousel-next" data-target="live-carousel" aria-label="Próximo">›</button>
+      </div>
+    </div>
+    <div class="carousel-track" id="live-carousel"></div>
+  </div>
+
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
     <!-- DESTAQUES DO DIA -->
     <div class="lg:col-span-2">
-      <div class="flex items-end justify-between mb-5 pb-3" style="border-bottom:1px solid var(--border);">
+      <div class="carousel-head pb-3" style="border-bottom:1px solid var(--border);">
         <h2 id="highlights-title" class="font-display text-3xl font-semibold uppercase tracking-wide">
           Destaques <span style="color: var(--valorant);">do Dia</span>
         </h2>
-        <span class="font-mono text-[11px] hidden sm:block" style="color: var(--muted);">atualizado há 12 min</span>
+        <div class="flex items-center gap-3">
+          <span class="font-mono text-[11px] hidden sm:block" style="color: var(--muted);">atualizado há 12 min</span>
+          <div class="carousel-arrows">
+            <button type="button" class="carousel-arrow js-carousel-prev" data-target="highlights-grid" aria-label="Anterior">‹</button>
+            <button type="button" class="carousel-arrow js-carousel-next" data-target="highlights-grid" aria-label="Próximo">›</button>
+          </div>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5" id="highlights-grid">
+      <div class="carousel-track" id="highlights-grid">
         <!-- Cards gerados dinamicamente via JS a partir de GAMES.news -->
       </div>
     </div>
@@ -697,13 +748,16 @@
   const highlightsGrid = document.getElementById("highlights-grid");
   const highlightsEmpty = document.createElement("p");
   highlightsEmpty.id = "highlights-empty";
-  highlightsEmpty.className = "sm:col-span-2 py-10 text-center font-mono text-[12px]";
+  highlightsEmpty.className = "carousel-empty py-10 text-center font-mono text-[12px]";
   highlightsEmpty.style.color = "var(--muted)";
   highlightsEmpty.style.display = "none";
   highlightsEmpty.textContent = "Nenhuma notícia encontrada para este filtro.";
 
-  const cardsHtml = ALL_NEWS.map((n) => `
-    <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="card clip-card block" data-game="${n.slug}" data-category="${n.category || ""}" style="background: var(--panel); border:1px solid var(--border);">
+  // Função única de card, reaproveitada pelo trilho "AO VIVO AGORA" e
+  // pelo trilho "Destaques do Dia" — mesmo visual, uma fonte só de verdade.
+  function renderNewsCard(n, { extraClass = "" } = {}) {
+    return `
+    <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="card clip-card block${extraClass ? " " + extraClass : ""}" data-game="${n.slug}" data-category="${n.category || ""}" style="background: var(--panel); border:1px solid var(--border);">
       <div class="relative h-36" style="background: linear-gradient(to bottom right, var(--${n.slug}-glow), var(--panel));">
         <span class="clip-tag absolute top-0 left-0 font-mono text-[11px] font-semibold px-4 py-1" style="background: var(--${n.slug}); color:#12141A;">${n.gameLabel.toUpperCase()}</span>
         ${n.isLive ? `<span class="absolute top-2 right-3 flex items-center gap-1 font-mono text-[10px] font-semibold" style="color: var(--live);">
@@ -718,10 +772,61 @@
         </div>
       </div>
     </a>
-  `);
+  `;
+  }
 
-  highlightsGrid.innerHTML = cardsHtml.join("");
+  highlightsGrid.innerHTML = ALL_NEWS.map((n) => renderNewsCard(n)).join("");
   highlightsGrid.appendChild(highlightsEmpty);
+
+  // ===============================================================
+  // AO VIVO AGORA — trilho isolado com o que está com isLive:true em
+  // qualquer jogo. Não participa dos filtros de jogo/categoria (é um
+  // resumo rápido, sempre visível); some sozinho se não houver nada
+  // ao vivo no momento.
+  // ===============================================================
+  const liveCarousel = document.getElementById("live-carousel");
+  const liveSection = document.getElementById("live-carousel-section");
+  const liveNews = ALL_NEWS.filter((n) => n.isLive);
+  if (liveCarousel && liveSection) {
+    if (liveNews.length > 0) {
+      liveCarousel.innerHTML = liveNews.map((n) => renderNewsCard(n, { extraClass: "live-card" })).join("");
+      liveSection.style.display = "";
+    } else {
+      liveSection.style.display = "none";
+    }
+  }
+
+  // ===============================================================
+  // SETAS DOS CARROSSÉIS — cada par de botões [data-target] rola o
+  // trilho correspondente pela largura de um card por clique, e some
+  // (fica desabilitado) quando não há mais o que rolar naquela direção.
+  // ===============================================================
+  function initCarouselArrows(track) {
+    if (!track) return;
+    const prevBtns = document.querySelectorAll(`.js-carousel-prev[data-target="${track.id}"]`);
+    const nextBtns = document.querySelectorAll(`.js-carousel-next[data-target="${track.id}"]`);
+
+    function step() {
+      const firstCard = track.querySelector(".card, .live-card");
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 260;
+      return cardWidth + 18; // largura do card + gap
+    }
+    function updateArrowState() {
+      const maxScroll = track.scrollWidth - track.clientWidth - 2;
+      prevBtns.forEach((b) => (b.disabled = track.scrollLeft <= 2));
+      nextBtns.forEach((b) => (b.disabled = track.scrollLeft >= maxScroll));
+    }
+    prevBtns.forEach((b) => b.addEventListener("click", () => track.scrollBy({ left: -step(), behavior: "smooth" })));
+    nextBtns.forEach((b) => b.addEventListener("click", () => track.scrollBy({ left: step(), behavior: "smooth" })));
+    track.addEventListener("scroll", updateArrowState);
+    window.addEventListener("resize", updateArrowState);
+    updateArrowState();
+    // Reavalia depois do primeiro layout (largura dos cards só é
+    // conhecida após o navegador desenhar o trilho).
+    setTimeout(updateArrowState, 50);
+  }
+  initCarouselArrows(highlightsGrid);
+  initCarouselArrows(liveCarousel);
 
   // ===============================================================
   // MOTOR DE FILTRO DOS CARDS — combina dois filtros independentes
@@ -734,7 +839,10 @@
   // -> fade-in), nunca "pisca" trocando de estado abruptamente.
   // ===============================================================
   const gameButtons = document.querySelectorAll(".filter-btn");
-  const allCards = () => document.querySelectorAll(".card");
+  // Escopado a #highlights-grid de propósito: o trilho "AO VIVO AGORA"
+  // usa a mesma classe .card (mesmo visual), mas não deve ser afetado
+  // pelos filtros de jogo/categoria — ele é sempre visível.
+  const allCards = () => document.querySelectorAll("#highlights-grid .card");
   let currentGameFilter = "todos";
   let currentCategoryFilter = "todos";
   const CARD_FADE_MS = 220;
