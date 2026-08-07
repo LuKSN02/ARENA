@@ -197,9 +197,21 @@
   }
   .dprev-ring.ring-glitch::before{ border-color:#FF4655; animation: dprev-glitch-a 1.6s infinite steps(2); }
   .dprev-ring.ring-glitch::after{ border-color:#22D3EE; animation: dprev-glitch-b 1.6s infinite steps(2); }
+  .dprev-ring.ring-plasma{
+    background: conic-gradient(from 0deg, #EC4899, #8B5CF6, #22D3EE, #EC4899);
+    animation: dprev-plasma 2.6s ease-in-out infinite, dprev-spin 7s linear infinite;
+  }
+  .dprev-ring.ring-plasma::after{ content:""; position:absolute; inset:7px; border-radius:9999px; background:#20242F; }
+  .dprev-ring.ring-gelo{
+    background: conic-gradient(from 45deg, #E7FBFF, #22D3EE, #0EA5E9, #E7FBFF);
+    box-shadow: 0 0 16px rgba(34,211,238,.5);
+    animation: dprev-pulse 2.6s ease-in-out infinite;
+  }
+  .dprev-ring.ring-gelo::after{ content:""; position:absolute; inset:5px; border-radius:9999px; background:#20242F; }
 
   @keyframes dprev-spin{ to{ transform: rotate(360deg); } }
   @keyframes dprev-pulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
+  @keyframes dprev-plasma{ 0%,100%{ filter:brightness(1) saturate(1); } 50%{ filter:brightness(1.4) saturate(1.3); } }
   @keyframes dprev-glitch-a{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-3px,1px); } 50%{ transform:translate(2px,-2px); } 75%{ transform:translate(-1px,2px); } }
   @keyframes dprev-glitch-b{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(3px,-1px); } 50%{ transform:translate(-2px,2px); } 75%{ transform:translate(1px,-2px); } }
 
@@ -220,6 +232,24 @@
   .dprev-trophy{ font-size:34px; filter: drop-shadow(0 0 10px rgba(245,196,83,.6)); }
   .dprev-confetti{ position:absolute; top:-10%; width:6px; height:10px; animation: dprev-fall linear infinite; }
   @keyframes dprev-fall{ 0%{ transform: translateY(-20%) rotate(0deg); opacity:0; } 10%{ opacity:1; } 100%{ transform: translateY(260%) rotate(360deg); opacity:0; } }
+  .dprev-banner.banner-tempestade{
+    background: linear-gradient(160deg, #0B1220, #1B1030 70%);
+  }
+  .dprev-bolt{
+    position:absolute; top:6%; width:2px; background:#fff; opacity:0;
+    filter: drop-shadow(0 0 6px #8B5CF6); animation: dprev-flash 3.2s infinite;
+  }
+  @keyframes dprev-flash{ 0%,88%,100%{ opacity:0; } 89%{ opacity:1; } 90%{ opacity:.15; } 91%{ opacity:1; } 93%{ opacity:0; } }
+  .dprev-banner.banner-vaporwave{
+    background: linear-gradient(180deg, #2B1055 0%, #6B2A8C 45%, #C23C7E 100%);
+  }
+  .dprev-sun{
+    position:absolute; left:50%; bottom:16%; width:44px; height:44px; border-radius:9999px;
+    transform:translateX(-50%); background: linear-gradient(180deg,#FFD166,#FF4655);
+    box-shadow:0 0 20px rgba(255,209,102,.6);
+  }
+  .dprev-gridline{ position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,.35); animation: dprev-grid-move 2.2s linear infinite; }
+  @keyframes dprev-grid-move{ 0%{ transform: translateY(0); opacity:.6; } 100%{ transform: translateY(14px); opacity:0; } }
 
   /* Emblema / badge de perfil */
   .dprev-badge{
@@ -232,7 +262,7 @@
   }
   .dprev-badge span{ font-family:'Teko', sans-serif; font-weight:700; font-size:20px; color:#F4E9FF; letter-spacing:2px; }
 
-  /* Efeito de nome RGB */
+  /* Efeito de nome RGB (e variações: fogo, holograma) */
   .dprev-nameeffect{
     font-family:'Teko', sans-serif; font-size:34px; font-weight:700; letter-spacing:2px;
     background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
@@ -241,6 +271,19 @@
     animation: dprev-rgb 3.5s linear infinite;
   }
   @keyframes dprev-rgb{ to{ background-position: 300% 0; } }
+  .dprev-nameeffect.nameeffect-fire, .name-fire-effect{
+    background: linear-gradient(0deg, #FF4655, #FFD166 55%, #FFF3C4);
+    background-size: 100% 250%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: dprev-fire 1.5s ease-in-out infinite;
+  }
+  @keyframes dprev-fire{ 0%,100%{ background-position: 0 0%; } 50%{ background-position: 0 100%; } }
+  .dprev-nameeffect.nameeffect-holo, .name-holo-effect{
+    background: linear-gradient(100deg, #22D3EE, #fff, #EC4899, #8B5CF6, #22D3EE);
+    background-size: 300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: dprev-rgb 2.4s linear infinite;
+  }
 
   /* Mesmo efeito, mas aplicado de verdade ao nome na navbar quando o item
      está equipado (dprev-nameeffect acima é só a prévia dentro do card). */
@@ -919,11 +962,16 @@
     const displayName = profile?.displayName || userName;
     document.getElementById("user-avatar-img").src = avatarSrc;
     document.getElementById("user-avatar-img-mobile").src = avatarSrc;
-    const hasNameEffect = profile?.equippedNameEffect === "efeito-nome-arena-rgb";
+    const nameEffectClass = profile?.equippedNameEffect === "efeito-nome-arena-rgb" ? "name-rgb-effect"
+      : profile?.equippedNameEffect === "efeito-nome-fogo" ? "name-fire-effect"
+      : profile?.equippedNameEffect === "efeito-nome-holograma" ? "name-holo-effect"
+      : null;
     document.getElementById("user-menu-name").textContent = displayName.toUpperCase();
     document.getElementById("user-menu-name-mobile").textContent = displayName;
-    document.getElementById("user-menu-name").classList.toggle("name-rgb-effect", hasNameEffect);
-    document.getElementById("user-menu-name-mobile").classList.toggle("name-rgb-effect", hasNameEffect);
+    ["name-rgb-effect", "name-fire-effect", "name-holo-effect"].forEach(cls => {
+      document.getElementById("user-menu-name").classList.toggle(cls, cls === nameEffectClass);
+      document.getElementById("user-menu-name-mobile").classList.toggle(cls, cls === nameEffectClass);
+    });
 
     const badges = profile?.equippedBadges || [];
     document.getElementById("nav-badges").innerHTML = badges.map(b => `
@@ -1109,6 +1157,14 @@
       { id: "banner-perfil-campeao", name: "Banner de Perfil Campeão", desc: "Capa com troféu e confetes animados, ideal pra comemorar vitórias.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner" },
       { id: "emblema-arena-vip",     name: "Emblema VIP Arena",        desc: "Selo exclusivo ao lado do seu nome em chats e rankings.", price: 34.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema" },
       { id: "efeito-nome-arena-rgb", name: "Efeito de Nome RGB",       desc: "Seu nome de usuário ganha um degradê RGB animado em toda a plataforma.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Nome+RGB" },
+      { id: "moldura-plasma-arena",  name: "Moldura Plasma Arena",     desc: "Anel de plasma girando em tons de magenta e violeta ao redor do avatar.", price: 39.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/EC4899?text=Moldura", featured: true, badge: "REVOLUCIONÁRIO" },
+      { id: "moldura-gelo-eterno",   name: "Moldura Gelo Eterno",      desc: "Borda de gelo cristalino com brilho ciano pulsante.",       price: 24.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Moldura" },
+      { id: "banner-perfil-tempestade", name: "Banner de Perfil Tempestade", desc: "Capa animada com relâmpagos cruzando um céu roxo-noturno.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner", featured: true, badge: "REVOLUCIONÁRIO" },
+      { id: "banner-perfil-vaporwave", name: "Banner de Perfil Vaporwave", desc: "Sol retrô sobre um horizonte gradiente rosa e roxo, com grade em movimento.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner" },
+      { id: "emblema-cacador-lendas", name: "Emblema Caçador de Lendas", desc: "Selo com brilho pulsante para quem já venceu partidas lendárias.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema" },
+      { id: "emblema-fundador-cosmico", name: "Emblema Fundador Cósmico", desc: "O selo mais raro da Arena — brilho estelar exclusivo ao lado do seu nome.", price: 44.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema", featured: true, badge: "RARÍSSIMO" },
+      { id: "efeito-nome-fogo",      name: "Efeito de Nome Fogo",      desc: "Seu nome pega fogo com um degradê animado de vermelho a amarelo.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FF4655?text=Nome+Fogo" },
+      { id: "efeito-nome-holograma", name: "Efeito de Nome Holograma", desc: "Seu nome ganha um brilho holográfico que varre ciano, branco e magenta.", price: 32.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Nome+Holo", featured: true, badge: "REVOLUCIONÁRIO" },
     ];
 
     const COUPON_ID = "cupom-loja-10";
@@ -1165,10 +1221,23 @@
       return "";
     }
 
+    // Metadados visuais dos emblemas — precisam bater com o que
+    // grantDigitalPurchases usa ao equipar (mesmo emoji/rarity/label).
+    const SHOP_EMBLEM_META = {
+      "emblema-arena-vip":        { label: "VIP", emoji: "👑", rarity: "lendario", color1: "#8B5CF6", color2: "#4C2E9E", glow: "rgba(139,92,246,.55)" },
+      "emblema-cacador-lendas":   { label: "LND", emoji: "🐉", rarity: "epico",    color1: "#F59E0B", color2: "#7C2D12", glow: "rgba(245,158,11,.5)" },
+      "emblema-fundador-cosmico": { label: "FND", emoji: "🌌", rarity: "lendario", color1: "#22D3EE", color2: "#4C2E9E", glow: "rgba(34,211,238,.55)" },
+    };
+
     // ---- Preview gerado dos itens DIGITAIS (substitui a img placeholder) ----
     function digitalPreviewHTML(p) {
       if (p.id.startsWith("moldura-")) {
-        const ring = p.id.includes("cyber") ? "ring-cyber" : p.id.includes("ouro") ? "ring-ouro" : "ring-glitch";
+        const ring = p.id.includes("cyber") ? "ring-cyber"
+          : p.id.includes("ouro") ? "ring-ouro"
+          : p.id.includes("glitch") ? "ring-glitch"
+          : p.id.includes("plasma") ? "ring-plasma"
+          : p.id.includes("gelo") ? "ring-gelo"
+          : "ring-cyber";
         return `<div class="dprev">
           <div class="dprev-avatar-slot">
             <div class="dprev-ring ${ring}"></div>
@@ -1186,6 +1255,21 @@
           }).join("");
           return `<div class="dprev"><div class="dprev-banner banner-nebulosa">${stars}</div></div>`;
         }
+        if (p.id.includes("tempestade")) {
+          const bolts = Array.from({ length: 3 }).map((_, i) => {
+            const left = (18 + i * 30).toFixed(0);
+            const height = (36 + Math.random() * 26).toFixed(0);
+            const delay = (i * 0.55).toFixed(2);
+            return `<span class="dprev-bolt" style="left:${left}%; height:${height}px; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-tempestade">${bolts}</div></div>`;
+        }
+        if (p.id.includes("vaporwave")) {
+          const lines = Array.from({ length: 5 }).map((_, i) =>
+            `<span class="dprev-gridline" style="bottom:${8 + i * 9}%; animation-delay:${(i * 0.3).toFixed(2)}s;"></span>`
+          ).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-vaporwave"><div class="dprev-sun"></div>${lines}</div></div>`;
+        }
         const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
         const confetti = Array.from({ length: 16 }).map((_, i) => {
           const left = (Math.random() * 100).toFixed(1);
@@ -1195,11 +1279,13 @@
         }).join("");
         return `<div class="dprev"><div class="dprev-banner banner-campeao">${confetti}<span class="dprev-trophy">🏆</span></div></div>`;
       }
-      if (p.id === "emblema-arena-vip") {
-        return `<div class="dprev"><div class="dprev-badge"><span>VIP</span></div></div>`;
+      if (p.id.startsWith("emblema-")) {
+        const meta = SHOP_EMBLEM_META[p.id] || SHOP_EMBLEM_META["emblema-arena-vip"];
+        return `<div class="dprev"><div class="dprev-badge" style="background:linear-gradient(160deg, ${meta.color1}, ${meta.color2}); box-shadow:0 0 22px ${meta.glow};"><span>${meta.label}</span></div></div>`;
       }
-      if (p.id === "efeito-nome-arena-rgb") {
-        return `<div class="dprev"><span class="dprev-nameeffect">ARENA</span></div>`;
+      if (p.id.startsWith("efeito-nome-")) {
+        const variant = p.id.includes("fogo") ? "nameeffect-fire" : p.id.includes("holograma") ? "nameeffect-holo" : "";
+        return `<div class="dprev"><span class="dprev-nameeffect ${variant}">ARENA</span></div>`;
       }
       return `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
     }
@@ -1612,10 +1698,14 @@
       "moldura-cyber-digital": "#FF4655",
       "moldura-ouro-elite": "#F59E0B",
       "moldura-neon-glitch": "#22D3EE",
+      "moldura-plasma-arena": "#EC4899",
+      "moldura-gelo-eterno": "#22D3EE",
     };
     const SHOP_BANNER_GRADIENT = {
       "banner-perfil-nebulosa": "linear-gradient(135deg,#5865F2,#22D3EE)",
       "banner-perfil-campeao": "linear-gradient(135deg,#F59E0B,#FF4655)",
+      "banner-perfil-tempestade": "linear-gradient(160deg,#0B1220,#1B1030 70%)",
+      "banner-perfil-vaporwave": "linear-gradient(180deg,#2B1055 0%,#6B2A8C 45%,#C23C7E 100%)",
     };
 
     function grantDigitalPurchases() {
@@ -1658,15 +1748,16 @@
             profile.bannerColor = undefined;
             profile.equippedBannerId = p.id;
             equippedNames.push(p.name);
-          } else if (p.id === "emblema-arena-vip") {
+          } else if (p.id.startsWith("emblema-")) {
             entry.equipped = true;
+            const meta = SHOP_EMBLEM_META[p.id] || SHOP_EMBLEM_META["emblema-arena-vip"];
             const badges = Array.isArray(profile.equippedBadges) ? profile.equippedBadges.slice() : [];
             if (!badges.some(b => b.id === p.id)) {
-              badges.push({ id: p.id, emoji: "👑", name: p.name, rarity: "lendario" });
+              badges.push({ id: p.id, emoji: meta.emoji, name: p.name, rarity: meta.rarity });
             }
             profile.equippedBadges = badges;
             equippedNames.push(p.name);
-          } else if (p.id === "efeito-nome-arena-rgb") {
+          } else if (p.id.startsWith("efeito-nome-")) {
             entry.equipped = true;
             profile.equippedNameEffect = p.id;
             equippedNames.push(p.name);

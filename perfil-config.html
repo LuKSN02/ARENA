@@ -187,6 +187,21 @@
     animation: nameRgbAnim 3.5s linear infinite;
   }
   @keyframes nameRgbAnim{ to{ background-position: 300% 0; } }
+
+  /* Efeito de Nome Fogo / Holograma — mesmos degradês do preview em loja.html. */
+  .name-fire-effect{
+    background: linear-gradient(0deg, #FF4655, #FFD166 55%, #FFF3C4);
+    background-size: 100% 250%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameFireAnim 1.5s ease-in-out infinite;
+  }
+  @keyframes nameFireAnim{ 0%,100%{ background-position: 0 0%; } 50%{ background-position: 0 100%; } }
+  .name-holo-effect{
+    background: linear-gradient(100deg, #22D3EE, #fff, #EC4899, #8B5CF6, #22D3EE);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameRgbAnim 2.4s linear infinite;
+  }
   #appearance-text-sample.fs-pequena{ font-size:12px; }
   #appearance-text-sample.fs-padrao{ font-size:14px; }
   #appearance-text-sample.fs-grande{ font-size:17px; }
@@ -285,6 +300,30 @@
     mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
   }
   .frame-swatch.is-cyber .frame-label{ color:#FF4655; }
+
+  /* ===== MOLDURA PLASMA ARENA (item digital da Loja Arena) =====
+     Mesmo truque da Cyber acima, mas com degradê magenta/violeta. */
+  @keyframes plasmaFrameSpin{ to{ transform: rotate(360deg); } }
+  .avatar-frame-overlay.is-plasma,
+  .frame-swatch .frame-ring.is-plasma{
+    border: none;
+    background: conic-gradient(from 0deg, #EC4899, #8B5CF6, #22D3EE, #EC4899);
+    animation: plasmaFrameSpin 3.4s linear infinite;
+    box-shadow: 0 0 14px -2px #EC4899, 0 0 14px -2px #8B5CF6;
+  }
+  .avatar-frame-overlay.is-plasma{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  }
+  #preview-avatar-frame-overlay.is-plasma{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  }
+  .frame-swatch .frame-ring.is-plasma{
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  }
+  .frame-swatch.is-plasma .frame-label{ color:#EC4899; }
 
   /* ===== STATUS PERSONALIZADO ===== */
   #status-emoji-input{ width:46px; text-align:center; font-size:16px; padding:10px 0; }
@@ -718,6 +757,14 @@
   if (ownsShopItem("moldura-neon-glitch")) {
     AVATAR_FRAMES.push({ id: "moldura-neon-glitch", label: "Neon Glitch", color: "#22D3EE" });
   }
+  // Moldura Plasma Arena — animada, mas com um degradê próprio
+  // (magenta/violeta) em vez de reaproveitar as cores da Cyber.
+  if (ownsShopItem("moldura-plasma-arena")) {
+    AVATAR_FRAMES.push({ id: "moldura-plasma-arena", label: "Plasma", color: "#EC4899", animated: true, animClass: "is-plasma" });
+  }
+  if (ownsShopItem("moldura-gelo-eterno")) {
+    AVATAR_FRAMES.push({ id: "moldura-gelo-eterno", label: "Gelo Eterno", color: "#22D3EE" });
+  }
 
   // Conquistas disponíveis pra vitrine (demo — em produção viriam do
   // mesmo backend de emblemas/inventário).
@@ -878,7 +925,10 @@
     bioCharCount.textContent = draftProfile.bio.length;
 
     previewDisplayName.textContent = draftProfile.displayName || "Nome de Exibição";
-    previewDisplayName.classList.toggle("name-rgb-effect", draftProfile.equippedNameEffect === "efeito-nome-arena-rgb");
+    previewDisplayName.classList.remove("name-rgb-effect", "name-fire-effect", "name-holo-effect");
+    if (draftProfile.equippedNameEffect === "efeito-nome-arena-rgb") previewDisplayName.classList.add("name-rgb-effect");
+    else if (draftProfile.equippedNameEffect === "efeito-nome-fogo") previewDisplayName.classList.add("name-fire-effect");
+    else if (draftProfile.equippedNameEffect === "efeito-nome-holograma") previewDisplayName.classList.add("name-holo-effect");
     renderEquippedBadges();
     renderFrames();
     renderStatus();
@@ -948,12 +998,15 @@
   // ---------------------------------------------------------------
   function renderFrames() {
     const row = document.getElementById("frames-row");
-    row.innerHTML = AVATAR_FRAMES.map(f => `
-      <button class="frame-swatch ${f.id === null ? "is-none" : ""} ${f.animated ? "is-cyber" : ""} ${draftProfile.equippedFrame === f.id ? "selected" : ""}"
+    row.innerHTML = AVATAR_FRAMES.map(f => {
+      const animClass = f.animated ? (f.animClass || "is-cyber") : "";
+      return `
+      <button class="frame-swatch ${f.id === null ? "is-none" : ""} ${animClass} ${draftProfile.equippedFrame === f.id ? "selected" : ""}"
               data-frame-id="${f.id ?? ""}" title="${f.label}" style="--fc-color:${f.color};">
-        ${f.id === null ? '<span class="frame-label">NENHUMA</span>' : `<span class="frame-ring ${f.animated ? "is-cyber" : ""}"></span>`}
+        ${f.id === null ? '<span class="frame-label">NENHUMA</span>' : `<span class="frame-ring ${animClass}"></span>`}
       </button>
-    `).join("");
+    `;
+    }).join("");
     row.querySelectorAll("[data-frame-id]").forEach(btn => {
       btn.addEventListener("click", () => {
         draftProfile.equippedFrame = btn.dataset.frameId || null;
@@ -962,9 +1015,11 @@
     });
 
     const equipped = AVATAR_FRAMES.find(f => f.id === draftProfile.equippedFrame) || AVATAR_FRAMES[0];
+    const equippedAnimClass = equipped.animated ? (equipped.animClass || "is-cyber") : "";
     [document.getElementById("avatar-frame-overlay"), document.getElementById("preview-avatar-frame-overlay")].forEach(el => {
       el.style.setProperty("--fc-color", equipped.color);
-      el.classList.toggle("is-cyber", !!equipped.animated);
+      el.classList.remove("is-cyber", "is-plasma");
+      if (equippedAnimClass) el.classList.add(equippedAnimClass);
     });
   }
 

@@ -203,6 +203,20 @@
     animation: nameRgbAnim 3.5s linear infinite;
   }
   @keyframes nameRgbAnim{ to{ background-position: 300% 0; } }
+  /* Efeito de Nome Fogo / Holograma — itens digitais da Loja Arena. */
+  .name-fire-effect{
+    background: linear-gradient(0deg, #FF4655, #FFD166 55%, #FFF3C4);
+    background-size: 100% 250%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameFireAnim 1.5s ease-in-out infinite;
+  }
+  @keyframes nameFireAnim{ 0%,100%{ background-position: 0 0%; } 50%{ background-position: 0 100%; } }
+  .name-holo-effect{
+    background: linear-gradient(100deg, #22D3EE, #fff, #EC4899, #8B5CF6, #22D3EE);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nameRgbAnim 2.4s linear infinite;
+  }
 </style>
 </head>
 <body>
@@ -959,11 +973,16 @@
     const displayName = profile?.displayName || userName;
     document.getElementById("user-avatar-img").src = avatarSrc;
     document.getElementById("user-avatar-img-mobile").src = avatarSrc;
-    const hasNameEffect = profile?.equippedNameEffect === "efeito-nome-arena-rgb";
+    const nameEffectClass = profile?.equippedNameEffect === "efeito-nome-arena-rgb" ? "name-rgb-effect"
+      : profile?.equippedNameEffect === "efeito-nome-fogo" ? "name-fire-effect"
+      : profile?.equippedNameEffect === "efeito-nome-holograma" ? "name-holo-effect"
+      : null;
     document.getElementById("user-menu-name").textContent = displayName.toUpperCase();
     document.getElementById("user-menu-name-mobile").textContent = displayName;
-    document.getElementById("user-menu-name").classList.toggle("name-rgb-effect", hasNameEffect);
-    document.getElementById("user-menu-name-mobile").classList.toggle("name-rgb-effect", hasNameEffect);
+    ["name-rgb-effect", "name-fire-effect", "name-holo-effect"].forEach(cls => {
+      document.getElementById("user-menu-name").classList.toggle(cls, cls === nameEffectClass);
+      document.getElementById("user-menu-name-mobile").classList.toggle(cls, cls === nameEffectClass);
+    });
 
     // Emblemas equipados (definidos em inventario.html) — um mini-cluster
     // grudado no avatar e a lista completa no topo do dropdown.
