@@ -367,16 +367,33 @@
   //    backend). Cupons têm `used`; banners/emblemas têm `equipped`.
   // ===============================================================
   function loadInventory() {
+    let inv = null;
     try {
       const raw = localStorage.getItem(inventoryKey);
-      if (raw) return JSON.parse(raw);
-    } catch (err) { /* segue pro seed */ }
+      if (raw) inv = JSON.parse(raw);
+    } catch (err) { inv = null; }
 
-    const starter = CATALOG
-      .filter(it => it.rarity === "comum")
-      .map(it => ({ id: it.id, used: false, equipped: it.type !== "cupom" }));
-    saveInventory(starter);
-    return starter;
+    // Kit inicial "comum" (sem requisito de desbloqueio) — normalmente é
+    // concedido na primeira visita a esta página. Mas se o usuário comprar
+    // algo digital na Loja Arena ANTES de nunca ter aberto o inventário,
+    // é a loja quem cria essa chave primeiro (só com o item comprado) — e
+    // sem isso aqui, os itens comuns nunca entrariam e quebrariam a tela
+    // (item sem `unlock` tratado como bloqueado). Então sempre completamos
+    // o kit inicial que ainda estiver faltando, em vez de só na 1ª visita.
+    const starterIds = CATALOG.filter(it => it.rarity === "comum" && !it.unlock).map(it => it.id);
+    if (!inv) {
+      inv = starterIds.map(id => ({ id, used: false, equipped: CATALOG.find(c => c.id === id).type !== "cupom" }));
+      saveInventory(inv);
+      return inv;
+    }
+    const missingStarters = starterIds.filter(id => !inv.some(i => i.id === id));
+    if (missingStarters.length > 0) {
+      missingStarters.forEach(id => {
+        inv.push({ id, used: false, equipped: CATALOG.find(c => c.id === id).type !== "cupom" });
+      });
+      saveInventory(inv);
+    }
+    return inv;
   }
   function saveInventory(inv) {
     try { localStorage.setItem(inventoryKey, JSON.stringify(inv)); } catch (err) { /* silencioso */ }
@@ -443,6 +460,7 @@
   }
   function unlockTarget(item) {
     const u = item.unlock;
+    if (!u) return null;
     if (u.type === "counter" || u.type === "days") return u.target;
     if (u.type === "combo") return u.items.length;
     return null;
