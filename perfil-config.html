@@ -153,6 +153,8 @@
   .fx-tempestade{ background: linear-gradient(160deg, #0B1220, #1B1030 70%); }
   .fx-bolt{ position:absolute; top:6%; width:2px; background:#fff; opacity:0; filter: drop-shadow(0 0 6px #8B5CF6); animation: fx-flash 3.2s infinite; }
   @keyframes fx-flash{ 0%,88%,100%{ opacity:0; } 89%{ opacity:1; } 90%{ opacity:.15; } 91%{ opacity:1; } 93%{ opacity:0; } }
+  .fx-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .fx-video-shade{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,18,32,0) 55%, rgba(11,18,32,.55) 100%); pointer-events:none; }
 
   .fx-campeao{ background: linear-gradient(135deg, #3A2508, #171006 70%); display:flex; align-items:center; justify-content:center; }
   .fx-trophy{ font-size:34px; filter: drop-shadow(0 0 10px rgba(245,196,83,.6)); }
@@ -983,6 +985,9 @@
     "banner-perfil-tempestade": "fx-tempestade",
     "banner-perfil-campeao": "fx-campeao",
   };
+  // Mesmo arquivo de vídeo usado como banner na Loja (deve ficar na mesma pasta
+  // que este HTML). Se falhar (ex: caminho errado), cai pro efeito CSS de raios.
+  const BANNER_VIDEO_SRC = "banner-tempestade.mp4";
 
   function bannerFxMarkup(fxClass) {
     if (fxClass === "fx-vaporwave") {
@@ -1000,12 +1005,19 @@
       }).join("");
     }
     if (fxClass === "fx-tempestade") {
-      return Array.from({ length: 3 }).map((_, i) => {
+      const bolts = Array.from({ length: 3 }).map((_, i) => {
         const left = (18 + i * 30).toFixed(0);
         const height = (36 + Math.random() * 26).toFixed(0);
         const delay = (i * 0.55).toFixed(2);
         return `<span class="fx-bolt" style="left:${left}%; height:${height}px; animation-delay:${delay}s;"></span>`;
       }).join("");
+      if (BANNER_VIDEO_SRC) {
+        const boltsEscaped = bolts.replace(/"/g, "&quot;");
+        return `<video class="fx-video" src="${BANNER_VIDEO_SRC}" autoplay muted loop playsinline
+          onerror="console.error('[Banner Tempestade] falha ao carregar o vídeo:', this.src); this.insertAdjacentHTML('afterend', '${boltsEscaped}'); this.remove();"
+        ></video><div class="fx-video-shade"></div>`;
+      }
+      return bolts;
     }
     if (fxClass === "fx-campeao") {
       const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
