@@ -346,18 +346,19 @@
 
   /* ===== CARROSSEL DE DESTAQUES ===== */
   #shop-carousel{ position:relative; }
-  #carousel-track{ transition: transform .5s cubic-bezier(.4,0,.2,1); }
-  .carousel-slide{ min-width:100%; flex-shrink:0; }
-  .carousel-card{ display:grid; grid-template-columns: 1fr; background: var(--panel); border:1px solid var(--border); overflow:hidden; }
+  #shop-carousel .overflow-hidden{ width:100%; }
+  #carousel-track{ display:flex; width:100%; transition: transform .5s cubic-bezier(.4,0,.2,1); }
+  .carousel-slide{ flex:0 0 100%; width:100%; max-width:100%; min-width:0; }
+  .carousel-card{ display:grid; grid-template-columns: 1fr; background: var(--panel); border:1px solid var(--border); overflow:hidden; min-width:0; }
   @media (min-width: 768px){ .carousel-card{ grid-template-columns: 1.1fr 1fr; } }
-  .carousel-img{ height:230px; position:relative; overflow:hidden; background:#20242F; }
-  @media (min-width: 768px){ .carousel-img{ height:auto; aspect-ratio:1/1; } }
-  .carousel-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .carousel-img{ height:230px; position:relative; overflow:hidden; background:#20242F; min-width:0; }
+  @media (min-width: 768px){ .carousel-img{ height:auto; aspect-ratio:1/1; min-height:0; } }
+  .carousel-img img{ width:100%; height:100%; object-fit:cover; display:block; max-width:100%; }
   .carousel-badge{
     position:absolute; top:14px; left:14px; font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700;
     padding:5px 12px; text-transform:uppercase; letter-spacing:.03em; background: var(--valorant); color:#12141A;
   }
-  .carousel-info{ padding:26px 28px; display:flex; flex-direction:column; gap:10px; justify-content:center; }
+  .carousel-info{ padding:26px 28px; display:flex; flex-direction:column; gap:10px; justify-content:center; min-width:0; }
   .carousel-name{ font-family:'Teko', sans-serif; font-size:32px; font-weight:600; text-transform:uppercase; line-height:1.05; }
   .carousel-desc{ font-size:13px; color: var(--muted); line-height:1.6; max-width:42ch; }
   .carousel-price{ font-family:'JetBrains Mono', monospace; font-size:24px; font-weight:700; margin-top:2px; }
@@ -1148,9 +1149,9 @@
   (function () {
     const SHOP_PRODUCTS = [
       // ---- VESTUÁRIO ----
-      { id: "camiseta-arena-preta",  name: "Camiseta Arena Preta",     desc: "100% algodão, estampa frontal minimalista.",              price: 89.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Camiseta", featured: true, badge: "MAIS VENDIDO" },
+      { id: "camiseta-arena-preta",  name: "Camiseta Arena Preta",     desc: "100% algodão, estampa frontal minimalista.",              price: 89.90,  tag: "VESTUÁRIO", img: "https://media.discordapp.net/attachments/1371610452290830386/1535365221286154260/image_41ea9b7f.png?ex=6a777fca&is=6a762e4a&hm=0297642830686c7163ed9f88cabf48dcf831bf274048800271c58fcaf4329d7f&=&format=webp&quality=lossless&width=672&height=864", featured: true, badge: "MAIS VENDIDO" },
       { id: "bone-arena-snapback",   name: "Boné Arena Snapback",      desc: "Ajuste snapback, logo bordado em 3D.",                     price: 69.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Bon%C3%A9" },
-      { id: "moletom-arena-cinza",   name: "Moletom Arena Cinza",      desc: "Moletom canguru flanelado, forro felpudo, capuz reforçado.", price: 149.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Moletom", featured: true, badge: "LANÇAMENTO" },
+      { id: "moletom-arena-cinza",   name: "Moletom Arena Cinza",      desc: "Moletom canguru flanelado, forro felpudo, capuz reforçado.", price: 149.90, tag: "VESTUÁRIO", img: "https://media.discordapp.net/attachments/1371610452290830386/1535367606612004864/banana.png?ex=6a778203&is=6a763083&hm=2bcd66111f313b97aa3e6451655abc5eeca96a4ab6550c24555d9e62f2bbe41b&=&format=webp&quality=lossless&width=753&height=968", featured: true, badge: "LANÇAMENTO" },
       { id: "jaqueta-arena-corta-vento", name: "Jaqueta Arena Corta-Vento", desc: "Tecido impermeável leve, zíper YKK, logo refletivo nas costas.", price: 179.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Jaqueta" },
       { id: "meia-arena-pro",        name: "Meia Arena Pro (par)",     desc: "Cano médio, compressão leve, respirável para maratonas de jogo.", price: 24.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Meia" },
       { id: "camiseta-arena-branca",  name: "Camiseta Arena Branca",    desc: "100% algodão, corte unissex, estampa nas costas.",         price: 89.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Camiseta" },
@@ -1166,23 +1167,23 @@
       { id: "porta-copo-arena-led",  name: "Porta-Copo Arena LED",     desc: "Base com luz de presença, logo iluminado ao apoiar o copo.", price: 39.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Porta-Copo" },
 
       // ---- SETUP ----
-      { id: "mousepad-arena-xl",     name: "Mousepad Arena XL",        desc: "90x40cm, base emborrachada antiderrapante, costura reforçada.", price: 59.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Mousepad" },
-      { id: "apoio-punho-arena",     name: "Apoio de Punho Arena",     desc: "Espuma viscoelástica, base antiderrapante para teclado e mouse.", price: 34.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Apoio" },
-      { id: "suporte-headset-arena", name: "Suporte de Headset Arena", desc: "Base em metal com braço giratório e organizador de cabos.", price: 79.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Suporte" },
-      { id: "organizador-cabos-arena", name: "Organizador de Cabos Arena", desc: "Kit com 8 clipes adesivos para manter a mesa livre de fiação.", price: 29.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Cabos" },
-      { id: "suporte-notebook-arena", name: "Suporte para Notebook Arena", desc: "Alumínio dobrável, 6 níveis de altura, ventilação por baixo.", price: 99.90, tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Suporte" },
-      { id: "hub-usb-arena-4p",      name: "Hub USB Arena 4 Portas",   desc: "USB 3.0, cabo de 30cm, encaixe compacto para o setup.",    price: 44.90,  tag: "SETUP", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Hub+USB" },
+      { id: "mousepad-arena-xl",     name: "Mousepad Arena XL",        desc: "90x40cm, base emborrachada antiderrapante, costura reforçada.", price: 59.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535377948667027556/2f563061-9b7d-43ee-9a41-d946073b5b91.png?ex=6a778ba4&is=6a763a24&hm=9b6d3009e2febf2ce9280db366d9fa4559dac23941283bfb939d6fd6119d6520&=&format=webp&quality=lossless" },
+      { id: "apoio-punho-arena",     name: "Apoio de Punho Arena",     desc: "Espuma viscoelástica, base antiderrapante para teclado e mouse.", price: 34.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378318629666816/2b91d6d6-7105-4ed4-a592-2f2fb39b75f4.png?ex=6a778bfd&is=6a763a7d&hm=e840f9ac66e1ee24150cacdef1e1c64573bad13e8493b36b048a7a16e70fdf2b&=&format=webp&quality=lossless" },
+      { id: "suporte-headset-arena", name: "Suporte de Headset Arena", desc: "Base em metal com braço giratório e organizador de cabos.", price: 79.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378684373115001/05824cb9-8bee-4983-aa0b-69c067f8c90d.png?ex=6a778c54&is=6a763ad4&hm=eaf865f0cda36a32893357418d0647c49b3cfea3aed800926074f8b3e26262cf&=&format=webp&quality=lossless" },
+      { id: "organizador-cabos-arena", name: "Organizador de Cabos Arena", desc: "Kit com 8 clipes adesivos para manter a mesa livre de fiação.", price: 29.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378964401360997/a891d3c0-1eb7-46e9-b6cd-b4439d9b9ded.png?ex=6a778c97&is=6a763b17&hm=be032ed5891fe53d358e3a6fc9feca70ad015b8da08ac278e04414e9b9372335&=&format=webp&quality=lossless" },
+      { id: "suporte-notebook-arena", name: "Suporte para Notebook Arena", desc: "Alumínio dobrável, 6 níveis de altura, ventilação por baixo.", price: 99.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535379536693428365/4d970979-44b8-4e94-9e25-92682253ceae.png?ex=6a778d1f&is=6a763b9f&hm=cad1d0909085c51dcb7acc5deab0d38e797be70ba2e1c4c6f93aff235e66f698&=&format=webp&quality=lossless" },
+      { id: "hub-usb-arena-4p",      name: "Hub USB Arena 4 Portas",   desc: "USB 3.0, cabo de 30cm, encaixe compacto para o setup.",    price: 44.90,  tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535380999918059600/41181209-f9b4-4768-807d-97aef4225e0d.png?ex=6a778e7c&is=6a763cfc&hm=2f5a6b9f7791f6eaced5fca5b6ae2ee690be71e7d7d8db816952ffe615ec64a0&=&format=webp&quality=lossless" },
 
       // ---- ELETRÔNICOS ----
-      { id: "headset-arena-pro",     name: "Headset Arena Pro 7.1",    desc: "Áudio surround virtual, drivers de 50mm, microfone com cancelamento de ruído.", price: 349.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Headset", featured: true, badge: "TOP ELETRÔNICOS" },
-      { id: "mouse-arena-precision", name: "Mouse Arena Precision",    desc: "Sensor óptico 26000 DPI, switches ópticos, 200h de bateria.", price: 279.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Mouse" },
-      { id: "teclado-arena-mecanico", name: "Teclado Mecânico Arena", desc: "Switches hot-swap, RGB por tecla, estrutura em alumínio escovado.", price: 449.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Teclado" },
-      { id: "webcam-arena-stream",   name: "Webcam Arena Stream 1440p", desc: "Foco automático, correção de luz em tempo real, tripé incluso.", price: 399.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Webcam" },
-      { id: "microfone-arena-voice", name: "Microfone Arena Voice USB", desc: "Condensador cardioide, filtro pop incluso, monitoramento em tempo real.", price: 329.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Microfone" },
-      { id: "fone-arena-earbuds",    name: "Fone Arena Earbuds ANC",   desc: "Cancelamento ativo de ruído, latência ultrabaixa para jogos mobile.", price: 219.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Earbuds" },
-      { id: "carregador-arena-gan-65w", name: "Carregador Arena GaN 65W", desc: "Compacto, 2 portas (USB-C + USB-A), carga rápida para notebook e celular.", price: 129.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Carregador" },
-      { id: "controle-arena-wireless", name: "Controle Arena Wireless", desc: "Sem fio, bateria de 20h, compatível com PC e principais consoles.", price: 259.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Controle", featured: true, badge: "NOVO" },
-      { id: "ssd-arena-portatil-1tb", name: "SSD Portátil Arena 1TB", desc: "Leitura até 1050MB/s, USB-C, case resistente a quedas.", price: 449.90, tag: "ELETRÔNICOS", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=SSD" },
+      { id: "headset-arena-pro",     name: "Headset Arena Pro 7.1",    desc: "Áudio surround virtual, drivers de 50mm, microfone com cancelamento de ruído.", price: 349.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535371540596662272/banana.png?ex=6a7785ad&is=6a76342d&hm=17645d5d187862edfb0b94d7900adbfeb2f7df08e94791282f6eb07663aaa6eb&=&format=webp&quality=lossless", featured: true, badge: "TOP ELETRÔNICOS" },
+      { id: "mouse-arena-precision", name: "Mouse Arena Precision",    desc: "Sensor óptico 26000 DPI, switches ópticos, 200h de bateria.", price: 279.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535375433967739020/6caae325-9a59-4450-9ca9-bf2c73aa350e.png?ex=6a77894d&is=6a7637cd&hm=144e61beaecfedd82918c975d8307a5c339e071bdbd621eb3e624e706e401496&=&format=webp&quality=lossless" },
+      { id: "teclado-arena-mecanico", name: "Teclado Mecânico Arena", desc: "Switches hot-swap, RGB por tecla, estrutura em alumínio escovado.", price: 449.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372010589266094/banana.png?ex=6a77861d&is=6a76349d&hm=6f798e789a9492b44cdbc5db1dff70dcd6eee92b1165300173d79fb517efaf10&=&format=webp&quality=lossless" },
+      { id: "webcam-arena-stream",   name: "Webcam Arena Stream 1440p", desc: "Foco automático, correção de luz em tempo real, tripé incluso.", price: 399.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372323367030894/banana.png?ex=6a778667&is=6a7634e7&hm=6bcef93c6893e0b058a1f05b0decef776621320f3d1341d4866b96a37b78a3ca&=&format=webp&quality=lossless" },
+      { id: "microfone-arena-voice", name: "Microfone Arena Voice USB", desc: "Condensador cardioide, filtro pop incluso, monitoramento em tempo real.", price: 329.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372598685212764/banana.png?ex=6a7786a9&is=6a763529&hm=a92cc5cd914fdb6efcb13c88c74bae0e7c65433d7ad6f1977e8747c6cbd01502&=&format=webp&quality=lossless" },
+      { id: "fone-arena-earbuds",    name: "Fone Arena Earbuds ANC",   desc: "Cancelamento ativo de ruído, latência ultrabaixa para jogos mobile.", price: 219.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372840856059995/banana.png?ex=6a7786e3&is=6a763563&hm=30c7518d13c25014ce69cf216a8bb7f0e49885d9c61f96a42a49afea3009ec64&=&format=webp&quality=lossless" },
+      { id: "carregador-arena-gan-65w", name: "Carregador Arena GaN 65W", desc: "Compacto, 2 portas (USB-C + USB-A), carga rápida para notebook e celular.", price: 129.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535373379471679528/a62b0fff-7820-4bdd-a4b2-f2d4b3041cee.png?ex=6a778763&is=6a7635e3&hm=543e07effb050133209c7d8fc2f125670d057c70e70cf54e738e73f00137048d&=&format=webp&quality=lossless" },
+      { id: "controle-arena-wireless", name: "Controle Arena Wireless", desc: "Sem fio, bateria de 20h, compatível com PC e principais consoles.", price: 259.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535371624306708490/image_e3fcc5f5.png?ex=6a7785c1&is=6a763441&hm=ec15966537de9e4d147d9d699e6d4e4718dc9dad466b24870bbf1eea3fc33255&=&format=webp&quality=lossless", featured: true, badge: "NOVO" },
+      { id: "ssd-arena-portatil-1tb", name: "SSD Portátil Arena 1TB", desc: "Leitura até 1050MB/s, USB-C, case resistente a quedas.", price: 449.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535374956341235773/d945db0c-bce0-44d5-be39-f849a931554c.png?ex=6a7788db&is=6a76375b&hm=8ab9564ddd9dc186aabe366054dbadebd82c0b79d0366774db620feb8ccf7455&=&format=webp&quality=lossless" },
 
       // ---- DIGITAL (perfil: molduras, banners e efeitos) ----
       { id: "moldura-cyber-digital", name: "Moldura Cyber (Digital)",  desc: "Moldura de perfil animada para seu avatar na Arena.",     price: 19.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura", featured: true, badge: "EXCLUSIVO DIGITAL" },
