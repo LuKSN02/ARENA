@@ -187,6 +187,11 @@
      =============================================================== */
   .dprev{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 
+  /* Banner de vídeo real (ex: Tempestade) */
+  .dprev-video-wrap{ background:#0B1220; }
+  .dprev-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .dprev-video-shade{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,18,32,0) 55%, rgba(11,18,32,.55) 100%); pointer-events:none; }
+
   /* Molduras de avatar */
   .dprev-avatar-slot{ position:relative; width:64%; aspect-ratio:1/1; max-width:150px; }
   .dprev-avatar-core{
@@ -1296,6 +1301,20 @@
             return `<span class="dprev-star" style="top:${top}%; left:${left}%; animation-delay:${delay}s;"></span>`;
           }).join("");
           return `<div class="dprev"><div class="dprev-banner banner-nebulosa">${stars}</div></div>`;
+        }
+        if (p.id.includes("tempestade") && p.video) {
+          const bolts = Array.from({ length: 3 }).map((_, i) => {
+            const left = (18 + i * 30).toFixed(0);
+            const height = (36 + Math.random() * 26).toFixed(0);
+            const delay = (i * 0.55).toFixed(2);
+            return `<span class="dprev-bolt" style="left:${left}%; height:${height}px; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev dprev-video-wrap">
+            <video class="dprev-video" src="${p.video}" autoplay muted loop playsinline
+              onerror="console.error('[Banner Tempestade] falha ao carregar o vídeo:', this.src); this.closest('.dprev-video-wrap').outerHTML = '<div class=&quot;dprev&quot;><div class=&quot;dprev-banner banner-tempestade&quot;>${bolts.replace(/"/g, "&quot;")}</div></div>';"
+            ></video>
+            <div class="dprev-video-shade"></div>
+          </div>`;
         }
         if (p.id.includes("tempestade")) {
           const bolts = Array.from({ length: 3 }).map((_, i) => {
