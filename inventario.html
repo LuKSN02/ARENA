@@ -114,6 +114,19 @@
   .progress-fill{ height:100%; background: var(--discord-blurple); border-radius:3px; transition: width .25s ease; }
   .item-action.locked-btn{ background: transparent; border:1px solid var(--border); color: var(--muted); cursor:not-allowed; }
 
+  /* ============ RESGATE POR CÓDIGO (emblema-criador e afins) ============ */
+  .redeem-row{ display:flex; gap:6px; margin-top:2px; }
+  .redeem-input{
+    flex:1; min-width:0; background: var(--bg); border:1px solid var(--border); border-radius:3px;
+    padding:8px 9px; font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--ink);
+    letter-spacing:.03em; text-transform:uppercase;
+  }
+  .redeem-input::placeholder{ color: var(--muted); text-transform:none; }
+  .redeem-input:focus{ outline:none; border-color: var(--discord-blurple); }
+  .redeem-row .item-action{ flex-shrink:0; padding:0 14px; background: var(--discord-blurple); color:#fff; }
+  .redeem-error{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--valorant); }
+  .redeem-error.hidden{ display:none; }
+
   /* ============ PAINEL DEV — SIMULAR PROGRESSO ============ */
   #dev-panel{ border:1px dashed var(--border); background: var(--panel); }
   #dev-panel summary{ cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--muted); padding:12px 16px; }
@@ -442,6 +455,10 @@
       emoji: "🔥",
       unlock: { type: "purchase", label: "Compre na Loja Arena (item Digital)" } },
 
+    { id: "emblema-criador", type: "emblema", name: "Criador", desc: "Emblema exclusivo e único de quem criou a Arena. Não pode ser comprado nem conquistado — só resgatado com o código secreto.", rarity: "lendario",
+      emoji: "🛠️",
+      unlock: { type: "code", label: "Resgate exclusivo por código" } },
+
     { id: "cupom-loja-10", type: "cupom", name: "10% OFF na Loja Arena", desc: "Válido para qualquer produto da loja oficial.", rarity: "comum",
       emoji: "🎟️" },
     { id: "cupom-chat-vip", type: "cupom", name: "Acesso VIP ao Chat", desc: "Libera o chat exclusivo durante transmissões ao vivo.", rarity: "raro",
@@ -451,6 +468,16 @@
 
   const RARITY_LABEL = { comum: "Comum", raro: "Raro", epico: "Épico", lendario: "Lendário" };
   const RARITY_COLOR = { comum: "var(--r-comum)", raro: "var(--r-raro)", epico: "var(--r-epico)", lendario: "var(--r-lendario)" };
+
+  // ===============================================================
+  // CÓDIGOS DE RESGATE — itens do tipo unlock.type === "code" só
+  // entram no inventário se o código bater aqui (comparação sem
+  // diferenciar maiúsculas/minúsculas e ignorando espaço nas pontas).
+  // Troque o valor abaixo pelo código que você quiser usar.
+  // ===============================================================
+  const REDEEM_CODES = {
+    "emblema-criador": "ARENA-CRIADOR",
+  };
 
   // ===============================================================
   // 3) ESTADO DO INVENTÁRIO — na primeira visita, "concede" um kit
@@ -696,6 +723,28 @@
     patchProfile({ equippedBadges, equippedBadgeId: undefined, equippedBadgeEmoji: undefined, equippedBadgeName: undefined });
   }
 
+  // Resgata um item do tipo unlock.type === "code" — compara o código
+  // digitado com REDEEM_CODES (sem diferenciar maiúsculas/minúsculas
+  // nem espaço nas pontas). Se bater, concede o item no inventário.
+  function redeemCode(item, rawCode) {
+    const typed = (rawCode || "").trim().toUpperCase();
+    const expected = (REDEEM_CODES[item.id] || "").trim().toUpperCase();
+    const errEl = document.querySelector(`[data-code-error="${item.id}"]`);
+    if (!typed) {
+      if (errEl) { errEl.textContent = "Digite um código."; errEl.classList.remove("hidden"); }
+      return;
+    }
+    if (!expected || typed !== expected) {
+      if (errEl) { errEl.textContent = "Código inválido."; errEl.classList.remove("hidden"); }
+      return;
+    }
+    inventory.push({ id: item.id, used: false, equipped: false });
+    saveInventory(inventory);
+    showAchievement(item);
+    showToast(`✓ EMBLEMA "${item.name.toUpperCase()}" RESGATADO`);
+    render();
+  }
+
   async function useCupom(item) {
     const ok = await themedConfirm({
       title: item.name,
@@ -790,6 +839,25 @@
         const target = unlockTarget(item);
         const hasBar = val !== null && target !== null;
         const pct = hasBar ? Math.min(100, (val / target) * 100) : 0;
+
+        // ---- Item de código secreto: input + botão em vez de barra ----
+        if (item.unlock.type === "code") {
+          return `
+            <div class="item-card clip-card locked" ${cardDelay}>
+              <div class="relative">${swatch}${rarityChip}<div class="lock-overlay">🔒</div></div>
+              <div class="item-body">
+                <div class="item-name">${item.name}</div>
+                <div class="item-desc">${item.desc}</div>
+                <div class="lock-req mt-1">${item.unlock.label}</div>
+                <div class="redeem-row">
+                  <input type="text" class="redeem-input" data-code-input="${item.id}" placeholder="CÓDIGO SECRETO" autocomplete="off" spellcheck="false">
+                  <button class="item-action" data-code-submit="${item.id}">RESGATAR</button>
+                </div>
+                <div class="redeem-error hidden" data-code-error="${item.id}"></div>
+              </div>
+            </div>`;
+        }
+
         const progressHtml = hasBar
           ? `<div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
              <div class="lock-req mt-1">${val}/${target} — ${item.unlock.label}</div>`
@@ -848,6 +916,17 @@
     });
     grid.querySelectorAll("[data-use]").forEach(btn => {
       btn.addEventListener("click", () => useCupom(CATALOG.find(c => c.id === btn.dataset.use)));
+    });
+    grid.querySelectorAll("[data-code-submit]").forEach(btn => {
+      const id = btn.dataset.codeSubmit;
+      const input = grid.querySelector(`[data-code-input="${id}"]`);
+      const submit = () => redeemCode(CATALOG.find(c => c.id === id), input.value);
+      btn.addEventListener("click", submit);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+      input.addEventListener("input", () => {
+        const errEl = grid.querySelector(`[data-code-error="${id}"]`);
+        if (errEl) errEl.classList.add("hidden");
+      });
     });
   }
 

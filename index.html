@@ -285,6 +285,21 @@
   .dropdown-badge:hover{ opacity:.9; }
   .dropdown-badge.is-on{ background: var(--panel-2); border-color: var(--nb-color, #5865F2); color: var(--ink-soft); opacity:1; }
 
+  /* Brilho exclusivo pro emblema "Criador" — único da conta, então
+     ganha um destaque diferente dos outros lendários. */
+  @keyframes creator-badge-glow{
+    0%,100%{ box-shadow: 0 0 6px -1px var(--nb-color, #F5B729); }
+    50%{ box-shadow: 0 0 14px 3px var(--nb-color, #F5B729); }
+  }
+  .nav-badge[data-id="emblema-criador"],
+  .dpv-badge-dot[data-id="emblema-criador"]{ animation: creator-badge-glow 2.2s ease-in-out infinite; }
+  .dropdown-badge.is-on[data-badge-id="emblema-criador"]{ animation: creator-badge-glow 2.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){
+    .nav-badge[data-id="emblema-criador"],
+    .dpv-badge-dot[data-id="emblema-criador"],
+    .dropdown-badge.is-on[data-badge-id="emblema-criador"]{ animation:none; }
+  }
+
   .dropdown-item{
     display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     padding:10px 14px; font-size:13px; font-weight:500; color: var(--ink-soft);
@@ -1367,6 +1382,7 @@
     "emblema-fundador-cosmico": { name: "Emblema Fundador Cósmico", emoji: "🌌", rarity: "lendario" },
     "emblema-mestre-arena": { name: "Emblema Mestre da Arena", emoji: "🎯", rarity: "lendario" },
     "emblema-fenix-renascida": { name: "Emblema Fênix Renascida", emoji: "🔥", rarity: "epico" },
+    "emblema-criador": { name: "Criador", emoji: "🛠️", rarity: "lendario" },
   };
   function inventoryKey(email) { return `arena-inventory-${email || "demo"}`; }
   function loadInventoryList(email) {
@@ -1555,7 +1571,7 @@
     const inv = userEmail ? normalizeEquippedBadges(userEmail) : [];
     const badges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
     document.getElementById("nav-badges").innerHTML = badges.map(b => `
-      <span class="nav-badge" style="--nb-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
+      <span class="nav-badge" data-id="${b.id}" style="--nb-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
     `).join("");
     renderBadgeManager();
 
@@ -1589,7 +1605,7 @@
     if (nameEffectClass) nameEl.classList.add(nameEffectClass);
 
     document.getElementById("dropdown-preview-badges").innerHTML = badges.map(b => `
-      <span class="dpv-badge-dot" style="--bc-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
+      <span class="dpv-badge-dot" data-id="${b.id}" style="--bc-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
     `).join("");
 
     document.getElementById("dropdown-preview-username").textContent = "@" + (profile?.username || displayName.toLowerCase());
