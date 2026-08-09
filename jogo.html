@@ -234,9 +234,23 @@
     } catch (err) { /* silencioso */ }
   }
 
+  // ===============================================================
+  // FEED DE ATIVIDADE — mesma chave `arena-activity-<email>` que
+  // perfil.html lê para montar a seção "Atividade recente".
+  // ===============================================================
+  function logArenaActivity(icon, text) {
+    try {
+      const key = `arena-activity-${sessionEmail || "demo"}`;
+      const raw = localStorage.getItem(key);
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({ icon, text, at: Date.now() });
+      localStorage.setItem(key, JSON.stringify(list.slice(0, 30)));
+    } catch (err) { /* silencioso */ }
+  }
+
   // Evita contar a mesma notícia duas vezes (abrir e fechar o modal
   // repetidas vezes) — soma progresso só na primeira abertura de cada uma.
-  function markArticleRead(articleKey, { isLive } = {}) {
+  function markArticleRead(articleKey, { isLive, title } = {}) {
     try {
       const readKey = `arena-read-articles-${sessionEmail || "demo"}`;
       const already = JSON.parse(localStorage.getItem(readKey) || "[]");
@@ -245,6 +259,7 @@
       localStorage.setItem(readKey, JSON.stringify(already));
       bumpArenaProgress("newsRead");
       if (isLive) bumpArenaProgress("liveMatchesWatched");
+      logArenaActivity("📰", `Leu a notícia "${title || "Sem título"}"`);
     } catch (err) { /* silencioso */ }
   }
 
@@ -472,6 +487,7 @@
   // Escreve os comentários "de fábrica" (fallback) + os que a pessoa
   // publicou de verdade (persistidos em localStorage) nessa notícia.
   let currentArticleKey = null;
+  let currentArticleTitle = "";
   let currentBaseComments = [];
 
   function renderModalComments() {
@@ -511,6 +527,7 @@
     `).join("");
 
     currentArticleKey = `${slug}:${idx}`;
+    currentArticleTitle = n.title || "";
     currentBaseComments = n.comments || buildFallbackComments(n);
     document.getElementById("modal-comment-input").value = "";
     renderModalComments();
@@ -523,7 +540,7 @@
     // modal aberto (evita somar progresso pra quem abre e fecha na hora).
     clearTimeout(openNewsModal._readTimer);
     openNewsModal._readTimer = setTimeout(() => {
-      markArticleRead(`${slug}:${idx}`, { isLive: !!n.isLive });
+      markArticleRead(`${slug}:${idx}`, { isLive: !!n.isLive, title: n.title });
     }, 4000);
   }
 
@@ -561,6 +578,7 @@
     if (!text || !currentArticleKey) { modalCommentInput.focus(); return; }
     saveStoredComment(currentArticleKey, { user: "Você", time: "agora", text });
     bumpArenaProgress("newsComments");
+    logArenaActivity("💬", `Comentou em "${currentArticleTitle}"`);
     modalCommentInput.value = "";
     renderModalComments();
   }

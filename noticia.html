@@ -198,9 +198,25 @@
     } catch (err) { /* silencioso */ }
   }
 
+  // ===============================================================
+  // FEED DE ATIVIDADE — mesma chave `arena-activity-<email>` que
+  // perfil.html lê para montar a seção "Atividade recente". Toda
+  // página que soma progresso (aqui, jogo.html, loja.html) também
+  // registra um evento aqui, mais nova primeiro, limitado a 30.
+  // ===============================================================
+  function logArenaActivity(icon, text) {
+    try {
+      const key = `arena-activity-${sessionEmail || "demo"}`;
+      const raw = localStorage.getItem(key);
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({ icon, text, at: Date.now() });
+      localStorage.setItem(key, JSON.stringify(list.slice(0, 30)));
+    } catch (err) { /* silencioso */ }
+  }
+
   // Evita contar a mesma notícia duas vezes (reload da página, voltar
   // e reler etc.) — só soma progresso na primeira leitura de cada uma.
-  function markArticleRead(articleKey, { isLive } = {}) {
+  function markArticleRead(articleKey, { isLive, title } = {}) {
     try {
       const readKey = `arena-read-articles-${sessionEmail || "demo"}`;
       const already = JSON.parse(localStorage.getItem(readKey) || "[]");
@@ -209,6 +225,7 @@
       localStorage.setItem(readKey, JSON.stringify(already));
       bumpArenaProgress("newsRead");
       if (isLive) bumpArenaProgress("liveMatchesWatched");
+      logArenaActivity("📰", `Leu a notícia "${title || "Sem título"}"`);
     } catch (err) { /* silencioso */ }
   }
 
@@ -305,7 +322,7 @@
   // Só conta como "lida" depois de alguns segundos na página — evita
   // somar progresso pra quem só passou de raspão e fechou na hora.
   setTimeout(() => {
-    markArticleRead(`${slug}:${id}`, { isLive: !!article.isLive });
+    markArticleRead(`${slug}:${id}`, { isLive: !!article.isLive, title: article.title });
   }, 4000);
 
   // Conteúdo do corpo — em produção viria pronto do CMS (article.content)
@@ -351,6 +368,7 @@
     if (!text) { commentInput.focus(); return; }
     saveStoredComment(articleKey, { user: "Você", time: "agora", text });
     bumpArenaProgress("newsComments");
+    logArenaActivity("💬", `Comentou em "${article.title}"`);
     commentInput.value = "";
     renderComments();
   }

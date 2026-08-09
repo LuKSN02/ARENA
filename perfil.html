@@ -105,6 +105,13 @@
   .h2h-val{ font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; }
 
   .empty-hint{ font-size:12px; color: var(--muted); }
+
+  /* ===== ATIVIDADE RECENTE ===== */
+  .activity-row{ display:flex; align-items:flex-start; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); }
+  .activity-row:last-child{ border-bottom:none; }
+  .activity-icon{ width:32px; height:32px; border-radius:9999px; background: var(--panel-2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .activity-text{ font-size:13px; color: var(--ink-soft); line-height:1.45; }
+  .activity-time{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--muted); margin-top:2px; display:block; }
 </style>
 </head>
 <body>
@@ -207,6 +214,17 @@
       <div id="showcase-row" class="flex gap-3 flex-wrap"></div>
     </div>
 
+    <!-- Atividade recente -->
+    <div id="activity-section" class="mt-8">
+      <p class="font-mono text-[11px] font-semibold mb-3" style="color: var(--muted);">ATIVIDADE RECENTE</p>
+      <div id="activity-list" class="rk-card"></div>
+    </div>
+
+    <!-- Atividade privada -->
+    <div id="activity-hidden-hint" class="hidden mt-8 rk-card p-6 text-center">
+      <p class="text-[12.5px]" style="color: var(--muted);">🔒 Este jogador optou por não exibir a atividade recente.</p>
+    </div>
+
     <!-- Comparação H2H -->
     <div id="h2h-section" class="hidden mt-10 rk-card p-6">
       <h3 class="font-display text-2xl uppercase tracking-wide mb-1">Comparar com você</h3>
@@ -241,6 +259,37 @@
   }
   function escapeHtml(str) {
     return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  // ===============================================================
+  // ATIVIDADE RECENTE — chave `arena-activity-<email>` guarda uma
+  // lista (mais nova primeiro) de eventos { icon, text, at }. Outras
+  // páginas (noticia.html, jogo.html, loja.html) chamam a mesma
+  // função logArenaActivity() sempre que o usuário faz algo relevante
+  // (ler notícia, comentar, comprar item, etc). Aqui só lemos e
+  // exibimos; seguir/deixar de seguir alguém também é logado direto
+  // nesta página, no clique do botão de seguir.
+  // ===============================================================
+  function activityKey(email) { return `arena-activity-${email || "demo"}`; }
+  function getActivity(email) { return readJSON(activityKey(email), []); }
+  function logArenaActivity(email, icon, text) {
+    try {
+      const list = getActivity(email);
+      list.unshift({ icon, text, at: Date.now() });
+      writeJSON(activityKey(email), list.slice(0, 30));
+    } catch (err) { /* silencioso */ }
+  }
+  function relativeTime(ts) {
+    const diff = Math.max(0, Date.now() - ts);
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `há ${d}d`;
+    const mo = Math.floor(d / 30);
+    return `há ${mo}${mo === 1 ? " mês" : " meses"}`;
   }
   function renderBioMarkdown(raw) {
     let safe = escapeHtml(raw || "");
@@ -513,6 +562,10 @@
       document.getElementById("follow-btn").textContent = nowFollowing ? "✓ SEGUINDO" : "+ SEGUIR";
       document.getElementById("follow-btn").classList.toggle("is-following", nowFollowing);
       document.getElementById("followers-count").textContent = countFollowers(targetEmail);
+      if (nowFollowing) {
+        const targetName = profile.displayName || userRecord.name;
+        logArenaActivity(sessionEmail, "🤝", `Passou a seguir ${escapeHtml(targetName)}`);
+      }
     });
   } else {
     actionButtons.innerHTML = `<a href="index.html" class="btn-follow">FAÇA LOGIN PRA SEGUIR</a>`;
@@ -536,6 +589,32 @@
     document.getElementById("stat-xpbar-fill").style.width = pct + "%";
     document.getElementById("stat-xp-caption").textContent =
       `${theirScore.xpIntoLevel} / ${XP_PER_LEVEL} XP para o nível ${theirScore.level + 1}`;
+  }
+
+  // ===============================================================
+  // 10b) RENDERIZA O FEED DE ATIVIDADE (mesma regra de privacidade
+  //      das estatísticas — quem escondeu o histórico de partidas
+  //      também esconde o feed).
+  // ===============================================================
+  if (!statsVisible) {
+    document.getElementById("activity-section").classList.add("hidden");
+    document.getElementById("activity-hidden-hint").classList.remove("hidden");
+  } else {
+    const activity = getActivity(targetEmail);
+    const activityList = document.getElementById("activity-list");
+    if (activity.length === 0) {
+      activityList.classList.remove("rk-card");
+      activityList.innerHTML = `<p class="empty-hint">Nenhuma atividade recente ainda.</p>`;
+    } else {
+      activityList.innerHTML = activity.slice(0, 12).map(a => `
+        <div class="activity-row">
+          <span class="activity-icon">${a.icon || "•"}</span>
+          <span>
+            <span class="activity-text">${escapeHtml(a.text)}</span>
+            <span class="activity-time">${relativeTime(a.at)}</span>
+          </span>
+        </div>`).join("");
+    }
   }
 
   // ===============================================================

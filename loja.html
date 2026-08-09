@@ -1237,6 +1237,17 @@
     function saveShopInventory(inv) {
       try { localStorage.setItem(shopInventoryKey, JSON.stringify(inv)); } catch (err) {}
     }
+    // Mesma chave `arena-activity-<email>` que perfil.html lê para a
+    // seção "Atividade recente".
+    function logArenaActivity(icon, text) {
+      try {
+        const key = `arena-activity-${shopSessionEmail || "demo"}`;
+        const raw = localStorage.getItem(key);
+        const list = raw ? JSON.parse(raw) : [];
+        list.unshift({ icon, text, at: Date.now() });
+        localStorage.setItem(key, JSON.stringify(list.slice(0, 30)));
+      } catch (err) { /* silencioso */ }
+    }
     function isCouponAlreadyUsed() {
       const entry = loadShopInventory().find(i => i.id === COUPON_ID);
       return !!(entry && entry.used);
@@ -1856,6 +1867,13 @@
     }
 
     function processCheckoutPayment() {
+      // Loga cada item do carrinho no feed de atividade ANTES de
+      // limpar o carrinho — inclui físicos e digitais.
+      Object.keys(cart).forEach(id => {
+        const p = SHOP_PRODUCTS.find(sp => sp.id === id);
+        if (p) logArenaActivity(p.tag === "DIGITAL" ? "🎁" : "🛍", `Comprou "${p.name}"`);
+      });
+
       const equippedNames = grantDigitalPurchases();
       const gotDigitalCosmetic = equippedNames.length > 0;
       // Reflete na hora o item recém-equipado (moldura/banner/emblema/nome RGB)
