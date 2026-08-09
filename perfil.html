@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil do Jogador | Arena</title>
+<meta name="description" content="Veja o perfil público de um jogador da Arena: banner, emblemas, conquistas e estatísticas.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
+  :root{
+    --bg: #14171E;
+    --panel: #1B1F28;
+    --panel-2: #20242F;
+    --border: rgba(255,255,255,0.08);
+    --ink: #D7DAE1;
+    --ink-soft: #AEB3BE;
+    --muted: #7C8394;
+    --live: #34D399;
+    --valorant: #FF4655; --valorant-glow: #241016;
+    --discord-blurple: #5865F2;
+    --r-comum: #7C8394; --r-raro: #5865F2; --r-epico: #8B5CF6; --r-lendario: #F59E0B;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+
+  .rk-card{ background: var(--panel); border:1px solid var(--border); border-radius:14px; }
+
+  /* ===== CARD DE PERFIL (banner + avatar sobreposto) ===== */
+  #profile-card{ background: var(--panel); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+  #profile-banner{ height:170px; position:relative; overflow:hidden; background-size:cover; background-position:center; }
+
+  .fx-vaporwave{ background: linear-gradient(180deg, #2B1055 0%, #6B2A8C 45%, #C23C7E 100%); }
+  .fx-sun{ position:absolute; left:50%; bottom:14%; width:70px; height:70px; border-radius:9999px; transform:translateX(-50%); background: linear-gradient(180deg,#FFD166,#FF4655); box-shadow:0 0 26px rgba(255,209,102,.6); }
+  .fx-gridline{ position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,.35); animation: fx-grid-move 2.2s linear infinite; }
+  @keyframes fx-grid-move{ 0%{ transform: translateY(0); opacity:.6; } 100%{ transform: translateY(14px); opacity:0; } }
+  .fx-nebulosa{ background: radial-gradient(circle at 20% 30%, rgba(139,92,246,.55), transparent 45%), radial-gradient(circle at 75% 60%, rgba(34,211,238,.4), transparent 50%), linear-gradient(135deg, #1B1030, #10131C 70%); }
+  .fx-star{ position:absolute; width:3px; height:3px; border-radius:9999px; background:#fff; animation: fx-twinkle 2.4s ease-in-out infinite; }
+  @keyframes fx-twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  .fx-tempestade{ background: linear-gradient(160deg, #0B1220, #1B1030 70%); }
+  .fx-bolt{ position:absolute; top:6%; width:2px; background:#fff; opacity:0; filter: drop-shadow(0 0 6px #8B5CF6); animation: fx-flash 3.2s infinite; }
+  @keyframes fx-flash{ 0%,88%,100%{ opacity:0; } 89%{ opacity:1; } 90%{ opacity:.15; } 91%{ opacity:1; } 93%{ opacity:0; } }
+  .fx-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .fx-video-shade{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,18,32,0) 55%, rgba(11,18,32,.55) 100%); pointer-events:none; }
+  .fx-campeao{ background: linear-gradient(135deg, #3A2508, #171006 70%); display:flex; align-items:center; justify-content:center; }
+  .fx-trophy{ font-size:44px; filter: drop-shadow(0 0 10px rgba(245,196,83,.6)); }
+  .fx-confetti{ position:absolute; top:-10%; width:6px; height:10px; animation: fx-fall linear infinite; }
+  @keyframes fx-fall{ 0%{ transform: translateY(-20%) rotate(0deg); opacity:0; } 10%{ opacity:1; } 100%{ transform: translateY(260%) rotate(360deg); opacity:0; } }
+
+  .avatar-wrap{ position:relative; width:104px; height:104px; margin-top:-56px; margin-left:24px; }
+  #avatar-frame{ position:relative; width:100%; height:100%; border-radius:9999px; overflow:hidden; border:4px solid var(--panel); background: var(--panel-2); }
+  #avatar-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .avatar-frame-overlay{ position:absolute; inset:-8px; pointer-events:none; border-radius:9999px; border:3px solid var(--fc-color, transparent); box-shadow: 0 0 14px -2px var(--fc-color, transparent), inset 0 0 8px -3px var(--fc-color, transparent); }
+  @keyframes cyberFrameSpin{ to{ transform: rotate(360deg); } }
+  .avatar-frame-overlay.is-cyber{ border:none; background: conic-gradient(from 0deg, #FF4655, #00E5FF, #8B5CF6, #FF4655); animation: cyberFrameSpin 3s linear infinite; box-shadow: 0 0 14px -2px #FF4655, 0 0 14px -2px #00E5FF; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }
+  @keyframes plasmaFrameSpin{ to{ transform: rotate(360deg); } }
+  .avatar-frame-overlay.is-plasma{ border:none; background: conic-gradient(from 0deg, #EC4899, #8B5CF6, #22D3EE, #EC4899); animation: plasmaFrameSpin 3.4s linear infinite; box-shadow: 0 0 14px -2px #EC4899, 0 0 14px -2px #8B5CF6; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }
+
+  .name-rgb-effect{ background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: nameRgbAnim 3.5s linear infinite; }
+  @keyframes nameRgbAnim{ to{ background-position: 300% 0; } }
+  .name-fire-effect{ background: linear-gradient(0deg, #FF4655, #FFD166 55%, #FFF3C4); background-size: 100% 250%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: nameFireAnim 1.5s ease-in-out infinite; }
+  @keyframes nameFireAnim{ 0%,100%{ background-position: 0 0%; } 50%{ background-position: 0 100%; } }
+  .name-holo-effect{ background: linear-gradient(100deg, #22D3EE, #fff, #EC4899, #8B5CF6, #22D3EE); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: nameRgbAnim 2.4s linear infinite; }
+
+  .profile-badge-chip{ display:flex; align-items:center; gap:7px; padding:6px 11px; background: var(--panel-2); border:1px solid var(--bc-color, var(--discord-blurple)); box-shadow: 0 0 10px -3px var(--bc-color, var(--discord-blurple)); font-size:12px; font-weight:600; border-radius:999px; }
+  .showcase-chip{ display:flex; align-items:center; gap:8px; padding:10px 14px; background: var(--panel-2); border:1px solid var(--ac-color, var(--discord-blurple)); box-shadow: 0 0 10px -3px var(--ac-color, var(--discord-blurple)); font-size:12.5px; font-weight:600; border-radius:10px; }
+  .connection-chip{ display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background: var(--panel-2); border:1px solid var(--border); font-size:11.5px; font-weight:600; color: var(--ink-soft); }
+  .connection-dot{ width:16px; height:16px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#fff; }
+
+  /* ===== BOTÕES DE AÇÃO ===== */
+  .btn-follow{ font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:9px 20px; border-radius:8px; background: var(--valorant); color:#fff; transition: filter .12s ease, background .12s ease, color .12s ease; }
+  .btn-follow:hover{ filter: brightness(1.1); }
+  .btn-follow.is-following{ background:transparent; border:1px solid var(--border); color: var(--ink-soft); }
+  .btn-follow.is-following:hover{ border-color: var(--valorant); color: var(--valorant); }
+  .btn-edit{ font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:9px 20px; border-radius:8px; background:transparent; border:1px solid var(--border); color: var(--ink-soft); }
+  .btn-edit:hover{ border-color: var(--ink); color: var(--ink); }
+
+  /* ===== STATS ===== */
+  .stat-tile{ background: var(--panel); border:1px solid var(--border); padding:16px 10px; text-align:center; border-radius:12px; }
+  .stat-value{ display:block; font-family:'Teko', sans-serif; font-size:32px; line-height:1; color: var(--ink); }
+  .stat-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); letter-spacing:.05em; margin-top:5px; display:block; }
+  .xpbar{ width:100%; height:8px; border-radius:999px; background: var(--panel-2); margin-top:8px; overflow:hidden; }
+  .xpbar-fill{ height:100%; background: linear-gradient(90deg, var(--valorant), #F59E0B); border-radius:999px; }
+
+  /* ===== COMPARAÇÃO H2H ===== */
+  .h2h-row{ display:grid; grid-template-columns: 1fr 90px 1fr; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .h2h-row:last-child{ border-bottom:none; }
+  .h2h-bar-wrap{ height:6px; border-radius:999px; background: var(--panel-2); overflow:hidden; }
+  .h2h-bar-you{ height:100%; background: var(--live); border-radius:999px; margin-left:auto; }
+  .h2h-bar-them{ height:100%; background: var(--valorant); border-radius:999px; }
+  .h2h-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); text-align:center; }
+  .h2h-val{ font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; }
+
+  .empty-hint{ font-size:12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
+      <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
+      <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+    </nav>
+    <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2 shrink-0" style="color: var(--muted);">
+      &larr; Voltar ao ranking
+    </a>
+  </div>
+</header>
+
+<div id="no-session-banner" class="hidden" style="background: color-mix(in srgb, var(--valorant) 12%, transparent); border-bottom:1px solid var(--valorant);">
+  <div class="max-w-4xl mx-auto px-4 py-2.5 font-mono text-[12px]" style="color: var(--valorant);">
+    ⚠ Você não está logado — <a href="index.html" style="text-decoration:underline;">faça login na Home</a> pra seguir jogadores e comparar seus stats.
+  </div>
+</div>
+
+<main class="max-w-4xl mx-auto px-4 py-10">
+
+  <!-- ===== SEM PARÂMETRO / JOGADOR NÃO ENCONTRADO ===== -->
+  <div id="not-found-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">🔍</div>
+    <h1 class="font-display text-2xl uppercase tracking-wide">Jogador não encontrado</h1>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      Esse perfil não existe nesta conta de navegador, ou o link está incompleto.
+      Veja quem já está no <a href="ranking.html" style="color: var(--valorant); text-decoration:underline;">ranking</a> pra visitar um perfil de verdade.
+    </p>
+  </div>
+
+  <!-- ===== PERFIL PRIVADO ===== -->
+  <div id="private-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">🔒</div>
+    <h1 class="font-display text-2xl uppercase tracking-wide">Este perfil é privado</h1>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      <span id="private-owner-name"></span> escolheu não exibir o perfil publicamente nas configurações de privacidade.
+    </p>
+  </div>
+
+  <!-- ===== CONTEÚDO DO PERFIL ===== -->
+  <div id="profile-content" class="hidden">
+
+    <!-- Cartão principal -->
+    <div id="profile-card">
+      <div id="profile-banner"></div>
+      <div class="flex items-end justify-between px-6">
+        <div class="avatar-wrap">
+          <div id="avatar-frame"><img id="avatar-img" src="" alt="Avatar"></div>
+          <span id="avatar-frame-overlay" class="avatar-frame-overlay"></span>
+        </div>
+        <div class="flex items-center gap-2 mb-4" id="action-buttons"></div>
+      </div>
+
+      <div class="px-6 pb-6 pt-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 id="display-name" class="font-display text-3xl font-semibold"></h1>
+          <span id="badges-inline" class="flex items-center gap-1"></span>
+        </div>
+        <p id="username" class="font-mono text-[12.5px] mt-0.5" style="color: var(--muted);"></p>
+        <p id="status-line" class="text-[12.5px] mt-2 flex items-center gap-1.5" style="color: var(--ink-soft);"></p>
+        <p id="bio" class="text-[13.5px] mt-3 leading-relaxed" style="color: var(--ink-soft);"></p>
+
+        <div class="flex items-center gap-4 mt-4">
+          <span class="font-mono text-[12px]"><b id="followers-count">0</b> <span style="color: var(--muted);">seguidores</span></span>
+          <span class="font-mono text-[12px]"><b id="following-count">0</b> <span style="color: var(--muted);">seguindo</span></span>
+        </div>
+
+        <div id="connections-row" class="flex items-center gap-2 flex-wrap mt-4"></div>
+      </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div id="stats-section" class="mt-8">
+      <p class="font-mono text-[11px] font-semibold mb-3" style="color: var(--muted);">ESTATÍSTICAS</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="stat-tile"><span class="stat-value" id="stat-level"></span><span class="stat-label">NÍVEL</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-xp"></span><span class="stat-label">XP TOTAL</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-items"></span><span class="stat-label">ITENS</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-days"></span><span class="stat-label">DIAS ATIVO</span></div>
+      </div>
+      <div class="xpbar"><div class="xpbar-fill" id="stat-xpbar-fill" style="width:0%;"></div></div>
+      <p class="font-mono text-[10.5px] mt-1.5" style="color: var(--muted);" id="stat-xp-caption"></p>
+    </div>
+
+    <!-- Estatísticas privadas -->
+    <div id="stats-hidden-hint" class="hidden mt-8 rk-card p-6 text-center">
+      <p class="text-[12.5px]" style="color: var(--muted);">🔒 Este jogador optou por não exibir estatísticas detalhadas.</p>
+    </div>
+
+    <!-- Vitrine de conquistas -->
+    <div id="showcase-section" class="mt-8">
+      <p class="font-mono text-[11px] font-semibold mb-3" style="color: var(--muted);">CONQUISTAS EM DESTAQUE</p>
+      <div id="showcase-row" class="flex gap-3 flex-wrap"></div>
+    </div>
+
+    <!-- Comparação H2H -->
+    <div id="h2h-section" class="hidden mt-10 rk-card p-6">
+      <h3 class="font-display text-2xl uppercase tracking-wide mb-1">Comparar com você</h3>
+      <p class="text-[12px] mb-4" style="color: var(--muted);">Lado a lado: <span style="color: var(--live);">você</span> vs. <span id="h2h-them-name" style="color: var(--valorant);"></span></p>
+      <div id="h2h-rows"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function(){
+  // ===============================================================
+  // 1) SESSÃO E DADOS BASE
+  // ===============================================================
+  const SESSION_KEY = "arena-session-email";
+  const USERS_KEY = "arena-demo-users";
+
+  function getSessionEmail() {
+    try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; }
+  }
+  function loadUsers() {
+    try { const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (err) { return []; }
+  }
+  function readJSON(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (err) { return fallback; }
+  }
+  function writeJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* silencioso */ }
+  }
+  function escapeHtml(str) {
+    return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+  function renderBioMarkdown(raw) {
+    let safe = escapeHtml(raw || "");
+    safe = safe
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
+    return safe;
+  }
+
+  const sessionEmail = getSessionEmail();
+  if (!sessionEmail) document.getElementById("no-session-banner").classList.remove("hidden");
+
+  const params = new URLSearchParams(location.search);
+  const targetEmail = params.get("user") || "";
+  const isOwnProfile = !!sessionEmail && sessionEmail === targetEmail;
+
+  // ===============================================================
+  // 2) TABELAS DE DADOS (moldura, badges, conquistas, conexões,
+  //    raridade de itens) — espelhando perfil-config.html/inventario.html.
+  // ===============================================================
+  const AVATAR_FRAMES = {
+    raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B",
+    "moldura-cyber-digital": "#FF4655", "moldura-plasma-arena": "#EC4899",
+    "moldura-ouro-elite": "#F59E0B", "moldura-neon-glitch": "#22D3EE",
+  };
+  const SPECIAL_BANNER_FX = {
+    "banner-perfil-vaporwave": "fx-vaporwave",
+    "banner-perfil-nebulosa": "fx-nebulosa",
+    "banner-perfil-tempestade": "fx-tempestade",
+    "banner-perfil-campeao": "fx-campeao",
+  };
+  const BANNER_VIDEO_SRC = "banner-tempestade.mp4";
+  const ACHIEVEMENTS = [
+    { id: "ace", emoji: "🔥", name: "Ace Perfeito", rarity: "lendario" },
+    { id: "clutch", emoji: "🎯", name: "Clutch Master", rarity: "epico" },
+    { id: "veterano", emoji: "🛡️", name: "Veterano", rarity: "raro" },
+    { id: "streak", emoji: "⚡", name: "Sequência Imortal", rarity: "raro" },
+    { id: "mvp", emoji: "🏆", name: "MVP da Temporada", rarity: "lendario" },
+    { id: "social", emoji: "🤝", name: "Bem Relacionado", rarity: "comum" },
+  ];
+  const RARITY_COLOR = { comum: "#7C8394", raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B" };
+  const CONNECTION_SERVICES = [
+    { key: "steam", label: "Steam", color: "#1B2838", initial: "S" },
+    { key: "riot", label: "Riot Games", color: "#D13639", initial: "R" },
+    { key: "discord", label: "Discord", color: "#5865F2", initial: "D" },
+    { key: "twitch", label: "Twitch", color: "#9146FF", initial: "T" },
+  ];
+  const ITEM_RARITY = {
+    "banner-neon-grade":"comum","banner-sinal-ao-vivo":"raro","banner-chamas-furia":"raro",
+    "banner-nebulosa-roxa":"epico","banner-aurora-cyber":"lendario","emblema-primeira-vitoria":"comum",
+    "emblema-cacador-noticias":"raro","emblema-comentarista":"raro","emblema-estrategista":"raro",
+    "emblema-coracao-roxo":"epico","emblema-veterano":"epico","emblema-fa-fundador":"lendario",
+    "moldura-cyber-digital":"epico","moldura-ouro-elite":"lendario","moldura-neon-glitch":"epico",
+    "banner-perfil-nebulosa":"epico","banner-perfil-campeao":"epico","banner-perfil-tempestade":"epico",
+    "banner-perfil-vaporwave":"epico","moldura-plasma-arena":"lendario","moldura-gelo-eterno":"epico",
+    "emblema-arena-vip":"lendario","emblema-cacador-lendas":"epico","emblema-fundador-cosmico":"lendario",
+    "banner-perfil-oceano-digital":"epico","banner-perfil-aurora-verde":"epico","emblema-mestre-arena":"lendario",
+    "emblema-fenix-renascida":"epico","cupom-loja-10":"comum","cupom-chat-vip":"raro",
+  };
+  const RARITY_XP = { comum: 10, raro: 25, epico: 50, lendario: 100 };
+  const XP_PER_LEVEL = 150;
+
+  // ===============================================================
+  // 3) SEGUIR/SEGUIDORES — arena-following-<email> guarda a lista
+  //    de e-mails que ESSA conta segue. "Seguidores" de um jogador é
+  //    calculado varrendo todas as contas cadastradas neste navegador
+  //    e contando quem tem esse e-mail na própria lista.
+  // ===============================================================
+  function followingKey(email) { return `arena-following-${email}`; }
+  function getFollowing(email) { return readJSON(followingKey(email), []); }
+  function isFollowing(viewerEmail, targetEmail) {
+    return getFollowing(viewerEmail).includes(targetEmail);
+  }
+  function toggleFollow(viewerEmail, targetEmail) {
+    const list = getFollowing(viewerEmail);
+    const idx = list.indexOf(targetEmail);
+    if (idx >= 0) list.splice(idx, 1); else list.push(targetEmail);
+    writeJSON(followingKey(viewerEmail), list);
+    return idx < 0; // retorna true se passou a seguir agora
+  }
+  function countFollowers(email) {
+    return loadUsers().filter(u => getFollowing(u.email).includes(email)).length;
+  }
+
+  // ===============================================================
+  // 4) XP / NÍVEL — mesma fórmula de ranking.html.
+  // ===============================================================
+  function computeScore(email) {
+    const progress = readJSON(`arena-progress-${email}`, {});
+    const inventory = readJSON(`arena-inventory-${email}`, []);
+    const progressXp =
+      (progress.newsRead || 0) * 2 + (progress.newsComments || 0) * 5 +
+      (progress.chatMessages || 0) * 1 + (progress.liveMatchesWatched || 0) * 4 +
+      (progress.campaignsJoined || 0) * 15;
+    let itemsXp = 0, itemCount = 0;
+    inventory.forEach(owned => {
+      const rarity = ITEM_RARITY[owned.id];
+      if (!rarity) return;
+      itemsXp += RARITY_XP[rarity] || 0;
+      itemCount++;
+    });
+    const xp = progressXp + itemsXp;
+    const daysActive = progress.firstVisit ? Math.max(1, Math.floor((Date.now() - progress.firstVisit) / 86400000) + 1) : 0;
+    return {
+      xp, itemCount, daysActive,
+      level: Math.floor(xp / XP_PER_LEVEL) + 1,
+      xpIntoLevel: xp % XP_PER_LEVEL,
+      newsRead: progress.newsRead || 0, newsComments: progress.newsComments || 0,
+      chatMessages: progress.chatMessages || 0, campaignsJoined: progress.campaignsJoined || 0,
+      liveMatchesWatched: progress.liveMatchesWatched || 0,
+    };
+  }
+
+  // ===============================================================
+  // 5) CARREGA O JOGADOR-ALVO
+  // ===============================================================
+  function showOnly(id) {
+    ["not-found-state", "private-state", "profile-content"].forEach(x =>
+      document.getElementById(x).classList.toggle("hidden", x !== id));
+  }
+
+  if (!targetEmail) { showOnly("not-found-state"); return; }
+
+  const users = loadUsers();
+  const userRecord = users.find(u => u.email === targetEmail);
+  if (!userRecord) { showOnly("not-found-state"); return; }
+
+  const profile = readJSON(`arena-profile-${targetEmail}`, null);
+  if (!profile) { showOnly("not-found-state"); return; }
+
+  const privacy = profile.privacy || { profilePublic: true, showMatchHistory: true };
+  if (privacy.profilePublic === false && !isOwnProfile) {
+    document.getElementById("private-owner-name").textContent = profile.displayName || userRecord.name;
+    showOnly("private-state");
+    return;
+  }
+
+  showOnly("profile-content");
+
+  // ===============================================================
+  // 6) RENDERIZA BANNER
+  // ===============================================================
+  function computeBannerCss(p) {
+    if (p.bannerMode === "image" && p.bannerImage) return `url('${p.bannerImage}')`;
+    if (p.bannerMode === "gradient") return p.bannerGradient;
+    return p.bannerColor;
+  }
+  function bannerFxMarkup(fxClass) {
+    if (fxClass === "fx-vaporwave") {
+      const lines = Array.from({ length: 5 }).map((_, i) =>
+        `<span class="fx-gridline" style="bottom:${8 + i * 9}%; animation-delay:${(i * 0.3).toFixed(2)}s;"></span>`).join("");
+      return `<div class="fx-sun"></div>${lines}`;
+    }
+    if (fxClass === "fx-nebulosa") {
+      return Array.from({ length: 14 }).map(() => {
+        const top = (Math.random() * 100).toFixed(1), left = (Math.random() * 100).toFixed(1), delay = (Math.random() * 2).toFixed(2);
+        return `<span class="fx-star" style="top:${top}%; left:${left}%; animation-delay:${delay}s;"></span>`;
+      }).join("");
+    }
+    if (fxClass === "fx-tempestade") {
+      const bolts = Array.from({ length: 4 }).map((_, i) => {
+        const left = (14 + i * 24).toFixed(0), height = (22 + Math.random() * 18).toFixed(0), delay = (i * 0.5).toFixed(2);
+        return `<span class="fx-bolt" style="left:${left}%; height:${height}px; animation-delay:${delay}s;"></span>`;
+      }).join("");
+      const boltsEscaped = bolts.replace(/"/g, "&quot;");
+      return `<video class="fx-video" src="${BANNER_VIDEO_SRC}" autoplay muted loop playsinline
+        onerror="this.insertAdjacentHTML('afterend', '${boltsEscaped}'); this.remove();"
+      ></video><div class="fx-video-shade"></div>`;
+    }
+    if (fxClass === "fx-campeao") {
+      const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
+      const confetti = Array.from({ length: 14 }).map((_, i) => {
+        const left = (Math.random() * 100).toFixed(1), dur = (1.6 + Math.random() * 1.4).toFixed(2), delay = (Math.random() * 2).toFixed(2);
+        return `<span class="fx-confetti" style="left:${left}%; background:${colors[i % colors.length]}; animation-duration:${dur}s; animation-delay:${delay}s;"></span>`;
+      }).join("");
+      return `${confetti}<span class="fx-trophy">🏆</span>`;
+    }
+    return "";
+  }
+
+  const bannerEl = document.getElementById("profile-banner");
+  const fxClass = SPECIAL_BANNER_FX[profile.equippedBannerId];
+  if (fxClass) {
+    bannerEl.classList.add(fxClass);
+    bannerEl.innerHTML = bannerFxMarkup(fxClass);
+  } else {
+    const bannerCss = computeBannerCss(profile);
+    const isImageUrl = profile.bannerMode === "image" && profile.bannerImage;
+    const isGradient = profile.bannerMode === "gradient";
+    bannerEl.style.backgroundColor = isImageUrl ? "var(--panel-2)" : (isGradient ? "transparent" : bannerCss);
+    bannerEl.style.backgroundImage = (isImageUrl || isGradient) ? bannerCss : "none";
+  }
+
+  // ===============================================================
+  // 7) RENDERIZA AVATAR + MOLDURA
+  // ===============================================================
+  const avatarSrc = profile.avatar || "https://placehold.co/200x200/1B1F28/D7DAE1?text=" + ((profile.displayName || "U")[0] || "U").toUpperCase();
+  document.getElementById("avatar-img").src = avatarSrc;
+  const frameOverlay = document.getElementById("avatar-frame-overlay");
+  const frameColor = AVATAR_FRAMES[profile.equippedFrame];
+  if (frameColor) {
+    frameOverlay.style.setProperty("--fc-color", frameColor);
+    if (profile.equippedFrame === "moldura-cyber-digital") frameOverlay.classList.add("is-cyber");
+    if (profile.equippedFrame === "moldura-plasma-arena") frameOverlay.classList.add("is-plasma");
+  }
+
+  // ===============================================================
+  // 8) NOME, USERNAME, STATUS, BIO
+  // ===============================================================
+  const nameEl = document.getElementById("display-name");
+  nameEl.textContent = profile.displayName || userRecord.name;
+  if (profile.equippedNameEffect === "efeito-nome-arena-rgb") nameEl.classList.add("name-rgb-effect");
+  else if (profile.equippedNameEffect === "efeito-nome-fogo") nameEl.classList.add("name-fire-effect");
+  else if (profile.equippedNameEffect === "efeito-nome-holograma") nameEl.classList.add("name-holo-effect");
+
+  document.getElementById("username").textContent = "@" + (profile.username || userRecord.name.split(" ")[0].toLowerCase());
+
+  const statusLine = document.getElementById("status-line");
+  if (profile.status && profile.status.text) {
+    statusLine.innerHTML = `${profile.status.emoji ? escapeHtml(profile.status.emoji) + " " : ""}${escapeHtml(profile.status.text)}`;
+  } else {
+    statusLine.remove();
+  }
+
+  const bioEl = document.getElementById("bio");
+  if (profile.bio) bioEl.innerHTML = renderBioMarkdown(profile.bio); else bioEl.remove();
+
+  // Badges ao lado do nome
+  const badges = profile.equippedBadges || [];
+  document.getElementById("badges-inline").innerHTML = badges.map(b => `
+    <span class="profile-badge-chip" style="--bc-color:${RARITY_COLOR[b.rarity] || "var(--discord-blurple)"};">
+      <span>${b.emoji}</span> ${escapeHtml(b.name)}
+    </span>`).join("");
+
+  // Conexões (só as que o jogador conectou)
+  const connections = profile.connections || {};
+  const connHtml = CONNECTION_SERVICES.filter(s => connections[s.key]).map(s => `
+    <span class="connection-chip">
+      <span class="connection-dot" style="background:${s.color};">${s.initial}</span>
+      @${escapeHtml(connections[s.key].username)}
+    </span>`).join("");
+  document.getElementById("connections-row").innerHTML = connHtml;
+
+  // Vitrine de conquistas
+  const showcase = (profile.showcase || []).map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean);
+  const showcaseSection = document.getElementById("showcase-section");
+  if (showcase.length === 0) {
+    showcaseSection.innerHTML = `<p class="font-mono text-[11px] font-semibold mb-3" style="color: var(--muted);">CONQUISTAS EM DESTAQUE</p><p class="empty-hint">Nenhuma conquista em destaque ainda.</p>`;
+  } else {
+    document.getElementById("showcase-row").innerHTML = showcase.map(a => `
+      <span class="showcase-chip" style="--ac-color:${RARITY_COLOR[a.rarity]};">${a.emoji} ${escapeHtml(a.name)}</span>`).join("");
+  }
+
+  // ===============================================================
+  // 9) SEGUIDORES / SEGUINDO + BOTÃO DE AÇÃO
+  // ===============================================================
+  document.getElementById("followers-count").textContent = countFollowers(targetEmail);
+  document.getElementById("following-count").textContent = getFollowing(targetEmail).length;
+
+  const actionButtons = document.getElementById("action-buttons");
+  if (isOwnProfile) {
+    actionButtons.innerHTML = `<a href="perfil-config.html" class="btn-edit">✏️ EDITAR PERFIL</a>`;
+  } else if (sessionEmail) {
+    const following = isFollowing(sessionEmail, targetEmail);
+    actionButtons.innerHTML = `<button id="follow-btn" class="btn-follow ${following ? "is-following" : ""}">${following ? "✓ SEGUINDO" : "+ SEGUIR"}</button>`;
+    document.getElementById("follow-btn").addEventListener("click", () => {
+      const nowFollowing = toggleFollow(sessionEmail, targetEmail);
+      document.getElementById("follow-btn").textContent = nowFollowing ? "✓ SEGUINDO" : "+ SEGUIR";
+      document.getElementById("follow-btn").classList.toggle("is-following", nowFollowing);
+      document.getElementById("followers-count").textContent = countFollowers(targetEmail);
+    });
+  } else {
+    actionButtons.innerHTML = `<a href="index.html" class="btn-follow">FAÇA LOGIN PRA SEGUIR</a>`;
+  }
+
+  // ===============================================================
+  // 10) ESTATÍSTICAS (respeita privacy.showMatchHistory)
+  // ===============================================================
+  const theirScore = computeScore(targetEmail);
+  const statsVisible = privacy.showMatchHistory !== false || isOwnProfile;
+
+  if (!statsVisible) {
+    document.getElementById("stats-section").classList.add("hidden");
+    document.getElementById("stats-hidden-hint").classList.remove("hidden");
+  } else {
+    document.getElementById("stat-level").textContent = theirScore.level;
+    document.getElementById("stat-xp").textContent = theirScore.xp;
+    document.getElementById("stat-items").textContent = theirScore.itemCount;
+    document.getElementById("stat-days").textContent = theirScore.daysActive;
+    const pct = Math.round((theirScore.xpIntoLevel / XP_PER_LEVEL) * 100);
+    document.getElementById("stat-xpbar-fill").style.width = pct + "%";
+    document.getElementById("stat-xp-caption").textContent =
+      `${theirScore.xpIntoLevel} / ${XP_PER_LEVEL} XP para o nível ${theirScore.level + 1}`;
+  }
+
+  // ===============================================================
+  // 11) COMPARAÇÃO H2H — só faz sentido logado, olhando outra pessoa,
+  //     e se as estatísticas dela forem públicas.
+  // ===============================================================
+  if (sessionEmail && !isOwnProfile && statsVisible) {
+    const yourScore = computeScore(sessionEmail);
+    const h2hSection = document.getElementById("h2h-section");
+    h2hSection.classList.remove("hidden");
+    document.getElementById("h2h-them-name").textContent = profile.displayName || userRecord.name;
+
+    const metrics = [
+      { label: "NÍVEL", you: yourScore.level, them: theirScore.level },
+      { label: "XP TOTAL", you: yourScore.xp, them: theirScore.xp },
+      { label: "ITENS", you: yourScore.itemCount, them: theirScore.itemCount },
+      { label: "NOTÍCIAS LIDAS", you: yourScore.newsRead, them: theirScore.newsRead },
+      { label: "COMENTÁRIOS", you: yourScore.newsComments, them: theirScore.newsComments },
+      { label: "CAMPANHAS", you: yourScore.campaignsJoined, them: theirScore.campaignsJoined },
+    ];
+
+    document.getElementById("h2h-rows").innerHTML = metrics.map(m => {
+      const max = Math.max(m.you, m.them, 1);
+      const youPct = Math.round((m.you / max) * 100);
+      const themPct = Math.round((m.them / max) * 100);
+      return `
+        <div class="h2h-row">
+          <div class="flex items-center justify-end gap-2">
+            <span class="h2h-val" style="color: var(--live);">${m.you}</span>
+            <div class="h2h-bar-wrap w-full"><div class="h2h-bar-you" style="width:${youPct}%;"></div></div>
+          </div>
+          <div class="h2h-label">${m.label}</div>
+          <div class="flex items-center gap-2">
+            <div class="h2h-bar-wrap w-full"><div class="h2h-bar-them" style="width:${themPct}%;"></div></div>
+            <span class="h2h-val" style="color: var(--valorant);">${m.them}</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+})();
+</script>
+
+</body>
+</html>

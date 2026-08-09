@@ -499,6 +499,7 @@
           <a href="perfil-config.html" class="dropdown-item" role="menuitem">⚙️ Configurações do Perfil</a>
           <a href="inventario.html" class="dropdown-item" role="menuitem">🎒 Meu Inventário</a>
           <a href="ranking.html" class="dropdown-item" role="menuitem">🏆 Ranking</a>
+          <a id="my-public-profile-link" href="perfil.html" class="dropdown-item" role="menuitem">🌐 Meu Perfil Público</a>
           <div class="dropdown-divider"></div>
           <button id="js-logout" class="dropdown-item danger" role="menuitem">🚪 Sair</button>
         </div>
@@ -995,6 +996,8 @@
     const displayName = profile?.displayName || userName;
     document.getElementById("user-avatar-img").src = avatarSrc;
     document.getElementById("user-avatar-img-mobile").src = avatarSrc;
+    const myProfileLink = document.getElementById("my-public-profile-link");
+    if (myProfileLink) myProfileLink.href = `perfil.html?user=${encodeURIComponent(userEmail)}`;
     const nameEffectClass = profile?.equippedNameEffect === "efeito-nome-arena-rgb" ? "name-rgb-effect"
       : profile?.equippedNameEffect === "efeito-nome-fogo" ? "name-fire-effect"
       : profile?.equippedNameEffect === "efeito-nome-holograma" ? "name-holo-effect"

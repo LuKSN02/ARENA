@@ -373,12 +373,17 @@
       .filter(i => top3[i])
       .map(i => {
         const p = top3[i];
+        const href = p.email ? `perfil.html?user=${encodeURIComponent(p.email)}` : null;
+        const openTag = href ? `<a href="${href}" style="display:block; text-decoration:none; color:inherit;">` : `<div>`;
+        const closeTag = href ? `</a>` : `</div>`;
         return `
           <div class="podium-slot ${slotClass[i]}">
+            ${openTag}
             <div class="podium-medal">${medals[i]}</div>
             <img class="podium-avatar" src="${avatarUrl(p.displayName, p.avatar)}" alt="${escapeHtml(p.displayName)}">
             <div class="podium-name">${escapeHtml(p.displayName)}${p.email === sessionEmail && sessionEmail ? " (você)" : ""}</div>
             <div class="podium-xp">Nível ${p.level} · ${p.xp} XP</div>
+            ${closeTag}
             <div class="podium-bar"></div>
           </div>`;
       }).join("");
@@ -388,9 +393,13 @@
     const isYou = p.email && p.email === sessionEmail;
     const frameColor = p.frame && RARITY_COLOR[p.frame] ? RARITY_COLOR[p.frame] : "transparent";
     const pct = Math.round((p.xpIntoLevel / XP_PER_LEVEL) * 100);
+    const href = p.email ? `perfil.html?user=${encodeURIComponent(p.email)}` : null;
+    const openTag = href ? `<a href="${href}" style="display:contents; text-decoration:none; color:inherit;">` : `<div style="display:contents;">`;
+    const closeTag = href ? `</a>` : `</div>`;
     return `
       <div class="rk-row ${isYou ? "is-you" : ""}">
         <div class="rk-rank">#${rank}</div>
+        ${openTag}
         <div class="rk-avatar-wrap">
           <img class="rk-avatar" src="${avatarUrl(p.displayName, p.avatar)}" alt="${escapeHtml(p.displayName)}">
           <span class="rk-frame-ring" style="border-color:${frameColor};"></span>
@@ -403,6 +412,7 @@
           </div>
           <div class="rk-username">${p.isGuest ? "modo demonstração" : "@" + escapeHtml(p.username)} · ${p.itemCount} ${p.itemCount === 1 ? "item" : "itens"}</div>
         </div>
+        ${closeTag}
         <div class="rk-stats">
           <div class="rk-level">NÍVEL ${p.level}</div>
           <div class="rk-xp">${p.xp} XP</div>
