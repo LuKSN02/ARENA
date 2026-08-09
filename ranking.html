@@ -126,6 +126,26 @@
     .rk-stats .rk-xpbar{ display:none; }
   }
 
+  /* ===== NAVBAR ===== */
+  .arena-nav{
+    align-items:center; gap:2px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600; letter-spacing:.03em;
+  }
+  .arena-nav-link{
+    display:flex; align-items:center; gap:7px;
+    padding:8px 12px; border-radius:8px;
+    color: var(--muted); text-decoration:none; white-space:nowrap;
+    transition: color .15s ease, background-color .15s ease;
+  }
+  .arena-nav-link svg{ width:15px; height:15px; flex-shrink:0; }
+  .arena-nav-link:hover{ color: var(--ink); background: var(--panel-2); }
+  .arena-nav-link.is-active{ color: var(--valorant); background: rgba(255,70,85,0.08); }
+  @media (max-width: 900px){
+    .arena-nav{ gap:0; }
+    .arena-nav-link{ padding:8px 8px; gap:5px; font-size:11px; }
+    .arena-nav-link svg{ width:14px; height:14px; }
+  }
+
   /* ===== NOTIFICAÇÕES ===== */
   .arena-notif-row{ display:flex; gap:10px; padding:10px 14px; text-decoration:none; color:inherit; border-bottom:1px solid var(--border); transition: background .12s ease; }
   .arena-notif-row:last-child{ border-bottom:none; }
@@ -151,11 +171,23 @@
     <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
       ARENA<span style="color: var(--valorant);">.</span>
     </a>
-    <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
-      <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
-      <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
-      <a href="inventario.html" style="color: var(--muted);" class="hover:opacity-80">🎒 INVENTÁRIO</a>
-      <a href="perfil-config.html" style="color: var(--muted);" class="hover:opacity-80">⚙ PERFIL</a>
+    <nav class="arena-nav hidden sm:flex" aria-label="Navegação principal">
+      <a href="loja.html" class="arena-nav-link" data-page="loja">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Loja</span>
+      </a>
+      <a href="feed.html" class="arena-nav-link" data-page="feed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <span>Feed</span>
+      </a>
+      <a href="inventario.html" class="arena-nav-link" data-page="inventario">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 .96L4.5 19a2 2 0 0 0 2 2.09h11a2 2 0 0 0 2-2.09L19 7.96A1 1 0 0 0 20 7Z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg>
+        <span>Inventário</span>
+      </a>
+      <a href="perfil-config.html" class="arena-nav-link" data-page="perfil-config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        <span>Perfil</span>
+      </a>
     </nav>
     <div class="relative hidden" id="notif-wrap">
       <button id="notif-btn" aria-label="Notificações" class="w-9 h-9 flex items-center justify-center text-[14px]" style="position:relative;">
@@ -244,6 +276,16 @@
 
   </div>
 </main>
+
+<script>
+(function(){
+  // Marca o item do menu correspondente à página atual.
+  var current = location.pathname.split("/").pop().replace(".html", "");
+  document.querySelectorAll(".arena-nav-link").forEach(function(link){
+    if (link.dataset.page === current) link.classList.add("is-active");
+  });
+})();
+</script>
 
 <script>
 (function(){
