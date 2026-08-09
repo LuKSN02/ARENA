@@ -382,6 +382,9 @@
     { id: "emblema-veterano", type: "emblema", name: "Veterano da Arena", desc: "Continua ativo há semanas na plataforma.", rarity: "epico",
       emoji: "🎖️",
       unlock: { type: "days", key: "daysActive", target: 14, label: "Seja um jogador ativo por 14 dias" } },
+    { id: "emblema-popular", type: "emblema", name: "Emblema Popular", desc: "Conquistou uma base de seguidores na Arena.", rarity: "raro",
+      emoji: "⭐",
+      unlock: { type: "followers", target: 5, label: "Alcance 5 seguidores na Arena" } },
     { id: "emblema-fa-fundador", type: "emblema", name: "Fã Fundador", desc: "Esteve entre os primeiros usuários da Arena.", rarity: "lendario",
       emoji: "🏆",
       unlock: { type: "date", before: "2026-09-01", label: "Exclusivo para contas criadas antes do lançamento oficial" } },
@@ -544,12 +547,13 @@
     if (u.type === "counter") return progress[u.key] || 0;
     if (u.type === "days") return daysActiveCount();
     if (u.type === "combo") return u.items.filter(id => ownedState(id)).length;
+    if (u.type === "followers") return countMyFollowers();
     return null; // "date" não tem barra de progresso
   }
   function unlockTarget(item) {
     const u = item.unlock;
     if (!u) return null;
-    if (u.type === "counter" || u.type === "days") return u.target;
+    if (u.type === "counter" || u.type === "days" || u.type === "followers") return u.target;
     if (u.type === "combo") return u.items.length;
     return null;
   }
@@ -560,7 +564,23 @@
     if (u.type === "days") return daysActiveCount() >= u.target;
     if (u.type === "date") return progress.firstVisit <= new Date(u.before).getTime();
     if (u.type === "combo") return u.items.every(id => ownedState(id));
+    if (u.type === "followers") return countMyFollowers() >= u.target;
     return false;
+  }
+
+  // Conta quantas contas cadastradas NESTE navegador seguem a conta
+  // atual — mesma lógica de countFollowers() em perfil.html/ranking.html,
+  // calculada aqui na hora (sem guardar contador à parte) pra nunca
+  // desalinhar do que o perfil público realmente mostra.
+  function countMyFollowers() {
+    const email = sessionEmail || "demo";
+    let users = [];
+    try { users = JSON.parse(localStorage.getItem("arena-demo-users") || "[]"); } catch (err) { users = []; }
+    return users.filter(u => {
+      let following = [];
+      try { following = JSON.parse(localStorage.getItem(`arena-following-${u.email}`) || "[]"); } catch (err) { following = []; }
+      return following.includes(email);
+    }).length;
   }
 
   function checkUnlocks() {

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed de Atividade | Arena</title>
+<meta name="description" content="Acompanhe o que os jogadores que você segue estão fazendo na Arena.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="data/social.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
+  :root{
+    --bg: #14171E; --panel: #1B1F28; --panel-2: #20242F;
+    --border: rgba(255,255,255,0.08); --ink: #D7DAE1; --ink-soft: #AEB3BE; --muted: #7C8394; --live: #34D399;
+    --valorant: #FF4655; --valorant-glow: #241016;
+    --r-comum: #7C8394; --r-raro: #5865F2; --r-epico: #8B5CF6; --r-lendario: #F59E0B;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+  .rk-card{ background: var(--panel); border:1px solid var(--border); border-radius:14px; }
+
+  /* ===== NOTIFICAÇÕES (reaproveitado do resto do site) ===== */
+  .arena-notif-row{ display:flex; gap:10px; padding:10px 14px; text-decoration:none; color:inherit; border-bottom:1px solid var(--border); transition: background .12s ease; }
+  .arena-notif-row:last-child{ border-bottom:none; }
+  .arena-notif-row:hover{ background: var(--panel-2); }
+  .arena-notif-row.is-unread{ background: rgba(255,70,85,0.06); }
+  .arena-notif-row.is-unread .arena-notif-text{ font-weight:600; color: var(--ink); }
+  .arena-notif-icon{ font-size:15px; flex-shrink:0; line-height:1.3; }
+  .arena-notif-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .arena-notif-text{ font-size:12.5px; color: var(--ink-soft); line-height:1.4; }
+  .arena-notif-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); }
+  .arena-notif-empty{ padding:22px 14px; text-align:center; font-size:12.5px; color: var(--muted); }
+
+  /* ===== FEED ===== */
+  .feed-row{
+    display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border);
+    text-decoration:none; color:inherit; transition: background .12s ease;
+  }
+  .feed-row:last-child{ border-bottom:none; }
+  .feed-row:hover{ background: var(--panel-2); }
+  .feed-avatar{ width:38px; height:38px; border-radius:9999px; object-fit:cover; background: var(--panel-2); flex-shrink:0; }
+  .feed-icon{ font-size:15px; flex-shrink:0; line-height:1.5; }
+  .feed-body{ min-width:0; flex:1; }
+  .feed-text{ font-size:13px; line-height:1.5; color: var(--ink-soft); }
+  .feed-text b{ color: var(--ink); font-weight:600; }
+  .feed-time{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--muted); margin-top:2px; display:block; }
+
+  .suggest-card{ display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background: var(--panel-2); }
+  .suggest-avatar{ width:34px; height:34px; border-radius:9999px; object-fit:cover; background: var(--panel); flex-shrink:0; }
+  .btn-follow-mini{ font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700; padding:5px 10px; border-radius:6px; background: var(--valorant); color:#fff; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
+      <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
+      <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+    </nav>
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="relative hidden" id="notif-wrap">
+        <button id="notif-btn" aria-label="Notificações" class="w-9 h-9 flex items-center justify-center text-[14px]" style="position:relative;">
+          🔔
+          <span id="notif-badge" class="hidden" style="position:absolute; top:1px; right:1px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; font-family:'JetBrains Mono', monospace; padding:1px 4px; border-radius:999px; line-height:1.3;"></span>
+        </button>
+        <div id="notif-dropdown" class="hidden" role="menu"
+          style="position:absolute; right:0; top:calc(100% + 10px); width:320px; max-width:88vw; background: var(--panel); border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 30px -8px rgba(0,0,0,.5); overflow:hidden; z-index:60;">
+          <div style="padding:12px 14px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; letter-spacing:.03em; color: var(--muted);">NOTIFICAÇÕES</div>
+          <div id="notif-list" style="max-height:340px; overflow-y:auto;"></div>
+        </div>
+      </div>
+      <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">
+        &larr; Voltar para o portal
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-10">
+
+  <div class="mb-8">
+    <p class="font-mono text-[11px] font-semibold tracking-wide" style="color: var(--valorant);">📡 ATIVIDADE DA REDE</p>
+    <h1 class="font-display text-4xl sm:text-5xl font-semibold uppercase tracking-wide mt-1">Feed</h1>
+    <p class="text-[13px] sm:text-[14px] mt-2 max-w-2xl" style="color: var(--ink-soft);">
+      O que os jogadores que você segue andam desbloqueando, subindo de nível e conquistando na Arena.
+    </p>
+  </div>
+
+  <!-- Precisa estar logado -->
+  <div id="no-session-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">🔒</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Faça login pra ver seu feed</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">O feed mostra a atividade de quem você segue — entre na sua conta pra acompanhar.</p>
+    <a href="index.html" class="inline-block mt-5 font-mono text-[12px] font-semibold px-5 py-2.5 rounded-lg" style="background: var(--valorant); color:#fff;">IR PARA A HOME</a>
+  </div>
+
+  <!-- Não segue ninguém ainda -->
+  <div id="no-following-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">👥</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Você ainda não segue ninguém</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      Visite o <a href="ranking.html" style="color: var(--valorant); text-decoration:underline;">ranking</a> e comece a seguir outros jogadores pra ver a atividade deles aqui.
+    </p>
+    <div id="suggestions-list" class="flex flex-col gap-2 max-w-sm mx-auto mt-6"></div>
+  </div>
+
+  <!-- Feed vazio (segue gente, mas sem atividade ainda) -->
+  <div id="empty-feed-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">📭</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Nada por aqui ainda</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      Ninguém que você segue teve atividade recente — volte mais tarde.
+    </p>
+  </div>
+
+  <!-- Feed de verdade -->
+  <div id="feed-content" class="hidden rk-card"></div>
+
+</main>
+
+<script>
+(function(){
+  // ===============================================================
+  // 1) SESSÃO E HELPERS
+  // ===============================================================
+  const SESSION_KEY = "arena-session-email";
+  const USERS_KEY = "arena-demo-users";
+
+  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
+  function loadUsers() { try { const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : []; } catch (err) { return []; } }
+  function readJSON(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (err) { return fallback; } }
+  function escapeHtml(str) { return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+  function relativeTime(ts) {
+    const diff = Math.max(0, Date.now() - ts);
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `há ${d}d`;
+    const mo = Math.floor(d / 30);
+    return `há ${mo}${mo === 1 ? " mês" : " meses"}`;
+  }
+
+  const sessionEmail = getSessionEmail();
+
+  function followingKey(email) { return `arena-following-${email}`; }
+  function getFollowing(email) { return readJSON(followingKey(email), []); }
+  function activityKey(email) { return `arena-activity-${email || "demo"}`; }
+  function getActivity(email) { return readJSON(activityKey(email), []); }
+
+  function showOnly(id) {
+    ["no-session-state", "no-following-state", "empty-feed-state", "feed-content"].forEach(x =>
+      document.getElementById(x).classList.toggle("hidden", x !== id));
+  }
+
+  // ===============================================================
+  // 2) SINO DE NOTIFICAÇÕES (mesmo padrão do resto do site)
+  // ===============================================================
+  if (sessionEmail && window.ArenaSocial) {
+    const notifWrap = document.getElementById("notif-wrap");
+    notifWrap.classList.remove("hidden");
+    notifWrap.classList.add("sm:block");
+    window.ArenaSocial.mountBell({
+      email: sessionEmail,
+      buttonEl: document.getElementById("notif-btn"),
+      dropdownEl: document.getElementById("notif-dropdown"),
+      badgeEl: document.getElementById("notif-badge"),
+      listEl: document.getElementById("notif-list"),
+    });
+  }
+
+  if (!sessionEmail) { showOnly("no-session-state"); return; }
+
+  // ===============================================================
+  // 3) MONTA O FEED — junta a atividade de cada pessoa que o usuário
+  //    segue (respeitando a privacidade de cada uma: se ela escondeu
+  //    o histórico/atividade no perfil, ela também some do feed de
+  //    quem a segue), ordenado por data, mais recente primeiro.
+  // ===============================================================
+  function resolvePlayerCard(email) {
+    const rec = loadUsers().find(u => u.email === email);
+    if (!rec) return null;
+    const p = readJSON(`arena-profile-${email}`, {});
+    return {
+      email,
+      displayName: p.displayName || rec.name,
+      username: p.username || rec.name.split(" ")[0].toLowerCase(),
+      avatar: p.avatar || "",
+      privacy: p.privacy || { showMatchHistory: true },
+    };
+  }
+
+  const followingEmails = getFollowing(sessionEmail);
+
+  if (followingEmails.length === 0) {
+    showOnly("no-following-state");
+    renderSuggestions();
+    return;
+  }
+
+  const players = followingEmails.map(resolvePlayerCard).filter(Boolean);
+  let events = [];
+  players.forEach(p => {
+    if (p.privacy.showMatchHistory === false) return; // respeita quem escondeu a atividade
+    getActivity(p.email).forEach(ev => events.push({ ...ev, player: p }));
+  });
+  events.sort((a, b) => b.at - a.at);
+  events = events.slice(0, 60);
+
+  if (events.length === 0) {
+    showOnly("empty-feed-state");
+    return;
+  }
+
+  showOnly("feed-content");
+  document.getElementById("feed-content").innerHTML = events.map(ev => `
+    <a href="perfil.html?user=${encodeURIComponent(ev.player.email)}" class="feed-row">
+      <img class="feed-avatar" src="${ev.player.avatar || `https://placehold.co/76x76/1B1F28/D7DAE1?text=${encodeURIComponent((ev.player.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(ev.player.displayName)}">
+      <span class="feed-icon">${ev.icon || "•"}</span>
+      <span class="feed-body">
+        <span class="feed-text"><b>${escapeHtml(ev.player.displayName)}</b> ${escapeHtml(ev.text)}</span>
+        <span class="feed-time">${relativeTime(ev.at)}</span>
+      </span>
+    </a>`).join("");
+
+  // ===============================================================
+  // 4) SUGESTÕES — mostradas só quando o feed está vazio por falta de
+  //    gente seguida. Sugere até 4 jogadores cadastrados que ainda não
+  //    são seguidos (excluindo a própria conta).
+  // ===============================================================
+  function renderSuggestions() {
+    const already = new Set(followingEmails);
+    const candidates = loadUsers()
+      .filter(u => u.email !== sessionEmail && !already.has(u.email))
+      .slice(0, 4)
+      .map(resolvePlayerCard)
+      .filter(Boolean);
+
+    const wrap = document.getElementById("suggestions-list");
+    if (candidates.length === 0) { wrap.innerHTML = ""; return; }
+
+    wrap.innerHTML = candidates.map(c => `
+      <div class="suggest-card">
+        <img class="suggest-avatar" src="${c.avatar || `https://placehold.co/68x68/1B1F28/D7DAE1?text=${encodeURIComponent((c.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(c.displayName)}">
+        <span class="flex-1 min-w-0 text-left">
+          <span class="block text-[12.5px] font-semibold truncate">${escapeHtml(c.displayName)}</span>
+          <span class="block font-mono text-[10.5px]" style="color: var(--muted);">@${escapeHtml(c.username)}</span>
+        </span>
+        <a href="perfil.html?user=${encodeURIComponent(c.email)}" class="btn-follow-mini">VER PERFIL</a>
+      </div>`).join("");
+  }
+})();
+</script>
+
+</body>
+</html>

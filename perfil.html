@@ -107,6 +107,17 @@
 
   .empty-hint{ font-size:12px; color: var(--muted); }
 
+  /* ===== PAINEL DE SEGUIDORES / SEGUINDO ===== */
+  .follow-count-btn{ background:none; border:none; padding:0; cursor:pointer; color: var(--ink); }
+  .follow-count-btn:hover b{ text-decoration: underline; }
+  .follow-list-tab{ background:none; border:none; padding:2px 4px; cursor:pointer; color: var(--muted); }
+  .follow-list-tab.active{ color: var(--ink); }
+  .follow-list-row{ display:flex; align-items:center; gap:10px; padding:8px 6px; border-radius:8px; text-decoration:none; color:inherit; }
+  .follow-list-row:hover{ background: var(--panel-2); }
+  .follow-list-avatar{ width:36px; height:36px; border-radius:9999px; object-fit:cover; background: var(--panel-2); flex-shrink:0; }
+  .follow-list-name{ font-size:13px; font-weight:600; color: var(--ink); }
+  .follow-list-username{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--muted); }
+
   /* ===== ATIVIDADE RECENTE ===== */
   .activity-row{ display:flex; align-items:flex-start; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); }
   .activity-row:last-child{ border-bottom:none; }
@@ -157,6 +168,7 @@
     </a>
     <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
       <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
+      <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
       <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
     </nav>
     <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2 shrink-0" style="color: var(--muted);">
@@ -219,12 +231,25 @@
         <p id="bio" class="text-[13.5px] mt-3 leading-relaxed" style="color: var(--ink-soft);"></p>
 
         <div class="flex items-center gap-4 mt-4">
-          <span class="font-mono text-[12px]"><b id="followers-count">0</b> <span style="color: var(--muted);">seguidores</span></span>
-          <span class="font-mono text-[12px]"><b id="following-count">0</b> <span style="color: var(--muted);">seguindo</span></span>
+          <button type="button" id="followers-tab-btn" class="follow-count-btn font-mono text-[12px]"><b id="followers-count">0</b> <span style="color: var(--muted);">seguidores</span></button>
+          <button type="button" id="following-tab-btn" class="follow-count-btn font-mono text-[12px]"><b id="following-count">0</b> <span style="color: var(--muted);">seguindo</span></button>
         </div>
 
         <div id="connections-row" class="flex items-center gap-2 flex-wrap mt-4"></div>
       </div>
+    </div>
+
+    <!-- Painel de seguidores/seguindo -->
+    <div id="follow-list-panel" class="hidden rk-card p-5 mt-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-1 font-mono text-[11px] font-semibold" style="color: var(--muted);">
+          <button type="button" id="follow-list-tab-followers" class="follow-list-tab">SEGUIDORES</button>
+          <span>·</span>
+          <button type="button" id="follow-list-tab-following" class="follow-list-tab">SEGUINDO</button>
+        </div>
+        <button type="button" id="follow-list-close" aria-label="Fechar" style="color: var(--muted); font-size:16px; line-height:1;">✕</button>
+      </div>
+      <div id="follow-list-body" class="flex flex-col gap-1"></div>
     </div>
 
     <!-- Estatísticas -->
@@ -416,7 +441,7 @@
     "banner-perfil-vaporwave":"epico","moldura-plasma-arena":"lendario","moldura-gelo-eterno":"epico",
     "emblema-arena-vip":"lendario","emblema-cacador-lendas":"epico","emblema-fundador-cosmico":"lendario",
     "banner-perfil-oceano-digital":"epico","banner-perfil-aurora-verde":"epico","emblema-mestre-arena":"lendario",
-    "emblema-fenix-renascida":"epico","cupom-loja-10":"comum","cupom-chat-vip":"raro",
+    "emblema-fenix-renascida":"epico","cupom-loja-10":"comum","cupom-chat-vip":"raro","emblema-popular":"raro",
   };
   const RARITY_XP = { comum: 10, raro: 25, epico: 50, lendario: 100 };
   const XP_PER_LEVEL = 150;
@@ -441,6 +466,23 @@
   }
   function countFollowers(email) {
     return loadUsers().filter(u => getFollowing(u.email).includes(email)).length;
+  }
+  function getFollowersEmails(email) {
+    return loadUsers().filter(u => getFollowing(u.email).includes(email)).map(u => u.email);
+  }
+  // Monta {displayName, username, avatar} pra qualquer e-mail cadastrado,
+  // lendo o perfil dele — usado nas listas de seguidores/seguindo, onde
+  // cada linha é de uma conta diferente da que estamos vendo.
+  function resolvePlayerCard(email) {
+    const rec = loadUsers().find(u => u.email === email);
+    if (!rec) return null;
+    const p = readJSON(`arena-profile-${email}`, {});
+    return {
+      email,
+      displayName: p.displayName || rec.name,
+      username: p.username || rec.name.split(" ")[0].toLowerCase(),
+      avatar: p.avatar || "",
+    };
   }
 
   // ===============================================================
@@ -629,6 +671,7 @@
       document.getElementById("follow-btn").textContent = nowFollowing ? "✓ SEGUINDO" : "+ SEGUIR";
       document.getElementById("follow-btn").classList.toggle("is-following", nowFollowing);
       document.getElementById("followers-count").textContent = countFollowers(targetEmail);
+      if (followListOpenKind === "followers") renderFollowList("followers");
       if (nowFollowing) {
         const targetName = profile.displayName || userRecord.name;
         logArenaActivity(sessionEmail, "🤝", `Passou a seguir ${escapeHtml(targetName)}`);
@@ -641,6 +684,53 @@
   } else {
     actionButtons.innerHTML = `<a href="index.html" class="btn-follow">FAÇA LOGIN PRA SEGUIR</a>`;
   }
+
+  // ===============================================================
+  // 9b) PAINEL DE SEGUIDORES / SEGUINDO — abre ao clicar num dos dois
+  //    contadores, com abas pra alternar entre as duas listas sem
+  //    fechar o painel. Cada linha leva ao perfil público da pessoa.
+  // ===============================================================
+  function renderFollowList(kind) {
+    const emails = kind === "followers" ? getFollowersEmails(targetEmail) : getFollowing(targetEmail);
+    const body = document.getElementById("follow-list-body");
+    document.getElementById("follow-list-tab-followers").classList.toggle("active", kind === "followers");
+    document.getElementById("follow-list-tab-following").classList.toggle("active", kind === "following");
+
+    if (emails.length === 0) {
+      body.innerHTML = `<p class="empty-hint py-3">${kind === "followers" ? "Ninguém segue este jogador ainda." : "Este jogador ainda não segue ninguém."}</p>`;
+      return;
+    }
+    const cards = emails.map(resolvePlayerCard).filter(Boolean);
+    body.innerHTML = cards.map(c => `
+      <a href="perfil.html?user=${encodeURIComponent(c.email)}" class="follow-list-row">
+        <img class="follow-list-avatar" src="${c.avatar || `https://placehold.co/72x72/1B1F28/D7DAE1?text=${encodeURIComponent((c.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(c.displayName)}">
+        <span>
+          <span class="follow-list-name block">${escapeHtml(c.displayName)}${c.email === sessionEmail ? " (você)" : ""}</span>
+          <span class="follow-list-username block">@${escapeHtml(c.username)}</span>
+        </span>
+      </a>`).join("");
+  }
+
+  let followListOpenKind = null;
+  function toggleFollowPanel(kind) {
+    const panel = document.getElementById("follow-list-panel");
+    if (followListOpenKind === kind) {
+      panel.classList.add("hidden");
+      followListOpenKind = null;
+      return;
+    }
+    followListOpenKind = kind;
+    panel.classList.remove("hidden");
+    renderFollowList(kind);
+  }
+  document.getElementById("followers-tab-btn").addEventListener("click", () => toggleFollowPanel("followers"));
+  document.getElementById("following-tab-btn").addEventListener("click", () => toggleFollowPanel("following"));
+  document.getElementById("follow-list-tab-followers").addEventListener("click", () => renderFollowList("followers") || (followListOpenKind = "followers"));
+  document.getElementById("follow-list-tab-following").addEventListener("click", () => renderFollowList("following") || (followListOpenKind = "following"));
+  document.getElementById("follow-list-close").addEventListener("click", () => {
+    document.getElementById("follow-list-panel").classList.add("hidden");
+    followListOpenKind = null;
+  });
 
   // ===============================================================
   // 10) ESTATÍSTICAS (respeita privacy.showMatchHistory)
