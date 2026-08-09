@@ -281,6 +281,21 @@
   .dropdown-item.danger:hover{ background: color-mix(in srgb, var(--valorant) 12%, transparent); color: var(--valorant); }
   .dropdown-divider{ border-top:1px solid var(--border); margin:6px 0; }
 
+  /* ===== "MAIS" — agrupa seções secundárias do nav desktop pra não
+     espremer a barra conforme o site ganha mais páginas. ===== */
+  #nav-more-wrap{ position:relative; }
+  #nav-more-btn{ display:flex; align-items:center; gap:4px; background:none; border:none; cursor:pointer; font:inherit; padding:0; }
+  #nav-more-btn .chevron{ font-size:9px; transition: transform .15s ease; }
+  #nav-more-btn[aria-expanded="true"] .chevron{ transform: rotate(180deg); }
+  #nav-more-dropdown{
+    position:absolute; left:0; top:calc(100% + 14px); width:200px; z-index:60;
+    background: var(--panel); border:1px solid var(--border); border-radius:10px; overflow:hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45); padding:6px 0;
+    opacity:0; transform: translateY(-6px); pointer-events:none; transition: opacity .15s ease, transform .15s ease;
+  }
+  #nav-more-dropdown.open{ opacity:1; transform: translateY(0); pointer-events:auto; }
+  #nav-more-dropdown .dropdown-item.active{ color: var(--valorant); }
+
   /* ===== Molduras de avatar equipáveis (mesmo padrão de perfil-config.html) ===== */
   .avatar-frame-overlay{
     position:absolute; inset:-9px; pointer-events:none; border-radius:9999px;
@@ -442,18 +457,29 @@
     </a>
 
     <!-- Navegação desktop -->
-    <nav id="nav-desktop" class="hidden lg:flex items-center gap-9 font-mono text-[12px] font-semibold">
+    <nav id="nav-desktop" class="hidden lg:flex items-center gap-6 font-mono text-[12px] font-semibold">
       <a href="index.html" data-filter="todos" class="nav-link active">HOME</a>
       <a href="#" data-filter="campeonatos" class="nav-link">CAMPEONATOS</a>
       <a href="#" data-filter="lancamentos" class="nav-link">LANÇAMENTOS</a>
       <a href="#" data-filter="reviews" class="nav-link">REVIEWS</a>
       <a href="#" data-filter="agenda" class="nav-link">AGENDA</a>
       <a href="loja.html" class="nav-link">LOJA</a>
-      <a href="campeonatos.html" class="nav-link">CHAVEAMENTO</a>
-      <a href="streamers.html" class="nav-link">STREAMERS</a>
-      <a href="ranking.html" class="nav-link">RANKING</a>
-      <a href="feed.html" class="nav-link">FEED</a>
       <span id="nav-indicator"></span>
+
+      <!-- "MAIS" agrupa as seções mais recentes do site (chaveamento,
+           streamers, ranking, feed) pra manter a barra principal enxuta
+           conforme o site cresce. -->
+      <div id="nav-more-wrap">
+        <button type="button" id="nav-more-btn" aria-haspopup="true" aria-expanded="false" style="color: var(--muted);">
+          MAIS <span class="chevron">▾</span>
+        </button>
+        <div id="nav-more-dropdown" role="menu">
+          <a href="campeonatos.html" class="dropdown-item" role="menuitem">🏆 Chaveamento</a>
+          <a href="streamers.html" class="dropdown-item" role="menuitem">🎥 Streamers</a>
+          <a href="ranking.html" class="dropdown-item" role="menuitem">🏆 Ranking</a>
+          <a href="feed.html" class="dropdown-item" role="menuitem">📡 Feed</a>
+        </div>
+      </div>
     </nav>
 
     <!-- Ações -->
@@ -510,7 +536,6 @@
             <a href="inventario.html" class="dropdown-item" role="menuitem">🎒 Meu Inventário</a>
             <a href="ranking.html" class="dropdown-item" role="menuitem">🏆 Ranking</a>
             <a id="my-public-profile-link" href="perfil.html" class="dropdown-item" role="menuitem">🌐 Meu Perfil Público</a>
-            <a href="feed.html" class="dropdown-item" role="menuitem">📡 Feed</a>
           </div>
           <div class="dropdown-divider"></div>
           <button id="js-logout" class="dropdown-item danger" role="menuitem">🚪 Sair</button>
@@ -1529,6 +1554,27 @@
   document.addEventListener("click", (e) => {
     if (!document.getElementById("user-menu-wrap").contains(e.target)) closeUserDropdown();
   });
+
+  // ===============================================================
+  // DROPDOWN "MAIS" (desktop) — mesmo padrão do dropdown do usuário:
+  // abre/fecha ao clicar, fecha ao clicar fora.
+  // ===============================================================
+  const navMoreBtn = document.getElementById("nav-more-btn");
+  const navMoreDropdown = document.getElementById("nav-more-dropdown");
+  if (navMoreBtn && navMoreDropdown) {
+    navMoreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willOpen = !navMoreDropdown.classList.contains("open");
+      navMoreDropdown.classList.toggle("open", willOpen);
+      navMoreBtn.setAttribute("aria-expanded", String(willOpen));
+    });
+    document.addEventListener("click", (e) => {
+      if (!document.getElementById("nav-more-wrap").contains(e.target)) {
+        navMoreDropdown.classList.remove("open");
+        navMoreBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
 
   function doLogout() {
     isLoggedIn = false;
