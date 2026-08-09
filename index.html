@@ -271,6 +271,20 @@
   #dropdown-preview-bio:empty{ display:none; }
   .dropdown-links{ padding:6px 0; }
 
+  #dropdown-badges{ padding:10px 14px 12px; display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border); }
+  #dropdown-badges:empty{ display:none; }
+  .dropdown-badges-label{ font-family:'JetBrains Mono', monospace; font-size:9.5px; font-weight:700; letter-spacing:.04em; color: var(--muted); }
+  .dropdown-badges-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .dropdown-badges-empty-hint{ font-size:11px; line-height:1.5; color: var(--muted); }
+  .dropdown-badges-empty-hint a{ color: var(--valorant); text-decoration:underline; }
+  .dropdown-badge{
+    display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono', monospace; font-size:10px;
+    padding:4px 8px; border-radius:4px; background:transparent; border:1px solid var(--border); color: var(--muted);
+    cursor:pointer; opacity:.6; transition: opacity .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
+  }
+  .dropdown-badge:hover{ opacity:.9; }
+  .dropdown-badge.is-on{ background: var(--panel-2); border-color: var(--nb-color, #5865F2); color: var(--ink-soft); opacity:1; }
+
   .dropdown-item{
     display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     padding:10px 14px; font-size:13px; font-weight:500; color: var(--ink-soft);
@@ -531,6 +545,7 @@
               <p id="dropdown-preview-bio"></p>
             </div>
           </a>
+          <div id="dropdown-badges"></div>
           <div class="dropdown-links">
             <a href="perfil-config.html" class="dropdown-item" role="menuitem">⚙️ Configurações do Perfil</a>
             <a href="inventario.html" class="dropdown-item" role="menuitem">🎒 Meu Inventário</a>
@@ -1323,6 +1338,114 @@
       return raw ? JSON.parse(raw) : null;
     } catch (err) { return null; }
   }
+  function saveProfilePatch(email, patch) {
+    try {
+      const raw = localStorage.getItem(`arena-profile-${email}`);
+      const profile = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(`arena-profile-${email}`, JSON.stringify({ ...profile, ...patch }));
+    } catch (err) { /* silencioso */ }
+  }
+
+  // ===============================================================
+  // EMBLEMAS — mesmo catálogo (só a parte "emblema") e mesma chave de
+  // inventário que inventario.html usa, pra equipar/desequipar direto
+  // por aqui refletir lá (e vice-versa) sem duplicar dado real, só os
+  // metadados de exibição (nome/emoji/raridade).
+  // ===============================================================
+  const MAX_EQUIPPED_BADGES = 3;
+  const EMBLEM_CATALOG = {
+    "emblema-primeira-vitoria": { name: "Primeira Vitória", emoji: "⭐", rarity: "comum" },
+    "emblema-cacador-noticias": { name: "Caçador de Notícias", emoji: "📰", rarity: "raro" },
+    "emblema-comentarista": { name: "Comentarista da Arena", emoji: "💬", rarity: "raro" },
+    "emblema-estrategista": { name: "Estrategista", emoji: "🧠", rarity: "raro" },
+    "emblema-coracao-roxo": { name: "Coração Roxo", emoji: "💜", rarity: "epico" },
+    "emblema-veterano": { name: "Veterano da Arena", emoji: "🎖️", rarity: "epico" },
+    "emblema-popular": { name: "Emblema Popular", emoji: "⭐", rarity: "raro" },
+    "emblema-fa-fundador": { name: "Fã Fundador", emoji: "🏆", rarity: "lendario" },
+    "emblema-arena-vip": { name: "Emblema VIP Arena", emoji: "👑", rarity: "lendario" },
+    "emblema-cacador-lendas": { name: "Emblema Caçador de Lendas", emoji: "🐉", rarity: "epico" },
+    "emblema-fundador-cosmico": { name: "Emblema Fundador Cósmico", emoji: "🌌", rarity: "lendario" },
+    "emblema-mestre-arena": { name: "Emblema Mestre da Arena", emoji: "🎯", rarity: "lendario" },
+    "emblema-fenix-renascida": { name: "Emblema Fênix Renascida", emoji: "🔥", rarity: "epico" },
+  };
+  function inventoryKey(email) { return `arena-inventory-${email || "demo"}`; }
+  function loadInventoryList(email) {
+    try { const raw = localStorage.getItem(inventoryKey(email)); return raw ? JSON.parse(raw) : []; }
+    catch (err) { return []; }
+  }
+  function saveInventoryList(email, inv) {
+    try { localStorage.setItem(inventoryKey(email), JSON.stringify(inv)); } catch (err) { /* silencioso */ }
+  }
+  // Se por algum motivo (dado antigo, teste, etc.) houver mais emblemas
+  // equipados do que o limite permite, apara o excesso automaticamente
+  // aqui — assim a poluição visual se resolve sozinha, sem precisar
+  // que o usuário clique em nada.
+  function normalizeEquippedBadges(email) {
+    const inv = loadInventoryList(email);
+    let count = 0;
+    let changed = false;
+    inv.forEach(i => {
+      if (i.equipped && EMBLEM_CATALOG[i.id]) {
+        count++;
+        if (count > MAX_EQUIPPED_BADGES) { i.equipped = false; changed = true; }
+      }
+    });
+    if (changed) saveInventoryList(email, inv);
+    const equippedBadges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
+    saveProfilePatch(email, { equippedBadges });
+    return inv;
+  }
+  function toggleBadge(email, id) {
+    const inv = loadInventoryList(email);
+    const entry = inv.find(i => i.id === id);
+    if (!entry) return;
+    const equippedCount = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).length;
+    if (!entry.equipped && equippedCount >= MAX_EQUIPPED_BADGES) {
+      const hint = document.getElementById("dropdown-badges-limit-hint");
+      if (hint) {
+        hint.classList.remove("hidden");
+        clearTimeout(toggleBadge._t);
+        toggleBadge._t = setTimeout(() => hint.classList.add("hidden"), 2400);
+      }
+      return;
+    }
+    entry.equipped = !entry.equipped;
+    saveInventoryList(email, inv);
+    const equippedBadges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
+    saveProfilePatch(email, { equippedBadges });
+    renderBadgeManager();
+    applyProfileToNav();
+  }
+  function renderBadgeManager() {
+    const container = document.getElementById("dropdown-badges");
+    if (!container) return;
+    if (!userEmail) { container.innerHTML = ""; return; }
+    const inv = loadInventoryList(userEmail);
+    const owned = inv.filter(i => EMBLEM_CATALOG[i.id]);
+    if (owned.length === 0) {
+      container.innerHTML = `<p class="dropdown-badges-empty-hint">Nenhum emblema desbloqueado ainda. Desbloqueie em <a href="inventario.html">Meu Inventário</a>.</p>`;
+      return;
+    }
+    const equippedCount = owned.filter(i => i.equipped).length;
+    container.innerHTML = `
+      <div class="dropdown-badges-label">SEUS EMBLEMAS · ${equippedCount}/${MAX_EQUIPPED_BADGES} ATIVOS</div>
+      <div class="dropdown-badges-chips">
+        ${owned.map(i => {
+          const meta = EMBLEM_CATALOG[i.id];
+          return `<button type="button" class="dropdown-badge ${i.equipped ? "is-on" : ""}" data-badge-id="${i.id}" style="--nb-color:${RARITY_COLOR_NAV[meta.rarity] || "#5865F2"};" title="${i.equipped ? "Clique pra tirar do perfil" : "Clique pra exibir no perfil"}">
+            <span>${meta.emoji}</span><span>${meta.name}</span>
+          </button>`;
+        }).join("")}
+      </div>
+      <p id="dropdown-badges-limit-hint" class="hidden dropdown-badges-empty-hint">Máximo de ${MAX_EQUIPPED_BADGES} emblemas ativos ao mesmo tempo — desative um pra ativar outro.</p>
+    `;
+    container.querySelectorAll("[data-badge-id]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleBadge(userEmail, btn.dataset.badgeId);
+      });
+    });
+  }
 
   const RARITY_COLOR_NAV = { comum: "#7C8394", raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B" };
 
@@ -1429,10 +1552,12 @@
     });
 
     // Mini-cluster de emblemas grudado no avatar da navbar.
-    const badges = profile?.equippedBadges || [];
+    const inv = userEmail ? normalizeEquippedBadges(userEmail) : [];
+    const badges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
     document.getElementById("nav-badges").innerHTML = badges.map(b => `
       <span class="nav-badge" style="--nb-color:${RARITY_COLOR_NAV[b.rarity] || "#5865F2"};" title="${b.name}">${b.emoji}</span>
     `).join("");
+    renderBadgeManager();
 
     // ---- Prévia completa do perfil dentro do dropdown ----
     const bannerEl = document.getElementById("dropdown-preview-banner");
