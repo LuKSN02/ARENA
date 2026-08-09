@@ -113,6 +113,20 @@
   .activity-text{ font-size:13px; color: var(--ink-soft); line-height:1.45; }
   .activity-time{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--muted); margin-top:2px; display:block; }
 
+  /* ===== MURAL DE RECADOS ===== */
+  #wall-composer textarea{ font-family:'Inter', sans-serif; }
+  #wall-composer textarea::placeholder{ color: var(--muted); }
+  .wall-row{ display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); }
+  .wall-row:last-child{ border-bottom:none; }
+  .wall-avatar{ width:34px; height:34px; border-radius:9999px; background: var(--panel-2); display:flex; align-items:center; justify-content:center; font-family:'Teko', sans-serif; font-size:16px; color: var(--ink-soft); flex-shrink:0; overflow:hidden; }
+  .wall-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .wall-author a{ font-size:12.5px; font-weight:700; color: var(--ink); text-decoration:none; }
+  .wall-author a:hover{ text-decoration:underline; }
+  .wall-text{ font-size:13px; color: var(--ink-soft); margin-top:3px; line-height:1.45; white-space:pre-wrap; word-break:break-word; }
+  .wall-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); margin-top:5px; display:block; }
+  .wall-delete-btn{ font-size:13px; color: var(--muted); background:transparent; border:none; cursor:pointer; padding:2px 6px; flex-shrink:0; line-height:1; }
+  .wall-delete-btn:hover{ color: var(--valorant); }
+
   /* ===== CARTÃO DE PERFIL EXPORTÁVEL ===== */
   #share-overlay{ position:fixed; inset:0; z-index:200; background: rgba(6,7,10,0.78); backdrop-filter: blur(3px); display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition: opacity .18s ease; }
   #share-overlay.open{ opacity:1; pointer-events:auto; }
@@ -238,6 +252,23 @@
     <!-- Atividade privada -->
     <div id="activity-hidden-hint" class="hidden mt-8 rk-card p-6 text-center">
       <p class="text-[12.5px]" style="color: var(--muted);">🔒 Este jogador optou por não exibir a atividade recente.</p>
+    </div>
+
+    <!-- Mural de recados -->
+    <div id="wall-section" class="mt-8">
+      <p class="font-mono text-[11px] font-semibold mb-3" style="color: var(--muted);">MURAL DE RECADOS</p>
+
+      <div id="wall-composer" class="rk-card p-4 mb-3 hidden">
+        <textarea id="wall-input" maxlength="280" rows="2" placeholder="Deixe um recado no perfil..." class="w-full bg-transparent outline-none text-[13px]" style="color: var(--ink); resize:none;"></textarea>
+        <div class="flex items-center justify-between mt-2">
+          <span id="wall-char-count" class="font-mono text-[10px]" style="color: var(--muted);">0/280</span>
+          <button id="wall-submit-btn" class="btn-follow" style="padding:7px 16px;">PUBLICAR</button>
+        </div>
+      </div>
+      <p id="wall-login-hint" class="empty-hint hidden mb-3">Faça login pra deixar um recado neste perfil.</p>
+      <p id="wall-own-hint" class="empty-hint hidden mb-3">Você não pode deixar recado no seu próprio mural — mas pode apagar os que não quiser manter.</p>
+
+      <div id="wall-list" class="rk-card"></div>
     </div>
 
     <!-- Comparação H2H -->
@@ -644,6 +675,92 @@
         </div>`).join("");
     }
   }
+
+  // ===============================================================
+  // 10c) MURAL DE RECADOS — chave `arena-wall-<email>` guarda a lista
+  //      de recados deixados no perfil de <email>, mais antigos
+  //      primeiro (exibidos com o mais recente no topo). Qualquer
+  //      pessoa logada pode deixar um recado no perfil de OUTRA
+  //      pessoa (não no próprio); o dono do perfil pode apagar
+  //      recados indesejados do próprio mural.
+  // ===============================================================
+  function wallKey(email) { return `arena-wall-${email}`; }
+  function getWall(email) { return readJSON(wallKey(email), []); }
+
+  function renderWall() {
+    const wall = getWall(targetEmail);
+    const listEl = document.getElementById("wall-list");
+    if (wall.length === 0) {
+      listEl.classList.remove("rk-card");
+      listEl.innerHTML = `<p class="empty-hint">Nenhum recado ainda. Seja a primeira pessoa a deixar um!</p>`;
+      return;
+    }
+    listEl.classList.add("rk-card");
+    listEl.innerHTML = wall.slice().reverse().map(entry => {
+      const authorProfile = readJSON(`arena-profile-${entry.authorEmail}`, {});
+      const avatarUrl = authorProfile.avatar || "";
+      const initial = ((entry.authorName || "U")[0] || "U").toUpperCase();
+      return `
+        <div class="wall-row">
+          <div class="wall-avatar">${avatarUrl ? `<img src="${avatarUrl}" alt="">` : initial}</div>
+          <div class="flex-1">
+            <span class="wall-author"><a href="perfil.html?user=${encodeURIComponent(entry.authorEmail)}">${escapeHtml(entry.authorName)}</a></span>
+            <p class="wall-text">${escapeHtml(entry.text)}</p>
+            <span class="wall-time">${relativeTime(entry.at)}</span>
+          </div>
+          ${isOwnProfile ? `<button class="wall-delete-btn" data-delete="${entry.id}" title="Remover recado">✕</button>` : ""}
+        </div>`;
+    }).join("");
+  }
+
+  const wallComposer = document.getElementById("wall-composer");
+  const wallInput = document.getElementById("wall-input");
+  const wallCharCount = document.getElementById("wall-char-count");
+
+  if (!sessionEmail) {
+    document.getElementById("wall-login-hint").classList.remove("hidden");
+  } else if (isOwnProfile) {
+    document.getElementById("wall-own-hint").classList.remove("hidden");
+  } else {
+    wallComposer.classList.remove("hidden");
+  }
+
+  wallInput?.addEventListener("input", () => {
+    wallCharCount.textContent = `${wallInput.value.length}/280`;
+  });
+
+  document.getElementById("wall-submit-btn")?.addEventListener("click", () => {
+    const text = wallInput.value.trim();
+    if (!text) { wallInput.focus(); return; }
+    const wall = getWall(targetEmail);
+    const authorProfile = readJSON(`arena-profile-${sessionEmail}`, {});
+    const authorUser = loadUsers().find(u => u.email === sessionEmail);
+    const authorName = authorProfile.displayName || (authorUser ? authorUser.name : "Alguém");
+    wall.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      authorEmail: sessionEmail,
+      authorName,
+      text: text.slice(0, 280),
+      at: Date.now(),
+    });
+    writeJSON(wallKey(targetEmail), wall);
+    wallInput.value = "";
+    wallCharCount.textContent = "0/280";
+    renderWall();
+    const targetName = profile.displayName || userRecord.name;
+    logArenaActivity(sessionEmail, "📝", `Deixou um recado no perfil de ${escapeHtml(targetName)}`);
+  });
+
+  document.getElementById("wall-list").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-delete]");
+    if (!btn || !isOwnProfile) return;
+    const id = btn.dataset.delete;
+    const wall = getWall(targetEmail).filter(w => w.id !== id);
+    writeJSON(wallKey(targetEmail), wall);
+    renderWall();
+  });
+
+  renderWall();
 
   // ===============================================================
   // 11) COMPARAÇÃO H2H — só faz sentido logado, olhando outra pessoa,
