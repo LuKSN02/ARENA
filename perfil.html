@@ -112,6 +112,18 @@
   .activity-icon{ width:32px; height:32px; border-radius:9999px; background: var(--panel-2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
   .activity-text{ font-size:13px; color: var(--ink-soft); line-height:1.45; }
   .activity-time{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--muted); margin-top:2px; display:block; }
+
+  /* ===== CARTÃO DE PERFIL EXPORTÁVEL ===== */
+  #share-overlay{ position:fixed; inset:0; z-index:200; background: rgba(6,7,10,0.78); backdrop-filter: blur(3px); display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition: opacity .18s ease; }
+  #share-overlay.open{ opacity:1; pointer-events:auto; }
+  #share-modal{ background: var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px; max-width:640px; width:100%; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+  #share-canvas-wrap{ width:100%; border-radius:10px; overflow:hidden; background: var(--panel-2); border:1px solid var(--border); }
+  #share-canvas{ display:block; width:100%; height:auto; }
+  .btn-primary{ font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:10px 18px; border-radius:8px; background: var(--valorant); color:#fff; }
+  .btn-primary:hover{ filter: brightness(1.1); }
+  .btn-ghost{ font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:10px 18px; border-radius:8px; background:transparent; border:1px solid var(--border); color: var(--ink-soft); }
+  .btn-ghost:hover{ border-color: var(--ink); color: var(--ink); }
+  #share-status{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--muted); margin-top:10px; min-height:14px; }
 </style>
 </head>
 <body>
@@ -169,7 +181,10 @@
           <div id="avatar-frame"><img id="avatar-img" src="" alt="Avatar"></div>
           <span id="avatar-frame-overlay" class="avatar-frame-overlay"></span>
         </div>
-        <div class="flex items-center gap-2 mb-4" id="action-buttons"></div>
+        <div class="flex items-center gap-2 mb-4">
+          <button id="share-card-btn" class="btn-edit">🖼 CARTÃO</button>
+          <div class="flex items-center gap-2" id="action-buttons"></div>
+        </div>
       </div>
 
       <div class="px-6 pb-6 pt-3">
@@ -234,6 +249,19 @@
 
   </div>
 </main>
+
+<!-- ===== MODAL: CARTÃO DE PERFIL EXPORTÁVEL ===== -->
+<div id="share-overlay">
+  <div id="share-modal">
+    <h3 class="font-display text-2xl uppercase tracking-wide mb-3">Cartão de perfil</h3>
+    <div id="share-canvas-wrap"><canvas id="share-canvas" width="1200" height="630"></canvas></div>
+    <p id="share-status"></p>
+    <div class="flex items-center gap-2 mt-4">
+      <button id="share-download-btn" class="btn-primary">⬇ BAIXAR PNG</button>
+      <button id="share-close-btn" class="btn-ghost">FECHAR</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -654,6 +682,271 @@
         </div>`;
     }).join("");
   }
+
+  // ===============================================================
+  // 12) CARTÃO DE PERFIL EXPORTÁVEL — desenha um resumo do perfil
+  //     (avatar, nome, nível, XP, badges, conquistas, seguidores)
+  //     num canvas 1200x630 (formato ideal pra Twitter/Discord) e
+  //     permite baixar como PNG.
+  // ===============================================================
+  const FX_FALLBACK_COLOR = {
+    "banner-perfil-vaporwave": "#6B2A8C",
+    "banner-perfil-nebulosa": "#1B1030",
+    "banner-perfil-tempestade": "#0B1220",
+    "banner-perfil-campeao": "#241705",
+  };
+
+  function extractHexColors(str) {
+    return (str || "").match(/#[0-9a-fA-F]{3,6}/g) || [];
+  }
+
+  function loadImageSafe(src) {
+    return new Promise(resolve => {
+      if (!src) { resolve(null); return; }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null); // sem cabeçalho CORS: cai no avatar de fallback
+      img.src = src;
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  async function drawShareCard() {
+    const canvas = document.getElementById("share-canvas");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const statusEl = document.getElementById("share-status");
+    statusEl.textContent = "Gerando cartão...";
+
+    try { await document.fonts.load("700 44px Teko"); } catch (err) {}
+    try { await document.fonts.load("600 16px Inter"); } catch (err) {}
+    try { await document.fonts.load("600 13px 'JetBrains Mono'"); } catch (err) {}
+    try { await document.fonts.ready; } catch (err) {}
+
+    // ---- fundo ----
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#1B1F28";
+    ctx.fillRect(0, 0, W, H);
+
+    // ---- faixa de topo (cor/gradiente do banner do perfil) ----
+    const bannerHeight = 190;
+    let bannerColors;
+    if (FX_FALLBACK_COLOR[profile.equippedBannerId]) {
+      bannerColors = [FX_FALLBACK_COLOR[profile.equippedBannerId], "#1B1F28"];
+    } else {
+      const bannerCss = computeBannerCss(profile) || "#20242F";
+      const hexes = extractHexColors(bannerCss);
+      bannerColors = hexes.length ? hexes : [bannerCss, bannerCss];
+    }
+    const bannerGrad = ctx.createLinearGradient(0, 0, W, bannerHeight);
+    bannerColors.forEach((c, i) => bannerGrad.addColorStop(i / Math.max(1, bannerColors.length - 1), c));
+    ctx.fillStyle = bannerGrad;
+    ctx.fillRect(0, 0, W, bannerHeight);
+    const shade = ctx.createLinearGradient(0, bannerHeight - 60, 0, bannerHeight);
+    shade.addColorStop(0, "rgba(27,31,40,0)");
+    shade.addColorStop(1, "rgba(27,31,40,1)");
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, bannerHeight - 60, W, 60);
+
+    // ---- logo Arena ----
+    ctx.font = "700 30px Teko, sans-serif";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText("ARENA", 36, 48);
+    ctx.fillStyle = "#FF4655";
+    ctx.fillText(".", 36 + ctx.measureText("ARENA").width, 48);
+
+    // ---- avatar ----
+    const avatarX = 90, avatarY = 190, avatarR = 74;
+    const avatarImg = await loadImageSafe(avatarSrc);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = "#20242F";
+    ctx.fill();
+    if (avatarImg) {
+      ctx.clip();
+      ctx.drawImage(avatarImg, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
+    } else {
+      ctx.fillStyle = "#D7DAE1";
+      ctx.font = "700 56px Teko, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(((profile.displayName || userRecord.name || "U")[0] || "U").toUpperCase(), avatarX, avatarY + 20);
+      ctx.textAlign = "left";
+    }
+    ctx.restore();
+    if (frameColor) {
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = frameColor;
+      ctx.lineWidth = 5;
+      ctx.shadowColor = frameColor;
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = "#1B1F28";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    // ---- nome + username ----
+    const nameX = 190, nameY = 178;
+    ctx.font = "700 44px Teko, sans-serif";
+    const displayName = profile.displayName || userRecord.name;
+    if (profile.equippedNameEffect) {
+      const nameW = ctx.measureText(displayName).width;
+      const grad = ctx.createLinearGradient(nameX, 0, nameX + nameW, 0);
+      if (profile.equippedNameEffect === "efeito-nome-fogo") {
+        grad.addColorStop(0, "#FF4655"); grad.addColorStop(1, "#FFD166");
+      } else if (profile.equippedNameEffect === "efeito-nome-holograma") {
+        grad.addColorStop(0, "#22D3EE"); grad.addColorStop(0.5, "#FFFFFF"); grad.addColorStop(1, "#EC4899");
+      } else {
+        grad.addColorStop(0, "#FF4655"); grad.addColorStop(0.5, "#34D399"); grad.addColorStop(1, "#8B5CF6");
+      }
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = "#D7DAE1";
+    }
+    ctx.fillText(displayName, nameX, nameY);
+
+    ctx.font = "600 16px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7C8394";
+    ctx.fillText("@" + (profile.username || (userRecord.name.split(" ")[0] || "").toLowerCase()), nameX, nameY + 26);
+
+    // ---- badges ao lado do username (até 3) ----
+    const badges = (profile.equippedBadges || []).slice(0, 3);
+    let bx = nameX;
+    const by = nameY + 46;
+    badges.forEach(b => {
+      ctx.font = "600 13px Inter, sans-serif";
+      const label = `${b.emoji} ${b.name}`;
+      const w = ctx.measureText(label).width + 22;
+      ctx.fillStyle = "#20242F";
+      roundRect(ctx, bx, by, w, 28, 14);
+      ctx.fill();
+      ctx.strokeStyle = RARITY_COLOR[b.rarity] || "#5865F2";
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, bx, by, w, 28, 14);
+      ctx.stroke();
+      ctx.fillStyle = "#D7DAE1";
+      ctx.fillText(label, bx + 11, by + 19);
+      bx += w + 8;
+    });
+
+    // ---- estatísticas ----
+    const stats = [
+      { label: "NÍVEL", value: String(theirScore.level) },
+      { label: "XP TOTAL", value: String(theirScore.xp) },
+      { label: "ITENS", value: String(theirScore.itemCount) },
+      { label: "SEGUIDORES", value: String(countFollowers(targetEmail)) },
+    ];
+    const statsY = 300, statW = (W - 72 - 36) / 4, statGap = 12;
+    stats.forEach((s, i) => {
+      const x = 36 + i * (statW + statGap);
+      ctx.fillStyle = "#20242F";
+      roundRect(ctx, x, statsY, statW, 92, 12);
+      ctx.fill();
+      ctx.font = "700 40px Teko, sans-serif";
+      ctx.fillStyle = "#D7DAE1";
+      ctx.textAlign = "center";
+      ctx.fillText(s.value, x + statW / 2, statsY + 52);
+      ctx.font = "600 11px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "#7C8394";
+      ctx.fillText(s.label, x + statW / 2, statsY + 74);
+      ctx.textAlign = "left";
+    });
+
+    // ---- barra de XP ----
+    const pct = Math.max(0, Math.min(1, theirScore.xpIntoLevel / XP_PER_LEVEL));
+    const xpY = 418, xpW = W - 72;
+    ctx.fillStyle = "#20242F";
+    roundRect(ctx, 36, xpY, xpW, 10, 5);
+    ctx.fill();
+    const xpGrad = ctx.createLinearGradient(36, 0, 36 + xpW * pct, 0);
+    xpGrad.addColorStop(0, "#FF4655"); xpGrad.addColorStop(1, "#F59E0B");
+    ctx.fillStyle = xpGrad;
+    roundRect(ctx, 36, xpY, Math.max(10, xpW * pct), 10, 5);
+    ctx.fill();
+    ctx.font = "600 12px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7C8394";
+    ctx.fillText(`${theirScore.xpIntoLevel} / ${XP_PER_LEVEL} XP para o nível ${theirScore.level + 1}`, 36, xpY + 30);
+
+    // ---- conquistas em destaque ----
+    const showcase = (profile.showcase || []).map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean).slice(0, 5);
+    if (showcase.length) {
+      ctx.font = "600 12px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "#7C8394";
+      ctx.fillText("CONQUISTAS EM DESTAQUE", 36, 495);
+      let cx = 36;
+      const cy = 512;
+      showcase.forEach(a => {
+        ctx.font = "600 14px Inter, sans-serif";
+        const label = `${a.emoji} ${a.name}`;
+        const w = ctx.measureText(label).width + 24;
+        if (cx + w > W - 36) return; // não estoura a largura do cartão
+        ctx.fillStyle = "#20242F";
+        roundRect(ctx, cx, cy, w, 34, 17);
+        ctx.fill();
+        ctx.strokeStyle = RARITY_COLOR[a.rarity] || "#5865F2";
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, cx, cy, w, 34, 17);
+        ctx.stroke();
+        ctx.fillStyle = "#D7DAE1";
+        ctx.fillText(label, cx + 12, cy + 23);
+        cx += w + 10;
+      });
+    }
+
+    // ---- rodapé ----
+    ctx.font = "600 13px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7C8394";
+    ctx.textAlign = "right";
+    ctx.fillText("ARENA.GG — O MAIOR PORTAL DE E-SPORTS DO BRASIL", W - 36, H - 30);
+    ctx.textAlign = "left";
+
+    statusEl.textContent = avatarImg ? "" : "⚠ O avatar não pôde ser carregado (imagem de outro domínio) — cartão gerado sem foto.";
+  }
+
+  function downloadShareCard() {
+    const canvas = document.getElementById("share-canvas");
+    const statusEl = document.getElementById("share-status");
+    try {
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `arena-perfil-${(profile.username || "jogador").replace(/[^a-z0-9_-]/gi, "")}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      statusEl.textContent = "⚠ Não foi possível exportar a imagem neste navegador.";
+    }
+  }
+
+  document.getElementById("share-card-btn")?.addEventListener("click", () => {
+    document.getElementById("share-overlay").classList.add("open");
+    drawShareCard();
+  });
+  document.getElementById("share-close-btn").addEventListener("click", () => {
+    document.getElementById("share-overlay").classList.remove("open");
+  });
+  document.getElementById("share-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "share-overlay") document.getElementById("share-overlay").classList.remove("open");
+  });
+  document.getElementById("share-download-btn").addEventListener("click", downloadShareCard);
 
 })();
 </script>
