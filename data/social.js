@@ -146,7 +146,74 @@
     return { render };
   }
 
+  // ===================================================================
+  // REAÇÕES — reação rápida (emoji) em qualquer item (recado de mural,
+  // comentário de notícia, etc). Guardadas num único objeto global
+  // `arena-reactions`, indexado por um itemId que cada página escolhe
+  // (ex: `wall-<id>`, `comment-<id>`) pra nunca colidir entre si:
+  //   { [itemId]: { "🔥": ["email1","email2"], "👍": [...] } }
+  // ===================================================================
+  const REACTIONS_KEY = "arena-reactions";
+  const DEFAULT_EMOJIS = ["🔥", "👍", "❤️", "😂", "💀"];
+
+  function getAllReactions() { return readJSON(REACTIONS_KEY, {}); }
+
+  function getItemReactions(itemId) {
+    return getAllReactions()[itemId] || {};
+  }
+
+  // Alterna a reação `emoji` de `email` no item `itemId`. Retorna true
+  // se a reação foi ADICIONADA agora (false se foi removida).
+  function toggleReaction(itemId, emoji, email) {
+    if (!email) return false;
+    const all = getAllReactions();
+    if (!all[itemId]) all[itemId] = {};
+    if (!all[itemId][emoji]) all[itemId][emoji] = [];
+    const list = all[itemId][emoji];
+    const idx = list.indexOf(email);
+    if (idx >= 0) list.splice(idx, 1); else list.push(email);
+    if (list.length === 0) delete all[itemId][emoji];
+    writeJSON(REACTIONS_KEY, all);
+    return idx < 0;
+  }
+
+  // Monta a barra de reações dentro de `containerEl`. Chamar de novo
+  // (ex: depois de re-renderizar a lista) é seguro — ela substitui o
+  // conteúdo do container a cada chamada.
+  //   opts.itemId, opts.email, opts.containerEl, opts.emojis (opcional)
+  //   opts.onReact(emoji, added) — callback opcional (ex: pra notificar
+  //   o autor do item quando alguém reage)
+  function mountReactions(opts) {
+    const { itemId, email, containerEl, emojis = DEFAULT_EMOJIS, onReact } = opts;
+    if (!containerEl) return;
+
+    function render() {
+      const reactions = getItemReactions(itemId);
+      containerEl.innerHTML = emojis.map(emoji => {
+        const list = reactions[emoji] || [];
+        const active = email && list.includes(email);
+        return `<button type="button" class="arena-reaction-btn ${active ? "is-active" : ""}" data-emoji="${emoji}">
+          <span>${emoji}</span>${list.length > 0 ? `<span class="arena-reaction-count">${list.length}</span>` : ""}
+        </button>`;
+      }).join("");
+
+      containerEl.querySelectorAll(".arena-reaction-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (!email) return;
+          const emoji = btn.dataset.emoji;
+          const added = toggleReaction(itemId, emoji, email);
+          render();
+          if (typeof onReact === "function") onReact(emoji, added);
+        });
+      });
+    }
+
+    render();
+    return { render };
+  }
+
   global.ArenaSocial = {
     notify, getAll, unreadCount, markAllRead, markOneRead, clearAll, mountBell, relativeTime,
+    getItemReactions, toggleReaction, mountReactions,
   };
 })(window);

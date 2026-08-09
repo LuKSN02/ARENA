@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streamers &amp; Criadores | Arena</title>
+<meta name="description" content="Conheça os streamers e criadores de conteúdo parceiros da Arena — quem está ao vivo agora e onde assistir.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="data/social.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  @view-transition{ navigation: auto; }
+  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
+  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
+  @keyframes arena-page-out{ to{ opacity:0; } }
+  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce){
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
+  }
+</style>
+<style>
+  :root{
+    --bg: #14171E; --panel: #1B1F28; --panel-2: #20242F; --sidebar: #0F1116;
+    --border: rgba(255,255,255,0.08); --ink: #D7DAE1; --ink-soft: #AEB3BE; --muted: #7C8394; --live: #34D399;
+    --valorant: #FF4655;  --valorant-glow: #241016;
+    --lol: #C89B3C;       --lol-glow: #221d10;
+    --cs2: #E8A03D;       --cs2-glow: #241c10;
+    --dota2: #C23C2A;     --dota2-glow: #241412;
+    --fortnite: #8B5CF6;  --fortnite-glow: #1c1428;
+    --cod: #5B90C9;       --cod-glow: #131c26;
+    --freefire: #FF5722;  --freefire-glow: #251510;
+    --apex: #DA3B46;      --apex-glow: #24141a;
+  }
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+  .clip-tag{ clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%); }
+  .clip-card{ clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+  .pulse-dot{ animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.45; transform:scale(.75); } }
+
+  .streamer-card{ transition: transform .15s ease, border-color .15s ease; }
+  .streamer-card:hover{ transform: translateY(-3px); }
+  .streamer-avatar{
+    width:56px; height:56px; border-radius:9999px; display:flex; align-items:center; justify-content:center;
+    font-family:'Teko', sans-serif; font-size:22px; font-weight:600; flex-shrink:0;
+    background: var(--panel-2); border:2px solid var(--card-accent, var(--border));
+  }
+  .platform-chip{ font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; }
+  .platform-chip.twitch{ background: rgba(145,70,255,0.15); color:#9146FF; }
+  .platform-chip.youtube{ background: rgba(255,0,0,0.12); color:#FF4B4B; }
+
+  .filter-chip{ border:1px solid var(--border); color: var(--muted); background: transparent; white-space:nowrap; }
+  .filter-chip.active{ border-color: var(--ink-soft); color: var(--ink); background: var(--panel-2); }
+
+  /* ===== NOTIFICAÇÕES (reaproveitado do resto do site) ===== */
+  .arena-notif-row{ display:flex; gap:10px; padding:10px 14px; text-decoration:none; color:inherit; border-bottom:1px solid var(--border); transition: background .12s ease; }
+  .arena-notif-row:last-child{ border-bottom:none; }
+  .arena-notif-row:hover{ background: var(--panel-2); }
+  .arena-notif-row.is-unread{ background: rgba(255,70,85,0.06); }
+  .arena-notif-row.is-unread .arena-notif-text{ font-weight:600; color: var(--ink); }
+  .arena-notif-icon{ font-size:15px; flex-shrink:0; line-height:1.3; }
+  .arena-notif-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .arena-notif-text{ font-size:12.5px; color: var(--ink-soft); line-height:1.4; }
+  .arena-notif-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); }
+  .arena-notif-empty{ padding:22px 14px; text-align:center; font-size:12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
+      <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+      <a href="campeonatos.html" style="color: var(--muted);" class="hover:opacity-80">🏆 CHAVEAMENTO</a>
+      <a href="streamers.html" style="color: var(--ink);" class="hover:opacity-80">🎥 STREAMERS</a>
+      <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
+    </nav>
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="relative hidden" id="notif-wrap">
+        <button id="notif-btn" aria-label="Notificações" class="w-9 h-9 flex items-center justify-center text-[14px]" style="position:relative;">
+          🔔
+          <span id="notif-badge" class="hidden" style="position:absolute; top:1px; right:1px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; font-family:'JetBrains Mono', monospace; padding:1px 4px; border-radius:999px; line-height:1.3;"></span>
+        </button>
+        <div id="notif-dropdown" class="hidden" role="menu"
+          style="position:absolute; right:0; top:calc(100% + 10px); width:320px; max-width:88vw; background: var(--panel); border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 30px -8px rgba(0,0,0,.5); overflow:hidden; z-index:60;">
+          <div style="padding:12px 14px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; letter-spacing:.03em; color: var(--muted);">NOTIFICAÇÕES</div>
+          <div id="notif-list" style="max-height:340px; overflow-y:auto;"></div>
+        </div>
+      </div>
+      <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2 shrink-0" style="color: var(--muted);">
+        &larr; Voltar para o portal
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-10">
+
+  <div class="mb-8">
+    <p class="font-mono text-[11px] font-semibold tracking-wide" style="color: var(--valorant);">🎥 CRIADORES PARCEIROS</p>
+    <h1 class="font-display text-4xl sm:text-5xl font-semibold uppercase tracking-wide mt-1">Streamers da Arena</h1>
+    <p class="text-[13px] sm:text-[14px] mt-2 max-w-2xl" style="color: var(--ink-soft);">
+      Os criadores de conteúdo parceiros da plataforma — quem está ao vivo agora, o que jogam, e onde assistir.
+    </p>
+  </div>
+
+  <!-- Filtro por jogo -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-8" id="game-filter-bar"></div>
+
+  <!-- Grid de streamers -->
+  <div id="streamers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  <p id="streamers-empty" class="hidden py-12 text-center font-mono text-[12px]" style="color: var(--muted);">Nenhum criador encontrado para este filtro.</p>
+
+</main>
+
+<script src="data/streamers.js"></script>
+<script>
+(function(){
+  const SESSION_KEY = "arena-session-email";
+  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
+  function escapeHtml(str) { return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+  function formatCount(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(".0", "") + "M";
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(".0", "") + "K";
+    return String(n);
+  }
+
+  const sessionEmail = getSessionEmail();
+  if (sessionEmail && window.ArenaSocial) {
+    const notifWrap = document.getElementById("notif-wrap");
+    notifWrap.classList.remove("hidden");
+    notifWrap.classList.add("sm:block");
+    window.ArenaSocial.mountBell({
+      email: sessionEmail,
+      buttonEl: document.getElementById("notif-btn"),
+      dropdownEl: document.getElementById("notif-dropdown"),
+      badgeEl: document.getElementById("notif-badge"),
+      listEl: document.getElementById("notif-list"),
+    });
+  }
+
+  // ===============================================================
+  // FILTRO DE JOGO — monta os chips a partir dos jogos que realmente
+  // aparecem em STREAMERS (data/streamers.js), então nunca sobra
+  // filtro vazio.
+  // ===============================================================
+  const gamesInUse = [];
+  STREAMERS.forEach(s => {
+    if (!gamesInUse.find(g => g.slug === s.game)) gamesInUse.push({ slug: s.game, label: s.gameLabel });
+  });
+
+  const filterBar = document.getElementById("game-filter-bar");
+  filterBar.innerHTML = [`<button class="filter-chip active font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="todos">TODOS</button>`]
+    .concat(gamesInUse.map(g => `<button class="filter-chip font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="${g.slug}">${g.label.toUpperCase()}</button>`))
+    .join("");
+
+  let currentFilter = "todos";
+
+  function renderGrid() {
+    const grid = document.getElementById("streamers-grid");
+    const empty = document.getElementById("streamers-empty");
+    const list = STREAMERS
+      .filter(s => currentFilter === "todos" || s.game === currentFilter)
+      // ao vivo primeiro, depois por nº de seguidores
+      .sort((a, b) => (b.isLive - a.isLive) || (b.followers - a.followers));
+
+    if (list.length === 0) {
+      grid.innerHTML = "";
+      empty.classList.remove("hidden");
+      return;
+    }
+    empty.classList.add("hidden");
+
+    grid.innerHTML = list.map(s => `
+      <a href="${s.url}" target="_blank" rel="noopener" class="streamer-card clip-card block p-5"
+        style="--card-accent: var(--${s.game}); background: var(--panel); border:1px solid var(--border);">
+        <div class="flex items-start gap-3">
+          <div class="streamer-avatar" style="color: var(--${s.game});">${escapeHtml(s.avatarSeed)}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="font-display text-xl font-semibold uppercase tracking-wide truncate">${escapeHtml(s.name)}</h3>
+              ${s.isLive ? `<span class="flex items-center gap-1 font-mono text-[10px] font-semibold shrink-0" style="color: var(--live);">
+                <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background: var(--live);"></span> AO VIVO
+              </span>` : ""}
+            </div>
+            <p class="font-mono text-[11px]" style="color: var(--muted);">${escapeHtml(s.handle)}</p>
+          </div>
+        </div>
+        <p class="text-[13px] mt-3 leading-relaxed" style="color: var(--ink-soft);">${escapeHtml(s.bio)}</p>
+        <div class="flex items-center justify-between mt-4 pt-3" style="border-top:1px solid var(--border);">
+          <span class="platform-chip ${s.platform}">${s.platform === "twitch" ? "TWITCH" : "YOUTUBE"}</span>
+          <span class="font-mono text-[11px]" style="color: var(--ink-soft);">
+            ${s.isLive ? `👁 ${formatCount(s.viewers)} agora` : `${formatCount(s.followers)} seguidores`}
+          </span>
+        </div>
+      </a>
+    `).join("");
+  }
+  renderGrid();
+
+  filterBar.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-game]");
+    if (!btn) return;
+    currentFilter = btn.dataset.game;
+    filterBar.querySelectorAll(".filter-chip").forEach(b => b.classList.toggle("active", b === btn));
+    renderGrid();
+  });
+})();
+</script>
+</body>
+</html>

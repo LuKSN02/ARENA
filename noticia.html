@@ -162,7 +162,16 @@
 
 </main>
 
+<style>
+  /* ===== REAÇÕES ===== */
+  .arena-reaction-bar{ display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+  .arena-reaction-btn{ display:flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); background: var(--panel); font-size:12px; line-height:1.4; cursor:pointer; transition: border-color .12s ease, background .12s ease; }
+  .arena-reaction-btn:hover{ border-color: var(--accent); }
+  .arena-reaction-btn.is-active{ border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .arena-reaction-count{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); }
+</style>
 <script src="data/noticias.js"></script>
+<script src="data/social.js"></script>
 <script>
   // ===============================================================
   // SESSÃO — mesma convenção usada em inventario.html/perfil-config.html:
@@ -348,7 +357,7 @@
   function renderComments() {
     const comments = [...baseComments, ...loadStoredComments(articleKey)];
     commentCountEl.textContent = comments.length;
-    commentsListEl.innerHTML = comments.map(c => `
+    commentsListEl.innerHTML = comments.map((c, i) => `
       <div class="flex items-start gap-3">
         <div class="comment-avatar">${escapeHtml(c.user.slice(0,2).toUpperCase())}</div>
         <div class="flex-1">
@@ -357,9 +366,20 @@
             <span style="color: var(--muted);">${escapeHtml(c.time)}</span>
           </div>
           <p class="text-[13px] mt-1" style="color: var(--ink-soft);">${escapeHtml(c.text)}</p>
+          <div class="arena-reaction-bar" data-reaction-for="${articleKey}-${i}"></div>
         </div>
       </div>
     `).join("");
+
+    if (window.ArenaSocial) {
+      commentsListEl.querySelectorAll("[data-reaction-for]").forEach(bar => {
+        window.ArenaSocial.mountReactions({
+          itemId: `comment-${bar.dataset.reactionFor}`,
+          email: sessionEmail || "",
+          containerEl: bar,
+        });
+      });
+    }
   }
   renderComments();
 

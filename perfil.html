@@ -119,6 +119,13 @@
   #wall-composer textarea::placeholder{ color: var(--muted); }
   .wall-row{ display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); }
   .wall-row:last-child{ border-bottom:none; }
+
+  /* ===== REAÇÕES ===== */
+  .arena-reaction-bar{ display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+  .arena-reaction-btn{ display:flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); background: var(--panel-2); font-size:12px; line-height:1.4; cursor:pointer; transition: border-color .12s ease, background .12s ease; }
+  .arena-reaction-btn:hover{ border-color: var(--valorant); }
+  .arena-reaction-btn.is-active{ border-color: var(--valorant); background: rgba(255,70,85,0.12); }
+  .arena-reaction-count{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); }
   .wall-avatar{ width:34px; height:34px; border-radius:9999px; background: var(--panel-2); display:flex; align-items:center; justify-content:center; font-family:'Teko', sans-serif; font-size:16px; color: var(--ink-soft); flex-shrink:0; overflow:hidden; }
   .wall-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
   .wall-author a{ font-size:12.5px; font-weight:700; color: var(--ink); text-decoration:none; }
@@ -712,10 +719,29 @@
             <span class="wall-author"><a href="perfil.html?user=${encodeURIComponent(entry.authorEmail)}">${escapeHtml(entry.authorName)}</a></span>
             <p class="wall-text">${escapeHtml(entry.text)}</p>
             <span class="wall-time">${relativeTime(entry.at)}</span>
+            <div class="arena-reaction-bar" data-reaction-for="${entry.id}"></div>
           </div>
           ${isOwnProfile ? `<button class="wall-delete-btn" data-delete="${entry.id}" title="Remover recado">✕</button>` : ""}
         </div>`;
     }).join("");
+
+    if (window.ArenaSocial) {
+      listEl.querySelectorAll("[data-reaction-for]").forEach(bar => {
+        const itemId = `wall-${bar.dataset.reactionFor}`;
+        window.ArenaSocial.mountReactions({
+          itemId, email: sessionEmail, containerEl: bar,
+          onReact: (emoji, added) => {
+            if (!added) return;
+            const wallEntry = wall.find(w => w.id === bar.dataset.reactionFor);
+            if (!wallEntry) return;
+            const reactorProfile = readJSON(`arena-profile-${sessionEmail}`, {});
+            const reactorUser = loadUsers().find(u => u.email === sessionEmail);
+            const reactorName = reactorProfile.displayName || (reactorUser ? reactorUser.name : "Alguém");
+            window.ArenaSocial.notify(wallEntry.authorEmail, emoji, `${reactorName} reagiu ${emoji} ao seu recado`, `perfil.html?user=${encodeURIComponent(targetEmail)}`, sessionEmail);
+          },
+        });
+      });
+    }
   }
 
   const wallComposer = document.getElementById("wall-composer");
