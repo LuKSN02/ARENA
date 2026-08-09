@@ -1477,10 +1477,10 @@
         const variant = p.id.includes("fogo") ? "nameeffect-fire" : p.id.includes("holograma") ? "nameeffect-holo" : "";
         return `<div class="dprev"><span class="dprev-nameeffect ${variant}">ARENA</span></div>`;
       }
-      return `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
+      return `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/500x500/1B1F28/D7DAE1?text=${encodeURIComponent(p.name)}';">`;
     }
     function productMediaHTML(p) {
-      return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
+      return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/500x500/1B1F28/D7DAE1?text=${encodeURIComponent(p.name)}';">`;
     }
 
     function renderFilters() {
