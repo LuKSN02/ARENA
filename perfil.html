@@ -7,6 +7,7 @@
 <meta name="description" content="Veja o perfil público de um jogador da Arena: banner, emblemas, conquistas e estatísticas.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   @view-transition{ navigation: auto; }
@@ -624,6 +625,10 @@
       if (nowFollowing) {
         const targetName = profile.displayName || userRecord.name;
         logArenaActivity(sessionEmail, "🤝", `Passou a seguir ${escapeHtml(targetName)}`);
+        const viewerProfile = readJSON(`arena-profile-${sessionEmail}`, {});
+        const viewerUser = loadUsers().find(u => u.email === sessionEmail);
+        const viewerName = viewerProfile.displayName || (viewerUser ? viewerUser.name : "Alguém");
+        window.ArenaSocial?.notify(targetEmail, "🤝", `${viewerName} passou a te seguir`, `perfil.html?user=${encodeURIComponent(sessionEmail)}`, sessionEmail);
       }
     });
   } else {
@@ -749,6 +754,7 @@
     renderWall();
     const targetName = profile.displayName || userRecord.name;
     logArenaActivity(sessionEmail, "📝", `Deixou um recado no perfil de ${escapeHtml(targetName)}`);
+    window.ArenaSocial?.notify(targetEmail, "📝", `${authorName} deixou um recado no seu mural`, `perfil.html?user=${encodeURIComponent(sessionEmail)}`, sessionEmail);
   });
 
   document.getElementById("wall-list").addEventListener("click", (e) => {
