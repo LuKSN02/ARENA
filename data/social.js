@@ -111,6 +111,7 @@
       e.stopPropagation();
       const willOpen = dropdownEl.classList.contains("hidden");
       dropdownEl.classList.toggle("hidden");
+      buttonEl.setAttribute("aria-expanded", String(willOpen));
       if (willOpen) {
         render();
         // pequeno delay pra não marcar tudo como lido instantaneamente
@@ -195,8 +196,51 @@
     return { render };
   }
 
+  // ===================================================================
+  // HEADER BELL — monta o sino + dropdown dentro de um container vazio
+  // (`<div id="notif-wrap" class="hidden"></div>` no header da página),
+  // em vez de exigir que cada página copie o markup/CSS do botão e do
+  // dropdown. Uso (uma linha, no script da página, com a sessão já
+  // resolvida via ArenaUtils.getSessionEmail()):
+  //
+  //   ArenaSocial.initHeaderBell();
+  //
+  // Não faz nada se não houver sessão ativa ou se o container não
+  // existir na página (páginas sem sino, como jogo.html/noticia.html,
+  // simplesmente ignoram a chamada). Retorna o mesmo objeto de
+  // mountBell({ render }) pra quem precisar re-renderizar manualmente,
+  // ou null se não montou.
+  // ===================================================================
+  function initHeaderBell(opts) {
+    const { email, containerId = "notif-wrap" } = opts || {};
+    const utils = global.ArenaUtils;
+    const resolvedEmail = email || (utils && utils.getSessionEmail());
+    const wrap = document.getElementById(containerId);
+    if (!resolvedEmail || !wrap) return null;
+
+    wrap.classList.remove("hidden");
+    wrap.classList.add("sm:block");
+    wrap.innerHTML = `
+      <button id="notif-btn" aria-label="Notificações" aria-haspopup="true" aria-expanded="false" class="w-9 h-9 flex items-center justify-center text-[14px] arena-notif-btn">
+        🔔
+        <span id="notif-badge" class="hidden arena-notif-badge"></span>
+      </button>
+      <div id="notif-dropdown" class="hidden arena-notif-dropdown" role="menu">
+        <div class="arena-notif-header">NOTIFICAÇÕES</div>
+        <div id="notif-list"></div>
+      </div>`;
+
+    return mountBell({
+      email: resolvedEmail,
+      buttonEl: wrap.querySelector("#notif-btn"),
+      dropdownEl: wrap.querySelector("#notif-dropdown"),
+      badgeEl: wrap.querySelector("#notif-badge"),
+      listEl: wrap.querySelector("#notif-list"),
+    });
+  }
+
   global.ArenaSocial = {
-    notify, getAll, unreadCount, markAllRead, markOneRead, clearAll, mountBell, relativeTime,
+    notify, getAll, unreadCount, markAllRead, markOneRead, clearAll, mountBell, initHeaderBell, relativeTime,
     getItemReactions, toggleReaction, mountReactions,
   };
 })(window);

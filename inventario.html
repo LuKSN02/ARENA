@@ -9,17 +9,7 @@
 <script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
-<style>
-  /* ===== TRANSIÇÃO ENTRE PÁGINAS (estilo Discord: crossfade + leve subida) ===== */
-  @view-transition{ navigation: auto; }
-  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
-  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
-  @keyframes arena-page-out{ to{ opacity:0; } }
-  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
-  @media (prefers-reduced-motion: reduce){
-    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
-  }
-</style>
+<link rel="stylesheet" href="data/theme.css">
 <style>
   :root{
     --bg: #14171E;
@@ -222,16 +212,6 @@
   #confirm-ok:hover{ filter: brightness(1.12); }
 
   /* ===== NOTIFICAÇÕES ===== */
-  .arena-notif-row{ display:flex; gap:10px; padding:10px 14px; text-decoration:none; color:inherit; border-bottom:1px solid var(--border); transition: background .12s ease; }
-  .arena-notif-row:last-child{ border-bottom:none; }
-  .arena-notif-row:hover{ background: var(--panel-2); }
-  .arena-notif-row.is-unread{ background: rgba(255,70,85,0.06); }
-  .arena-notif-row.is-unread .arena-notif-text{ font-weight:600; color: var(--ink); }
-  .arena-notif-icon{ font-size:15px; flex-shrink:0; line-height:1.3; }
-  .arena-notif-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-  .arena-notif-text{ font-size:12.5px; color: var(--ink-soft); line-height:1.4; }
-  .arena-notif-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); }
-  .arena-notif-empty{ padding:22px 14px; text-align:center; font-size:12.5px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -242,17 +222,7 @@
       ARENA<span style="color: var(--valorant);">.</span>
     </a>
     <div class="flex items-center gap-4">
-      <div class="relative hidden" id="notif-wrap">
-        <button id="notif-btn" aria-label="Notificações" class="w-9 h-9 flex items-center justify-center text-[14px]" style="position:relative;">
-          🔔
-          <span id="notif-badge" class="hidden" style="position:absolute; top:1px; right:1px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; font-family:'JetBrains Mono', monospace; padding:1px 4px; border-radius:999px; line-height:1.3;"></span>
-        </button>
-        <div id="notif-dropdown" class="hidden" role="menu"
-          style="position:absolute; right:0; top:calc(100% + 10px); width:320px; max-width:88vw; background: var(--panel); border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 30px -8px rgba(0,0,0,.5); overflow:hidden; z-index:60;">
-          <div style="padding:12px 14px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; letter-spacing:.03em; color: var(--muted);">NOTIFICAÇÕES</div>
-          <div id="notif-list" style="max-height:340px; overflow-y:auto;"></div>
-        </div>
-      </div>
+      <div class="hidden" id="notif-wrap"></div>
 
       <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--r-lendario);">🏆 Ranking</a>
       <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">&larr; Voltar para o portal</a>
@@ -342,16 +312,7 @@
   if (!sessionEmail) {
     document.getElementById("no-session-banner").classList.remove("hidden");
   } else if (window.ArenaSocial) {
-    const notifWrap = document.getElementById("notif-wrap");
-    notifWrap.classList.remove("hidden");
-    notifWrap.classList.add("sm:block");
-    window.ArenaSocial.mountBell({
-      email: sessionEmail,
-      buttonEl: document.getElementById("notif-btn"),
-      dropdownEl: document.getElementById("notif-dropdown"),
-      badgeEl: document.getElementById("notif-badge"),
-      listEl: document.getElementById("notif-list"),
-    });
+    window.ArenaSocial.initHeaderBell();
   }
 
   // ===============================================================

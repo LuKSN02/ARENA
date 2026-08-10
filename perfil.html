@@ -10,16 +10,7 @@
 <script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  @view-transition{ navigation: auto; }
-  ::view-transition-old(root){ animation: arena-page-out .15s ease-in both; }
-  ::view-transition-new(root){ animation: arena-page-in .2s ease-out both; }
-  @keyframes arena-page-out{ to{ opacity:0; } }
-  @keyframes arena-page-in{ from{ opacity:0; transform: translateY(8px); } }
-  @media (prefers-reduced-motion: reduce){
-    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important; }
-  }
-</style>
+<link rel="stylesheet" href="data/theme.css">
 <style>
   :root{
     --bg: #14171E;
