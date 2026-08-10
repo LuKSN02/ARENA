@@ -416,6 +416,53 @@
   #search-results a:last-child{ border-bottom: none; }
   #login-error, #signup-error{ color: var(--valorant); }
 
+  /* ===== CADASTRO EM ETAPAS ===== */
+  #signup-progress-track{ height:3px; background: var(--panel-2); }
+  #signup-progress-bar{ height:100%; width:33.333%; background: var(--valorant); transition: width .25s ease; }
+  .field-hint{ display:block; font-size:11px; margin-top:5px; min-height:14px; line-height:1.4; color: var(--muted); transition: color .15s ease; }
+  .field-hint.is-error{ color: var(--valorant); }
+  .field-hint.is-ok{ color: var(--live); }
+  .modal-input.is-error{ border-color: var(--valorant); }
+  .modal-input.is-ok{ border-color: var(--live); }
+  .pw-strength{ display:flex; gap:4px; margin-top:7px; }
+  .pw-strength span{ flex:1; height:3px; border-radius:2px; background: var(--panel-2); transition: background .2s ease; }
+  .pw-strength[data-level="1"] span:nth-child(1){ background:#EF4444; }
+  .pw-strength[data-level="2"] span:nth-child(1), .pw-strength[data-level="2"] span:nth-child(2){ background:#F59E0B; }
+  .pw-strength[data-level="3"] span{ background: var(--live); }
+  .signup-step{ display:flex; flex-direction:column; gap:12px; }
+  .signup-step.hidden{ display:none; }
+  .game-chip{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:600; padding:7px 13px;
+    border-radius:999px; border:1px solid var(--border); color: var(--muted); background:transparent;
+    cursor:pointer; transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .game-chip.is-selected{ border-color: var(--chip-accent, var(--valorant)); color: var(--ink); background: color-mix(in srgb, var(--chip-accent, var(--valorant)) 14%, transparent); }
+  .signup-avatar-preview{
+    width:64px; height:64px; border-radius:9999px; background: var(--panel-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-family:'Teko', sans-serif;
+    font-size:24px; color: var(--muted); overflow:hidden; border:2px solid var(--border);
+  }
+  .signup-avatar-preview img{ width:100%; height:100%; object-fit:cover; }
+  .btn-outline-mini{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:8px 13px;
+    border:1px solid var(--border); color: var(--ink-soft); border-radius:6px; cursor:pointer;
+    background:transparent; transition: border-color .15s ease, color .15s ease; text-align:center;
+  }
+  .btn-outline-mini:hover{ border-color: var(--ink-soft); color: var(--ink); }
+  #signup-toast{
+    position:fixed; top:18px; left:50%; transform: translateX(-50%) translateY(-12px);
+    background: var(--panel); border:1px solid var(--live); color: var(--ink); z-index:300;
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600; padding:11px 18px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    opacity:0; pointer-events:none; transition: opacity .2s ease, transform .2s ease;
+    display:flex; align-items:center; gap:8px;
+  }
+  #signup-toast.is-visible{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .login-view.hidden{ display:none; }
+  #login-remember{ accent-color: var(--valorant); }
+  #login-forgot-link{ background:none; border:none; cursor:pointer; padding:0; }
+  #login-forgot-link:hover{ text-decoration: underline; }
+
   /* Efeito de Nome RGB — item comprável na Loja Arena (efeito-nome-arena-rgb). */
   .name-rgb-effect{
     background: linear-gradient(90deg, #FF4655, #FFD166, #34D399, #22D3EE, #8B5CF6, #FF4655);
@@ -850,63 +897,188 @@
 </div>
 
 <!-- ===================================================== -->
-<!-- MODAL DE LOGIN                                          -->
+<!-- MODAL DE LOGIN — 3 telas: entrar, "esqueci a senha"    -->
+<!-- (e-mail) e redefinir senha. Fluxo de recuperação é      -->
+<!-- simulado no front (não há backend de e-mail real neste  -->
+<!-- protótipo), mas segue o padrão de segurança de nunca     -->
+<!-- confirmar se um e-mail existe ou não na base.            -->
 <!-- ===================================================== -->
 <div id="login-overlay" class="modal-overlay" aria-hidden="true">
   <div class="modal-panel">
     <div class="flex items-center justify-between p-5" style="border-bottom:1px solid var(--border);">
-      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Entrar na <span style="color: var(--valorant);">Arena</span></h2>
+      <h2 id="login-title" class="font-display text-2xl font-semibold uppercase tracking-wide">Entrar na <span style="color: var(--valorant);">Arena</span></h2>
       <button class="modal-close js-close-login text-[13px]" aria-label="Fechar login">✕</button>
     </div>
-    <form id="login-form" class="p-5 flex flex-col gap-3">
+
+    <!-- ===== TELA 1 — LOGIN ===== -->
+    <form id="login-form" class="login-view p-5 flex flex-col gap-3" data-view="signin">
       <div>
         <label for="login-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
-        <input id="login-email" type="email" required placeholder="seu@email.com" class="modal-input">
+        <input id="login-email" type="email" required placeholder="seu@email.com" class="modal-input" autocomplete="email">
       </div>
       <div>
-        <label for="login-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
-        <input id="login-password" type="password" required minlength="4" placeholder="••••••••" class="modal-input">
+        <div class="flex items-center justify-between mb-1.5">
+          <label for="login-password" class="font-mono text-[10px] font-semibold" style="color: var(--muted);">SENHA</label>
+          <button type="button" id="login-forgot-link" class="font-mono text-[10px] font-semibold" style="color: var(--valorant);">Esqueci minha senha</button>
+        </div>
+        <input id="login-password" type="password" required minlength="4" placeholder="••••••••" class="modal-input" autocomplete="current-password">
       </div>
+      <label class="flex items-center gap-2 text-[11.5px] mt-0.5" style="color: var(--ink-soft);">
+        <input type="checkbox" id="login-remember" checked>
+        <span>Manter conectado neste dispositivo</span>
+      </label>
       <span id="login-error" class="text-[12px] hidden">Preencha e-mail e senha para continuar.</span>
       <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">ENTRAR</button>
       <p class="text-[11px] text-center mt-1" style="color: var(--muted);">Ainda não tem conta? <a href="#" class="js-open-signup footer-link" style="color: var(--valorant);">Cadastre-se</a></p>
     </form>
-  </div>
-</div>
 
-<!-- ===================================================== -->
-<!-- MODAL DE CADASTRO                                        -->
-<!-- ===================================================== -->
-<div id="signup-overlay" class="modal-overlay" aria-hidden="true">
-  <div class="modal-panel">
-    <div class="flex items-center justify-between p-5" style="border-bottom:1px solid var(--border);">
-      <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Criar conta na <span style="color: var(--valorant);">Arena</span></h2>
-      <button class="modal-close js-close-signup text-[13px]" aria-label="Fechar cadastro">✕</button>
+    <!-- ===== TELA 2 — ESQUECI MINHA SENHA (informar e-mail) ===== -->
+    <form id="login-forgot-email-form" class="login-view hidden p-5 flex flex-col gap-3" data-view="forgot-email">
+      <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">
+        Digite o e-mail da sua conta — se ele existir na Arena, mandamos um link pra você redefinir a senha.
+      </p>
+      <div>
+        <label for="login-forgot-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
+        <input id="login-forgot-email" type="email" required placeholder="seu@email.com" class="modal-input" autocomplete="email">
+      </div>
+      <span id="login-forgot-email-error" class="text-[12px] hidden"></span>
+      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">ENVIAR LINK</button>
+      <button type="button" id="login-back-to-signin-1" class="font-mono text-[11.5px] font-semibold text-center" style="color: var(--muted);">← Voltar para o login</button>
+    </form>
+
+    <!-- ===== TELA 3 — LINK "ENVIADO" (confirmação + simulação de demo) ===== -->
+    <div id="login-forgot-sent" class="login-view hidden p-5 flex flex-col gap-3" data-view="forgot-sent">
+      <div class="text-3xl">📬</div>
+      <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">
+        Se esse e-mail existir na Arena, enviamos um link de redefinição — confira sua caixa de entrada (e o spam).
+        O link expira em 30 minutos.
+      </p>
+      <p class="text-[11px]" style="color: var(--muted);">
+        🔧 Modo demonstração: este protótipo não envia e-mails de verdade. Clique abaixo pra simular a abertura do link.
+      </p>
+      <button type="button" id="login-simulate-link-btn" class="btn-outline-mini">SIMULAR ABERTURA DO LINK</button>
+      <button type="button" id="login-back-to-signin-2" class="font-mono text-[11.5px] font-semibold text-center mt-1" style="color: var(--muted);">← Voltar para o login</button>
     </div>
-    <form id="signup-form" class="p-5 flex flex-col gap-3">
+
+    <!-- ===== TELA 4 — DEFINIR NOVA SENHA ===== -->
+    <form id="login-reset-form" class="login-view hidden p-5 flex flex-col gap-3" data-view="forgot-reset">
+      <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">Escolha uma nova senha pra sua conta.</p>
       <div>
-        <label for="signup-name" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOME</label>
-        <input id="signup-name" type="text" required placeholder="Seu nome" class="modal-input">
+        <label for="login-reset-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOVA SENHA</label>
+        <input id="login-reset-password" type="password" required minlength="6" placeholder="mín. 6 caracteres" class="modal-input" autocomplete="new-password">
+        <div class="pw-strength" id="login-reset-strength-bar" data-level="0"><span></span><span></span><span></span></div>
+        <span id="login-reset-password-hint" class="field-hint">Use 8+ caracteres com letras e números pra uma senha forte.</span>
       </div>
       <div>
-        <label for="signup-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
-        <input id="signup-email" type="email" required placeholder="seu@email.com" class="modal-input">
+        <label for="login-reset-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR NOVA SENHA</label>
+        <input id="login-reset-confirm" type="password" required minlength="6" placeholder="repita a senha" class="modal-input" autocomplete="new-password">
+        <span id="login-reset-confirm-hint" class="field-hint"></span>
       </div>
-      <div>
-        <label for="signup-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
-        <input id="signup-password" type="password" required minlength="4" placeholder="mín. 4 caracteres" class="modal-input">
-      </div>
-      <div>
-        <label for="signup-password-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR SENHA</label>
-        <input id="signup-password-confirm" type="password" required minlength="4" placeholder="repita a senha" class="modal-input">
-      </div>
-      <span id="signup-error" class="text-[12px] hidden">Confira os dados: nome, e-mail e senhas precisam bater.</span>
-      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">CRIAR CONTA</button>
-      <p class="text-[11px] text-center mt-1" style="color: var(--muted);">Já tem conta? <a href="#" class="js-open-login-from-signup footer-link" style="color: var(--valorant);">Entrar</a></p>
+      <span id="login-reset-error" class="text-[12px] hidden"></span>
+      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">REDEFINIR SENHA</button>
     </form>
   </div>
 </div>
 
+<!-- ===================================================== -->
+<!-- MODAL DE CADASTRO — 3 etapas: dados da conta (obrigatório),  -->
+<!-- jogos favoritos (opcional) e avatar/username (opcional).     -->
+<!-- Só a etapa 1 é obrigatória; 2 e 3 podem ser puladas e         -->
+<!-- preenchidas depois em perfil-config.html.                     -->
+<!-- ===================================================== -->
+<div id="signup-overlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal-panel" style="max-width:480px;">
+    <div class="flex items-center justify-between p-5 pb-4" style="border-bottom:1px solid var(--border);">
+      <div>
+        <h2 class="font-display text-2xl font-semibold uppercase tracking-wide">Criar conta na <span style="color: var(--valorant);">Arena</span></h2>
+        <p id="signup-step-label" class="font-mono text-[10px] font-semibold tracking-wide mt-1" style="color: var(--muted);">ETAPA 1 DE 3 · SEUS DADOS</p>
+      </div>
+      <button class="modal-close js-close-signup text-[13px]" aria-label="Fechar cadastro">✕</button>
+    </div>
+    <div id="signup-progress-track"><div id="signup-progress-bar"></div></div>
+
+    <form id="signup-form" class="p-5 flex flex-col gap-3" novalidate>
+
+      <!-- ===== ETAPA 1 — CONTA (obrigatória) ===== -->
+      <div class="signup-step" data-step="1">
+        <div>
+          <label for="signup-name" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOME</label>
+          <input id="signup-name" type="text" required placeholder="Seu nome" class="modal-input" autocomplete="name">
+        </div>
+        <div>
+          <label for="signup-email" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">E-MAIL</label>
+          <input id="signup-email" type="email" required placeholder="seu@email.com" class="modal-input" autocomplete="email">
+          <span id="signup-email-hint" class="field-hint"></span>
+        </div>
+        <div>
+          <label for="signup-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
+          <input id="signup-password" type="password" required minlength="6" placeholder="mín. 6 caracteres" class="modal-input" autocomplete="new-password">
+          <div class="pw-strength" id="pw-strength-bar" data-level="0"><span></span><span></span><span></span></div>
+          <span id="signup-password-hint" class="field-hint">Use 8+ caracteres com letras e números pra uma senha forte.</span>
+        </div>
+        <div>
+          <label for="signup-password-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR SENHA</label>
+          <input id="signup-password-confirm" type="password" required minlength="6" placeholder="repita a senha" class="modal-input" autocomplete="new-password">
+          <span id="signup-confirm-hint" class="field-hint"></span>
+        </div>
+        <label class="flex items-start gap-2 text-[11.5px] mt-1" style="color: var(--ink-soft);">
+          <input type="checkbox" id="signup-terms" required class="mt-0.5">
+          <span>Li e aceito os <a href="#" style="color: var(--valorant); text-decoration:underline;">Termos de Uso</a> e a <a href="#" style="color: var(--valorant); text-decoration:underline;">Política de Privacidade</a> *</span>
+        </label>
+        <label class="flex items-start gap-2 text-[11.5px]" style="color: var(--muted);">
+          <input type="checkbox" id="signup-marketing" class="mt-0.5">
+          <span>Quero receber novidades e promoções da Arena por e-mail (opcional)</span>
+        </label>
+      </div>
+
+      <!-- ===== ETAPA 2 — JOGOS FAVORITOS (opcional) ===== -->
+      <div class="signup-step hidden" data-step="2">
+        <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">
+          Escolha os jogos que você acompanha — isso personaliza suas notícias, seu feed e a agenda de partidas. Pode pular e escolher depois.
+        </p>
+        <div id="signup-games-grid" class="flex flex-wrap gap-2 mt-1"></div>
+      </div>
+
+      <!-- ===== ETAPA 3 — AVATAR E USERNAME (opcional) ===== -->
+      <div class="signup-step hidden" data-step="3">
+        <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">
+          Adicione uma foto pra deixar sua conta com a sua cara. Pode pular e trocar quando quiser em Configurações.
+        </p>
+        <div class="flex items-center gap-4 mt-1">
+          <div class="signup-avatar-preview" id="signup-avatar-preview">?</div>
+          <div class="flex flex-col gap-2">
+            <label for="signup-avatar-input" class="btn-outline-mini">ESCOLHER FOTO</label>
+            <input type="file" id="signup-avatar-input" accept="image/*" class="hidden">
+            <button type="button" id="signup-avatar-remove" class="hidden text-[11px] text-left" style="color: var(--muted);">Remover foto</button>
+          </div>
+        </div>
+        <div class="mt-2">
+          <label for="signup-username" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOME DE USUÁRIO</label>
+          <input id="signup-username" type="text" placeholder="seuusername" class="modal-input">
+          <span id="signup-username-hint" class="field-hint">Sugerimos um com base no seu nome — pode trocar à vontade.</span>
+        </div>
+      </div>
+
+      <span id="signup-error" class="text-[12px] hidden"></span>
+
+      <div class="flex items-center gap-3 mt-1">
+        <button type="button" id="signup-back-btn" class="hidden font-mono text-[11.5px] font-semibold px-1 py-2" style="color: var(--muted);">← VOLTAR</button>
+        <div class="flex items-center gap-3 ml-auto">
+          <button type="button" id="signup-skip-btn" class="hidden font-mono text-[11.5px] font-semibold" style="color: var(--muted); text-decoration:underline;">Pular</button>
+          <button type="submit" id="signup-next-btn" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag">CONTINUAR</button>
+        </div>
+      </div>
+      <p id="signup-login-link-wrap" class="text-[11px] text-center mt-1" style="color: var(--muted);">Já tem conta? <a href="#" class="js-open-login-from-signup footer-link" style="color: var(--valorant);">Entrar</a></p>
+    </form>
+  </div>
+</div>
+
+<!-- Toast de sucesso pós-cadastro (canto superior, some sozinho) -->
+<div id="signup-toast" role="status" aria-live="polite">
+  <span>🎉</span><span id="signup-toast-text">Conta criada com sucesso!</span>
+</div>
+
+<script src="data/utils.js"></script>
 <script src="data/noticias.js"></script>
 <script src="data/social.js"></script>
 <script>
@@ -1299,24 +1471,7 @@
   // Sem backend real, mas agora o login só funciona se o e-mail e
   // a senha baterem com uma conta criada no cadastro.
   // ===============================================================
-  const USERS_KEY = "arena-demo-users";
-  let usersFallback = []; // usado só se o localStorage estiver bloqueado
-
-  function loadUsers() {
-    try {
-      const raw = localStorage.getItem(USERS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (err) {
-      return usersFallback;
-    }
-  }
-  function saveUsers(users) {
-    try {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    } catch (err) {
-      usersFallback = users;
-    }
-  }
+  const { loadUsers, saveUsers } = window.ArenaUtils;
 
   // ===============================================================
   // LOGIN — exige e-mail e senha cadastrados previamente.
@@ -1330,22 +1485,15 @@
   let userEmail = "";
 
   // ===============================================================
-  // SESSÃO — guardamos só o e-mail de quem está logado no
-  // sessionStorage (dura a aba/sessão do navegador). É esse e-mail
+  // SESSÃO — por padrão vive só no sessionStorage (dura a aba). Se a
+  // pessoa marcar "Manter conectado" no login, também guardamos uma
+  // cópia persistente no localStorage com validade de 30 dias — ao
+  // reabrir o navegador, getSessionEmail() recupera essa cópia e
+  // "espelha" de volta pro sessionStorage da aba atual. É esse e-mail
   // que perfil-config.html usa pra saber de quem carregar/salvar o
   // perfil (banner, avatar, bio etc.), guardado em outra chave.
   // ===============================================================
-  const SESSION_KEY = "arena-session-email";
-
-  function setSession(email) {
-    try { sessionStorage.setItem(SESSION_KEY, email); } catch (err) { /* silencioso */ }
-  }
-  function clearSession() {
-    try { sessionStorage.removeItem(SESSION_KEY); } catch (err) { /* silencioso */ }
-  }
-  function getSessionEmail() {
-    try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; }
-  }
+  const { setSession, clearSession, getSessionEmail } = window.ArenaUtils;
 
   function loadProfile(email) {
     try {
@@ -1465,9 +1613,7 @@
 
   const RARITY_COLOR_NAV = { comum: "#7C8394", raro: "#5865F2", epico: "#8B5CF6", lendario: "#F59E0B" };
 
-  function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
+  const { escapeHtml } = window.ArenaUtils;
 
   // ---------------------------------------------------------------
   // Mesma lógica de banner/moldura/fx de perfil-config.html, resumida
@@ -1670,6 +1816,7 @@
   document.querySelectorAll(".js-open-login").forEach(btn => {
     btn.addEventListener("click", () => {
       loginError.classList.add("hidden");
+      showLoginView("signin");
       openModal(loginOverlay);
       setTimeout(() => document.getElementById("login-email").focus(), 50);
     });
@@ -1730,6 +1877,27 @@
   document.querySelector(".js-close-login").addEventListener("click", () => closeModal(loginOverlay));
   loginOverlay.addEventListener("click", (e) => { if (e.target === loginOverlay) closeModal(loginOverlay); });
 
+  // ===============================================================
+  // TROCA DE TELA DENTRO DO MODAL DE LOGIN — entrar / esqueci a senha
+  // (informar e-mail) / "link enviado" (simulado) / redefinir senha.
+  // Só uma fica visível por vez; o título do modal muda junto.
+  // ===============================================================
+  const loginViews = Array.from(document.querySelectorAll(".login-view"));
+  const loginTitle = document.getElementById("login-title");
+  const LOGIN_VIEW_TITLES = {
+    "signin": `Entrar na <span style="color: var(--valorant);">Arena</span>`,
+    "forgot-email": `Recuperar <span style="color: var(--valorant);">senha</span>`,
+    "forgot-sent": `Verifique seu <span style="color: var(--valorant);">e-mail</span>`,
+    "forgot-reset": `Nova <span style="color: var(--valorant);">senha</span>`,
+  };
+  let forgotPasswordEmail = ""; // guarda o e-mail em recuperação entre as telas
+
+  function showLoginView(viewName) {
+    loginViews.forEach(el => el.classList.toggle("hidden", el.dataset.view !== viewName));
+    loginTitle.innerHTML = LOGIN_VIEW_TITLES[viewName] || LOGIN_VIEW_TITLES.signin;
+  }
+
+  // ----- Tela 1: login -----
   loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value.trim().toLowerCase();
@@ -1752,75 +1920,443 @@
     isLoggedIn = true;
     userName = match.name.split(" ")[0];
     userEmail = match.email;
-    setSession(userEmail);
+    setSession(userEmail, document.getElementById("login-remember").checked);
     updateLoginUI();
     closeModal(loginOverlay);
     loginForm.reset();
+    document.getElementById("login-remember").checked = true; // volta ao padrão pra próxima vez
   });
 
+  document.getElementById("login-forgot-link").addEventListener("click", () => {
+    loginError.classList.add("hidden");
+    document.getElementById("login-forgot-email").value = document.getElementById("login-email").value;
+    document.getElementById("login-forgot-email-error").classList.add("hidden");
+    showLoginView("forgot-email");
+    setTimeout(() => document.getElementById("login-forgot-email").focus(), 50);
+  });
+
+  // ----- Tela 2: informar e-mail pra recuperação -----
+  const forgotEmailForm = document.getElementById("login-forgot-email-form");
+  const forgotEmailError = document.getElementById("login-forgot-email-error");
+  forgotEmailForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-forgot-email").value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      forgotEmailError.textContent = "Esse e-mail não parece certo — confere o @ e o domínio?";
+      forgotEmailError.classList.remove("hidden");
+      return;
+    }
+    forgotEmailError.classList.add("hidden");
+    // Por segurança, NUNCA revelamos se o e-mail existe ou não na base
+    // — a mensagem na próxima tela é sempre a mesma, exista a conta ou não.
+    forgotPasswordEmail = email;
+    showLoginView("forgot-sent");
+  });
+
+  // ----- Tela 3: confirmação (link "enviado") -----
+  document.getElementById("login-simulate-link-btn").addEventListener("click", () => {
+    // Demo: em produção isso seria o destino do link recebido por e-mail,
+    // validado por um token de uso único com expiração curta no backend.
+    document.getElementById("login-reset-form").reset();
+    document.getElementById("login-reset-strength-bar").dataset.level = "0";
+    [document.getElementById("login-reset-password"), document.getElementById("login-reset-confirm")].forEach(el => el.classList.remove("is-error", "is-ok"));
+    document.getElementById("login-reset-password-hint").textContent = "Use 8+ caracteres com letras e números pra uma senha forte.";
+    document.getElementById("login-reset-password-hint").className = "field-hint";
+    document.getElementById("login-reset-confirm-hint").textContent = "";
+    showLoginView("forgot-reset");
+  });
+
+  // ----- Tela 4: definir nova senha -----
+  const resetForm = document.getElementById("login-reset-form");
+  const resetPasswordInput = document.getElementById("login-reset-password");
+  const resetPasswordHint = document.getElementById("login-reset-password-hint");
+  const resetStrengthBar = document.getElementById("login-reset-strength-bar");
+  const resetConfirmInput = document.getElementById("login-reset-confirm");
+  const resetConfirmHint = document.getElementById("login-reset-confirm-hint");
+  const resetError = document.getElementById("login-reset-error");
+
+  resetPasswordInput.addEventListener("input", () => {
+    const pw = resetPasswordInput.value;
+    const level = pw.length < 6 ? 0 : Math.max(1, Math.min(3,
+      (pw.length >= 8 ? 1 : 0) + ((/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) ? 1 : 0) + ((/[^a-zA-Z0-9]/.test(pw) || pw.length >= 12) ? 1 : 0)
+    ));
+    resetStrengthBar.dataset.level = String(level);
+    if (!pw) { resetPasswordHint.textContent = "Use 8+ caracteres com letras e números pra uma senha forte."; resetPasswordHint.className = "field-hint"; }
+    else if (pw.length < 6) { resetPasswordHint.textContent = `Faltam ${6 - pw.length} caractere(s) — mínimo de 6.`; resetPasswordHint.className = "field-hint is-error"; }
+    else if (level <= 1) { resetPasswordHint.textContent = "Senha fraca — tente misturar letras e números."; resetPasswordHint.className = "field-hint"; }
+    else if (level === 2) { resetPasswordHint.textContent = "Senha boa."; resetPasswordHint.className = "field-hint is-ok"; }
+    else { resetPasswordHint.textContent = "Senha forte ✓"; resetPasswordHint.className = "field-hint is-ok"; }
+    if (resetConfirmInput.value) resetConfirmInput.dispatchEvent(new Event("input"));
+  });
+  resetConfirmInput.addEventListener("input", () => {
+    if (!resetConfirmInput.value) { resetConfirmHint.textContent = ""; resetConfirmHint.className = "field-hint"; resetConfirmInput.classList.remove("is-error", "is-ok"); return; }
+    if (resetConfirmInput.value !== resetPasswordInput.value) {
+      resetConfirmInput.classList.add("is-error"); resetConfirmInput.classList.remove("is-ok");
+      resetConfirmHint.textContent = "As senhas não coincidem."; resetConfirmHint.className = "field-hint is-error";
+    } else {
+      resetConfirmInput.classList.add("is-ok"); resetConfirmInput.classList.remove("is-error");
+      resetConfirmHint.textContent = "Senhas iguais ✓"; resetConfirmHint.className = "field-hint is-ok";
+    }
+  });
+
+  resetForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const pw = resetPasswordInput.value;
+    const confirm = resetConfirmInput.value;
+    if (pw.length < 6) {
+      resetError.textContent = "Sua senha precisa ter pelo menos 6 caracteres.";
+      resetError.classList.remove("hidden");
+      return;
+    }
+    if (pw !== confirm) {
+      resetError.textContent = "As senhas não coincidem — confere de novo.";
+      resetError.classList.remove("hidden");
+      return;
+    }
+    resetError.classList.add("hidden");
+
+    // Atualiza a senha só se o e-mail realmente existir — mas a resposta
+    // pra pessoa é sempre a mesma, pra não revelar se a conta existe.
+    const users = loadUsers();
+    const idx = users.findIndex(u => u.email === forgotPasswordEmail);
+    if (idx >= 0) {
+      users[idx].password = pw;
+      saveUsers(users);
+    }
+
+    showLoginView("signin");
+    document.getElementById("login-email").value = forgotPasswordEmail;
+    loginError.textContent = "Senha redefinida! Já pode entrar com a nova senha.";
+    loginError.classList.remove("hidden");
+    loginError.style.color = "var(--live)";
+    setTimeout(() => {
+      document.getElementById("login-password").focus();
+      loginError.style.color = "";
+    }, 2500);
+  });
+
+  document.getElementById("login-back-to-signin-1").addEventListener("click", () => showLoginView("signin"));
+  document.getElementById("login-back-to-signin-2").addEventListener("click", () => showLoginView("signin"));
+
   // ===============================================================
-  // CADASTRO — cria a conta (nome, e-mail, senha) e a guarda; NÃO
-  // loga automaticamente — manda a pessoa confirmar os dados no
-  // login, para garantir que ela digitou tudo certo.
+  // CADASTRO — fluxo em 3 etapas:
+  //   1) Conta (nome, e-mail, senha, termos) — obrigatória
+  //   2) Jogos favoritos — opcional, puxa a lista de GAMES (data/noticias.js)
+  //   3) Avatar + username — opcional
+  // Ao concluir (ou pular direto da etapa 1), a conta já é criada
+  // E LOGADA na hora — reduz o atrito de precisar digitar a senha
+  // de novo na sequência, mantendo a confirmação por e-mail/senha
+  // só para o fluxo de login normal depois.
   // ===============================================================
   const signupOverlay = document.getElementById("signup-overlay");
   const signupForm = document.getElementById("signup-form");
   const signupError = document.getElementById("signup-error");
+  const signupSteps = Array.from(document.querySelectorAll(".signup-step"));
+  const signupStepLabel = document.getElementById("signup-step-label");
+  const signupProgressBar = document.getElementById("signup-progress-bar");
+  const signupBackBtn = document.getElementById("signup-back-btn");
+  const signupSkipBtn = document.getElementById("signup-skip-btn");
+  const signupNextBtn = document.getElementById("signup-next-btn");
+  const signupLoginLinkWrap = document.getElementById("signup-login-link-wrap");
+
+  const STEP_META = {
+    1: { label: "ETAPA 1 DE 3 · SEUS DADOS", next: "CONTINUAR", skippable: false },
+    2: { label: "ETAPA 2 DE 3 · JOGOS FAVORITOS", next: "CONTINUAR", skippable: true },
+    3: { label: "ETAPA 3 DE 3 · SEU PERFIL", next: "CRIAR CONTA", skippable: true },
+  };
+  let signupStep = 1;
+  let signupAvatarDataUrl = "";
+
+  function setFieldState(inputEl, hintEl, state, message) {
+    inputEl.classList.remove("is-error", "is-ok");
+    hintEl.classList.remove("is-error", "is-ok");
+    if (state) inputEl.classList.add(state === "error" ? "is-error" : "is-ok");
+    if (hintEl) {
+      hintEl.textContent = message || "";
+      if (state) hintEl.classList.add(state === "error" ? "is-error" : "is-ok");
+    }
+  }
+
+  function goToSignupStep(step) {
+    signupStep = step;
+    signupSteps.forEach(el => el.classList.toggle("hidden", Number(el.dataset.step) !== step));
+    signupStepLabel.textContent = STEP_META[step].label;
+    signupProgressBar.style.width = ((step / 3) * 100) + "%";
+    signupNextBtn.textContent = STEP_META[step].next;
+    signupBackBtn.classList.toggle("hidden", step === 1);
+    signupSkipBtn.classList.toggle("hidden", !STEP_META[step].skippable);
+    signupLoginLinkWrap.classList.toggle("hidden", step !== 1);
+    signupError.classList.add("hidden");
+  }
+
+  // ----- Validação em tempo real da Etapa 1 -----
+  const nameInput = document.getElementById("signup-name");
+  const emailInput = document.getElementById("signup-email");
+  const emailHint = document.getElementById("signup-email-hint");
+  const passwordInput = document.getElementById("signup-password");
+  const passwordHint = document.getElementById("signup-password-hint");
+  const pwStrengthBar = document.getElementById("pw-strength-bar");
+  const confirmInput = document.getElementById("signup-password-confirm");
+  const confirmHint = document.getElementById("signup-confirm-hint");
+  const termsCheckbox = document.getElementById("signup-terms");
+
+  emailInput.addEventListener("blur", () => {
+    const email = emailInput.value.trim().toLowerCase();
+    if (!email) { setFieldState(emailInput, emailHint, null, ""); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFieldState(emailInput, emailHint, "error", "Esse e-mail não parece certo — confere o @ e o domínio?");
+      return;
+    }
+    const taken = loadUsers().some(u => u.email === email);
+    if (taken) {
+      setFieldState(emailInput, emailHint, "error", "Esse e-mail já tem conta na Arena. Quer fazer login?");
+    } else {
+      setFieldState(emailInput, emailHint, "ok", "E-mail disponível ✓");
+    }
+  });
+
+  function passwordStrengthLevel(pw) {
+    if (pw.length < 6) return 0;
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) score++;
+    if (/[^a-zA-Z0-9]/.test(pw) || pw.length >= 12) score++;
+    return Math.max(1, Math.min(3, score));
+  }
+  passwordInput.addEventListener("input", () => {
+    const pw = passwordInput.value;
+    const level = passwordStrengthLevel(pw);
+    pwStrengthBar.dataset.level = String(level);
+    if (!pw) {
+      passwordHint.textContent = "Use 8+ caracteres com letras e números pra uma senha forte.";
+      passwordHint.className = "field-hint";
+    } else if (pw.length < 6) {
+      passwordHint.textContent = `Faltam ${6 - pw.length} caractere(s) — mínimo de 6.`;
+      passwordHint.className = "field-hint is-error";
+    } else if (level === 1) {
+      passwordHint.textContent = "Senha fraca — tente misturar letras e números.";
+      passwordHint.className = "field-hint";
+    } else if (level === 2) {
+      passwordHint.textContent = "Senha boa.";
+      passwordHint.className = "field-hint is-ok";
+    } else {
+      passwordHint.textContent = "Senha forte ✓";
+      passwordHint.className = "field-hint is-ok";
+    }
+    if (confirmInput.value) confirmInput.dispatchEvent(new Event("input"));
+  });
+  confirmInput.addEventListener("input", () => {
+    if (!confirmInput.value) { setFieldState(confirmInput, confirmHint, null, ""); return; }
+    if (confirmInput.value !== passwordInput.value) {
+      setFieldState(confirmInput, confirmHint, "error", "As senhas não coincidem.");
+    } else {
+      setFieldState(confirmInput, confirmHint, "ok", "Senhas iguais ✓");
+    }
+  });
+
+  function validateStep1() {
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+
+    if (!name) return "Preenche seu nome pra gente saber como te chamar.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Esse e-mail não parece certo — confere o @ e o domínio?";
+    if (loadUsers().some(u => u.email === email)) return "Esse e-mail já tem conta na Arena. Faça login em vez disso.";
+    if (password.length < 6) return "Sua senha precisa ter pelo menos 6 caracteres.";
+    if (password !== confirm) return "As senhas não coincidem — confere de novo.";
+    if (!termsCheckbox.checked) return "Pra continuar, você precisa aceitar os Termos de Uso e a Política de Privacidade.";
+    return null;
+  }
+
+  // ----- Etapa 2: chips de jogos favoritos -----
+  const gamesGrid = document.getElementById("signup-games-grid");
+  const selectedGames = new Set();
+  if (typeof GAMES === "object" && GAMES) {
+    gamesGrid.innerHTML = Object.entries(GAMES).map(([slug, g]) => `
+      <button type="button" class="game-chip" data-game="${slug}" style="--chip-accent: ${g.accent || "var(--valorant)"};">${escapeHtml(g.label)}</button>
+    `).join("");
+    gamesGrid.querySelectorAll(".game-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const slug = chip.dataset.game;
+        if (selectedGames.has(slug)) { selectedGames.delete(slug); chip.classList.remove("is-selected"); }
+        else { selectedGames.add(slug); chip.classList.add("is-selected"); }
+      });
+    });
+  }
+
+  // ----- Etapa 3: avatar (redimensionado via canvas) + username -----
+  const avatarInput = document.getElementById("signup-avatar-input");
+  const avatarPreview = document.getElementById("signup-avatar-preview");
+  const avatarRemoveBtn = document.getElementById("signup-avatar-remove");
+  const usernameInput = document.getElementById("signup-username");
+  const usernameHint = document.getElementById("signup-username-hint");
+
+  function slugifyUsername(name) {
+    return (name || "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 16) || "player";
+  }
+  function usernameTaken(username) {
+    try {
+      return Object.keys(localStorage).some(k => {
+        if (!k.startsWith("arena-profile-")) return false;
+        try { return JSON.parse(localStorage.getItem(k))?.username === username; }
+        catch (err) { return false; }
+      });
+    } catch (err) { return false; }
+  }
+  function suggestUsername() {
+    const base = slugifyUsername(nameInput.value);
+    let candidate = base;
+    let n = 1;
+    while (usernameTaken(candidate)) { candidate = `${base}${Math.floor(Math.random() * 900 + 100)}`; n++; if (n > 20) break; }
+    usernameInput.value = candidate;
+  }
+  usernameInput.addEventListener("input", () => {
+    const val = usernameInput.value.trim();
+    if (!val) { setFieldState(usernameInput, usernameHint, null, "Sugerimos um com base no seu nome — pode trocar à vontade."); return; }
+    if (!/^[a-z0-9_]{3,20}$/i.test(val)) {
+      setFieldState(usernameInput, usernameHint, "error", "Use só letras, números e _ (3 a 20 caracteres).");
+    } else if (usernameTaken(val)) {
+      setFieldState(usernameInput, usernameHint, "error", "Esse nome de usuário já existe — tenta outro.");
+    } else {
+      setFieldState(usernameInput, usernameHint, "ok", "Disponível ✓");
+    }
+  });
+
+  avatarInput.addEventListener("change", () => {
+    const file = avatarInput.files && avatarInput.files[0];
+    if (!file) return;
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.onload = () => {
+        const size = 160;
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        signupAvatarDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        avatarPreview.innerHTML = `<img src="${signupAvatarDataUrl}" alt="Prévia do avatar">`;
+        avatarRemoveBtn.classList.remove("hidden");
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  avatarRemoveBtn.addEventListener("click", () => {
+    signupAvatarDataUrl = "";
+    avatarInput.value = "";
+    avatarPreview.innerHTML = "?";
+    avatarRemoveBtn.classList.add("hidden");
+  });
+
+  function resetSignupWizard() {
+    signupForm.reset();
+    selectedGames.clear();
+    gamesGrid.querySelectorAll(".game-chip.is-selected").forEach(c => c.classList.remove("is-selected"));
+    signupAvatarDataUrl = "";
+    avatarPreview.innerHTML = "?";
+    avatarRemoveBtn.classList.add("hidden");
+    [emailInput, passwordInput, confirmInput, usernameInput].forEach(el => el.classList.remove("is-error", "is-ok"));
+    pwStrengthBar.dataset.level = "0";
+    goToSignupStep(1);
+  }
+
+  function showSignupToast(text) {
+    const toast = document.getElementById("signup-toast");
+    document.getElementById("signup-toast-text").textContent = text;
+    toast.classList.add("is-visible");
+    clearTimeout(showSignupToast._t);
+    showSignupToast._t = setTimeout(() => toast.classList.remove("is-visible"), 3200);
+  }
+
+  // Cria a conta, salva o perfil (jogos/avatar/username) e já loga
+  // a pessoa direto — sem pedir pra digitar tudo de novo no login.
+  function finishSignup() {
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+
+    const users = loadUsers();
+    if (users.some(u => u.email === email)) {
+      signupError.textContent = "Esse e-mail já tem conta na Arena. Faça login.";
+      signupError.classList.remove("hidden");
+      goToSignupStep(1);
+      return;
+    }
+    users.push({ name, email, password });
+    saveUsers(users);
+
+    saveProfilePatch(email, {
+      username: (usernameInput.value.trim() || slugifyUsername(name)).toLowerCase(),
+      avatar: signupAvatarDataUrl || "",
+      favoriteGames: Array.from(selectedGames),
+      marketingOptIn: document.getElementById("signup-marketing").checked,
+    });
+
+    isLoggedIn = true;
+    userName = name.split(" ")[0];
+    userEmail = email;
+    setSession(userEmail, true); // conta nova já entra com "manter conectado" por padrão
+    updateLoginUI();
+
+    closeModal(signupOverlay);
+    resetSignupWizard();
+    showSignupToast(`Conta criada! Bem-vindo(a), ${userName} 🎉`);
+  }
 
   document.querySelector(".js-open-signup").addEventListener("click", (e) => {
     e.preventDefault();
-    signupError.classList.add("hidden");
     closeModal(loginOverlay);
+    resetSignupWizard();
     openModal(signupOverlay);
-    setTimeout(() => document.getElementById("signup-name").focus(), 50);
+    setTimeout(() => nameInput.focus(), 50);
   });
   document.querySelector(".js-open-login-from-signup").addEventListener("click", (e) => {
     e.preventDefault();
     loginError.classList.add("hidden");
     closeModal(signupOverlay);
+    showLoginView("signin");
     openModal(loginOverlay);
     setTimeout(() => document.getElementById("login-email").focus(), 50);
   });
   document.querySelector(".js-close-signup").addEventListener("click", () => closeModal(signupOverlay));
   signupOverlay.addEventListener("click", (e) => { if (e.target === signupOverlay) closeModal(signupOverlay); });
 
+  signupBackBtn.addEventListener("click", () => {
+    if (signupStep > 1) goToSignupStep(signupStep - 1);
+  });
+
+  signupSkipBtn.addEventListener("click", () => {
+    if (signupStep === 2) { goToSignupStep(3); suggestUsername(); }
+    else if (signupStep === 3) finishSignup();
+  });
+
   signupForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = document.getElementById("signup-name").value.trim();
-    const email = document.getElementById("signup-email").value.trim().toLowerCase();
-    const password = document.getElementById("signup-password").value;
-    const confirm = document.getElementById("signup-password-confirm").value;
-
-    if (!name || !email || password.length < 4 || password !== confirm) {
-      signupError.textContent = "Confira os dados: nome, e-mail e senhas precisam bater.";
-      signupError.classList.remove("hidden");
-      return;
-    }
-
-    const users = loadUsers();
-    if (users.some(u => u.email === email)) {
-      signupError.textContent = "Já existe uma conta com esse e-mail. Faça login.";
-      signupError.classList.remove("hidden");
-      return;
-    }
     signupError.classList.add("hidden");
 
-    users.push({ name, email, password });
-    saveUsers(users);
-    signupForm.reset();
-
-    // Não loga automaticamente: fecha o cadastro e abre o login já
-    // com o e-mail preenchido, pedindo a senha para confirmar.
-    closeModal(signupOverlay);
-    document.getElementById("login-email").value = email;
-    loginError.textContent = "Conta criada! Agora entre com sua senha.";
-    loginError.classList.remove("hidden");
-    loginError.style.color = "var(--live)";
-    openModal(loginOverlay);
-    setTimeout(() => {
-      document.getElementById("login-password").focus();
-      loginError.style.color = "";
-    }, 2500);
+    if (signupStep === 1) {
+      const err = validateStep1();
+      if (err) {
+        signupError.textContent = err;
+        signupError.classList.remove("hidden");
+        return;
+      }
+      goToSignupStep(2);
+      return;
+    }
+    if (signupStep === 2) {
+      goToSignupStep(3);
+      suggestUsername();
+      return;
+    }
+    // Etapa 3 -> finaliza
+    finishSignup();
   });
 
   // Fecha qualquer modal aberto com a tecla Esc

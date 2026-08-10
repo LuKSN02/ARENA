@@ -7,6 +7,7 @@
 <meta name="description" content="Chaveamento completo dos principais campeonatos de e-sports — acompanhe rodada por rodada quem avança.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -135,9 +136,7 @@
 <script src="data/campeonatos.js"></script>
 <script>
 (function(){
-  const SESSION_KEY = "arena-session-email";
-  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
-  function escapeHtml(str) { return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+  const { getSessionEmail, escapeHtml } = window.ArenaUtils;
 
   const STATUS_LABEL = { "ao-vivo": "AO VIVO", "em-breve": "EM BREVE", "encerrado": "ENCERRADO" };
 

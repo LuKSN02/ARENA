@@ -205,6 +205,7 @@
   </div>
 </div>
 
+<script src="data/utils.js"></script>
 <script src="data/noticias.js"></script>
 <script>
   // ===============================================================
@@ -213,15 +214,8 @@
   // lê. Abrir uma notícia aqui conta pros emblemas de leitura/partidas
   // ao vivo, do mesmo jeito que noticia.html (página dedicada) já faz.
   // ===============================================================
-  function getSessionEmail() {
-    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
-  }
+  const { getSessionEmail, escapeHtml } = window.ArenaUtils;
   const sessionEmail = getSessionEmail();
-
-  // Evita que texto de comentário vire HTML/JS injetado no innerHTML.
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-  }
 
   function bumpArenaProgress(key, amount = 1) {
     try {

@@ -6,6 +6,7 @@
 <title>Meu Inventário — Arena</title>
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
@@ -331,13 +332,10 @@
 
 <script>
   // ===============================================================
-  // 1) SESSÃO — mesma convenção usada em perfil-config.html: lê o
-  //    e-mail salvo pelo home.html no login e monta as chaves de
-  //    armazenamento a partir dele.
+  // 1) SESSÃO — getSessionEmail() vem de data/utils.js (também
+  //    recupera a sessão "lembrada" de 30 dias, não só a da aba).
   // ===============================================================
-  function getSessionEmail() {
-    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
-  }
+  const { getSessionEmail } = window.ArenaUtils;
   const sessionEmail = getSessionEmail();
   const inventoryKey = `arena-inventory-${sessionEmail || "demo"}`;
   const profileKey = `arena-profile-${sessionEmail || "demo"}`;

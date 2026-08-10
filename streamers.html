@@ -7,6 +7,7 @@
 <meta name="description" content="Conheça os streamers e criadores de conteúdo parceiros da Arena — quem está ao vivo agora e onde assistir.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -123,14 +124,7 @@
 <script src="data/streamers.js"></script>
 <script>
 (function(){
-  const SESSION_KEY = "arena-session-email";
-  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
-  function escapeHtml(str) { return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
-  function formatCount(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(".0", "") + "M";
-    if (n >= 1000) return (n / 1000).toFixed(1).replace(".0", "") + "K";
-    return String(n);
-  }
+  const { getSessionEmail, escapeHtml, formatCount } = window.ArenaUtils;
 
   const sessionEmail = getSessionEmail();
   if (sessionEmail && window.ArenaSocial) {

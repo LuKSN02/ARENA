@@ -7,6 +7,7 @@
 <meta name="description" content="Camisetas, bonés, canecas e itens digitais exclusivos da Arena — o portal brasileiro de e-sports.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -503,69 +504,6 @@
     padding:10px 18px; transition: transform .22s ease; max-width:90vw; text-align:center;
   }
   #shop-toast.show{ transform: translateX(-50%) translateY(0); }
-
-  /* ===================================================== */
-  /* QUICK VIEW — modal aberto ao clicar num produto, com    */
-  /* glow na imagem e descrição mais detalhada.               */
-  /* ===================================================== */
-  .shop-card{ cursor:pointer; }
-  .quickview-panel{
-    max-width: 760px; max-height: calc(100vh - 110px); overflow-y:auto;
-  }
-  .quickview-body{ display:grid; grid-template-columns: 1fr; }
-  @media (min-width: 760px){ .quickview-body{ grid-template-columns: 1fr 1.05fr; } }
-
-  .quickview-media{
-    position:relative; display:flex; align-items:center; justify-content:center;
-    padding: 34px 30px; background:
-      radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--qv-accent, var(--valorant)) 26%, transparent), transparent 68%),
-      var(--sidebar);
-    min-height: 260px;
-  }
-  .quickview-img-frame{
-    position:relative; width:100%; max-width:300px; aspect-ratio:1/1; border-radius:14px; overflow:hidden;
-    background: var(--panel-2, #20242F);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--qv-accent, var(--valorant)) 45%, transparent),
-      0 0 34px -4px color-mix(in srgb, var(--qv-accent, var(--valorant)) 75%, transparent),
-      0 0 80px -14px color-mix(in srgb, var(--qv-accent, var(--valorant)) 60%, transparent);
-    animation: quickviewGlowPulse 2.6s ease-in-out infinite;
-  }
-  @keyframes quickviewGlowPulse{
-    0%,100%{
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--qv-accent, var(--valorant)) 45%, transparent),
-        0 0 34px -4px color-mix(in srgb, var(--qv-accent, var(--valorant)) 75%, transparent),
-        0 0 80px -14px color-mix(in srgb, var(--qv-accent, var(--valorant)) 60%, transparent);
-    }
-    50%{
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--qv-accent, var(--valorant)) 60%, transparent),
-        0 0 46px 2px color-mix(in srgb, var(--qv-accent, var(--valorant)) 90%, transparent),
-        0 0 100px -6px color-mix(in srgb, var(--qv-accent, var(--valorant)) 75%, transparent);
-    }
-  }
-  @media (prefers-reduced-motion: reduce){ .quickview-img-frame{ animation:none; } }
-  .quickview-img-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .quickview-img-frame .dprev{ position:absolute; inset:0; }
-
-  .quickview-info{ padding: 30px 30px 26px; display:flex; flex-direction:column; gap:10px; min-width:0; }
-  .quickview-name{ font-family:'Teko', sans-serif; font-size:30px; font-weight:600; text-transform:uppercase; line-height:1.05; }
-  .quickview-desc{ font-size:13.5px; line-height:1.65; color: var(--ink-soft); }
-  .quickview-details{ display:flex; flex-direction:column; gap:7px; margin-top:2px; }
-  .quickview-details li{
-    font-size:12.5px; line-height:1.5; color: var(--ink-soft); padding-left:18px; position:relative;
-  }
-  .quickview-details li::before{
-    content:"✓"; position:absolute; left:0; top:0; color: var(--qv-accent, var(--valorant)); font-weight:700; font-size:11px;
-  }
-  .quickview-price{ font-family:'JetBrains Mono', monospace; font-size:22px; font-weight:700; margin-top:6px; }
-  .quickview-add-btn{
-    margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:12px 0;
-    text-align:center; cursor:pointer; background: transparent; border:1px solid var(--qv-accent, var(--valorant)); color: var(--qv-accent, var(--valorant));
-    transition: all .15s ease;
-  }
-  .quickview-add-btn:hover{ background: var(--qv-accent, var(--valorant)); color:#12141A; box-shadow: 0 0 16px color-mix(in srgb, var(--qv-accent, var(--valorant)) 55%, transparent); }
 </style>
 </head>
 <body>
@@ -1027,31 +965,6 @@
   </div>
 </div>
 
-<!-- ===================================================== -->
-<!-- MODAL DE VISUALIZAÇÃO RÁPIDA DO PRODUTO                 -->
-<!-- Aberto ao clicar em qualquer card do catálogo ou do     -->
-<!-- carrossel — mostra a imagem com glow e a descrição       -->
-<!-- completa antes de adicionar ao carrinho.                 -->
-<!-- ===================================================== -->
-<div id="quickview-overlay" class="modal-overlay" aria-hidden="true">
-  <div class="modal-panel quickview-panel">
-    <div class="flex items-center justify-end p-3" style="border-bottom:1px solid var(--border);">
-      <button class="modal-close js-close-quickview text-[13px]" aria-label="Fechar visualização">✕</button>
-    </div>
-    <div class="quickview-body">
-      <div class="quickview-media" id="quickview-media"></div>
-      <div class="quickview-info">
-        <span class="shop-tag" id="quickview-tag" style="position:static; align-self:flex-start;"></span>
-        <h2 class="quickview-name" id="quickview-name"></h2>
-        <p class="quickview-desc" id="quickview-desc"></p>
-        <ul class="quickview-details" id="quickview-details"></ul>
-        <div class="quickview-price" id="quickview-price"></div>
-        <button class="quickview-add-btn" id="quickview-add">+ ADICIONAR AO CARRINHO</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
   // ===============================================================
   // MENU HAMBÚRGUER (mobile)
@@ -1143,19 +1056,17 @@
   }
 
   // ===============================================================
-  // "BANCO" DE USUÁRIOS + SESSÃO — mesma convenção usada em
-  // index.html/perfil-config.html/inventario.html, para manter o
-  // login e o carrinho/cupom sincronizados entre as páginas.
+  // "BANCO" DE USUÁRIOS + SESSÃO — vem de data/utils.js, mesma
+  // convenção usada em index.html/perfil-config.html/inventario.html,
+  // pra manter o login e o carrinho/cupom sincronizados entre as
+  // páginas. clearSession() agora também derruba a sessão "lembrada"
+  // de 30 dias (antes o logout daqui não derrubava, e um refresh
+  // trazia a pessoa de volta logada). setSession() aqui sempre lembra
+  // a sessão por 30 dias — este modal não tem checkbox "manter
+  // conectado" como o de index.html, então assumimos que sim.
   // ===============================================================
-  const USERS_KEY = "arena-demo-users";
-  let usersFallback = [];
-  function loadUsers() {
-    try { const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch (err) { return usersFallback; }
-  }
-  function saveUsers(users) {
-    try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (err) { usersFallback = users; }
-  }
+  const { loadUsers, saveUsers, getSessionEmail, clearSession } = window.ArenaUtils;
+  function setSession(email) { window.ArenaUtils.setSession(email, true); }
 
   const loginOverlay = document.getElementById("login-overlay");
   const loginForm = document.getElementById("login-form");
@@ -1164,11 +1075,6 @@
   let isLoggedIn = false;
   let userName = "";
   let userEmail = "";
-
-  const SESSION_KEY = "arena-session-email";
-  function setSession(email) { try { sessionStorage.setItem(SESSION_KEY, email); } catch (err) {} }
-  function clearSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch (err) {} }
-  function getSessionEmail() { try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; } }
 
   function loadProfile(email) {
     try { const raw = localStorage.getItem(`arena-profile-${email}`); return raw ? JSON.parse(raw) : null; }
@@ -1699,76 +1605,6 @@
       return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/500x500/1B1F28/D7DAE1?text=${encodeURIComponent(p.name)}';">`;
     }
 
-    // ---- Quick view (glow na imagem + descrição detalhada) ----
-    // Cor do glow por categoria — usa as mesmas cores das tags do catálogo.
-    const TAG_ACCENT = {
-      "VESTUÁRIO": "#FF4655",
-      "CASA": "#FF4655",
-      "SETUP": "#FF4655",
-      "ELETRÔNICOS": "#22D3EE",
-      "DIGITAL": "#8B5CF6",
-    };
-    // Detalhes extras exibidos como checklist no quick view, por categoria —
-    // complementam a descrição curta do card sem precisar duplicar dado por produto.
-    const TAG_DETAILS = {
-      "VESTUÁRIO": [
-        "Modelagem unissex, pensada pra maratonas de jogo e o dia a dia.",
-        "Tecido resistente a lavagens repetidas, sem perder a cor.",
-        "Acabamento com a identidade visual oficial da Arena.",
-      ],
-      "CASA": [
-        "Acabamento premium, pensado pra compor seu setup ou ambiente.",
-        "Fácil de limpar e de manter no uso diário.",
-        "Item oficial licenciado pela Arena.",
-      ],
-      "SETUP": [
-        "Compatibilidade com os principais periféricos do mercado.",
-        "Materiais duráveis, pensados pra uso intenso no dia a dia.",
-        "Ajuda a manter o setup organizado e confortável.",
-      ],
-      "ELETRÔNICOS": [
-        "Garantia de 12 meses direto com a Arena.",
-        "Compatível com PC e notebook — alguns modelos também com consoles.",
-        "Testado pra sessões longas de jogo e stream.",
-      ],
-      "DIGITAL": [
-        "Item 100% digital — liberado automaticamente na sua conta após a compra.",
-        "Pode ser equipado ou trocado a qualquer momento no seu perfil.",
-        "Visível pra toda a comunidade Arena.",
-      ],
-    };
-
-    const quickviewOverlay = document.getElementById("quickview-overlay");
-    function openQuickview(id) {
-      const p = SHOP_PRODUCTS.find(pr => pr.id === id);
-      if (!p) return;
-
-      const mediaEl = document.getElementById("quickview-media");
-      mediaEl.style.setProperty("--qv-accent", TAG_ACCENT[p.tag] || "#FF4655");
-      mediaEl.innerHTML = `<div class="quickview-img-frame">${productMediaHTML(p)}</div>`;
-
-      const tagEl = document.getElementById("quickview-tag");
-      tagEl.textContent = p.tag;
-      tagEl.className = `shop-tag ${tagClass(p.tag)}`;
-      tagEl.style.position = "static";
-      tagEl.style.clipPath = "none";
-
-      document.getElementById("quickview-name").textContent = p.name;
-      document.getElementById("quickview-desc").textContent = p.desc;
-      document.getElementById("quickview-details").innerHTML =
-        (TAG_DETAILS[p.tag] || []).map(d => `<li>${d}</li>`).join("");
-      document.getElementById("quickview-price").textContent = money(p.price);
-
-      const addBtn = document.getElementById("quickview-add");
-      addBtn.style.setProperty("--qv-accent", TAG_ACCENT[p.tag] || "#FF4655");
-      addBtn.onclick = () => { addToCart(p.id); closeQuickview(); };
-
-      openModal(quickviewOverlay);
-    }
-    function closeQuickview() { closeModal(quickviewOverlay); }
-    document.querySelector(".js-close-quickview").addEventListener("click", closeQuickview);
-    quickviewOverlay.addEventListener("click", (e) => { if (e.target === quickviewOverlay) closeQuickview(); });
-
     function renderFilters() {
       const wrap = document.getElementById("shop-filters");
       if (!wrap) return;
@@ -1791,7 +1627,7 @@
       if (!grid) return;
       const list = currentFilter === "TODOS" ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.tag === currentFilter);
       grid.innerHTML = list.map((p, idx) => `
-        <div class="shop-card clip-card" data-view="${p.id}" style="--card-delay:${Math.min(idx * 0.03, 0.3)}s">
+        <div class="shop-card clip-card" style="--card-delay:${Math.min(idx * 0.03, 0.3)}s">
           <div class="shop-card-img">
             <span class="shop-tag ${tagClass(p.tag)}">${p.tag}</span>
             ${productMediaHTML(p)}
@@ -1808,10 +1644,7 @@
         grid.innerHTML = `<div class="text-[12px] font-mono" style="color: var(--muted); grid-column:1/-1;">Nenhum produto nessa categoria por enquanto.</div>`;
       }
       grid.querySelectorAll("[data-add]").forEach(btn => {
-        btn.addEventListener("click", (e) => { e.stopPropagation(); addToCart(btn.dataset.add); });
-      });
-      grid.querySelectorAll("[data-view]").forEach(card => {
-        card.addEventListener("click", () => openQuickview(card.dataset.view));
+        btn.addEventListener("click", () => addToCart(btn.dataset.add));
       });
     }
 
@@ -1827,7 +1660,7 @@
       if (!carouselTrack || FEATURED.length === 0) return;
       carouselTrack.innerHTML = FEATURED.map(p => `
         <div class="carousel-slide">
-          <div class="carousel-card clip-card-lg" data-view="${p.id}">
+          <div class="carousel-card clip-card-lg">
             <div class="carousel-img">
               <span class="carousel-badge">${p.badge || "DESTAQUE"}</span>
               ${productMediaHTML(p)}
@@ -1845,15 +1678,7 @@
       carouselDots.innerHTML = FEATURED.map((_, i) => `<button class="carousel-dot" data-dot="${i}" aria-label="Ir para destaque ${i + 1}"></button>`).join("");
 
       carouselTrack.querySelectorAll("[data-add]").forEach(btn => {
-        btn.addEventListener("click", (e) => { e.stopPropagation(); addToCart(btn.dataset.add); });
-      });
-      carouselTrack.querySelectorAll(".carousel-img, .carousel-info").forEach(el => {
-        el.addEventListener("click", (e) => {
-          if (e.target.closest("[data-add]")) return;
-          const card = e.target.closest("[data-view]");
-          if (card) openQuickview(card.dataset.view);
-        });
-        el.style.cursor = "pointer";
+        btn.addEventListener("click", () => addToCart(btn.dataset.add));
       });
       carouselDots.querySelectorAll("[data-dot]").forEach(btn => {
         btn.addEventListener("click", () => goToSlide(Number(btn.dataset.dot)));

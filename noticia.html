@@ -170,6 +170,7 @@
   .arena-reaction-btn.is-active{ border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
   .arena-reaction-count{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); }
 </style>
+<script src="data/utils.js"></script>
 <script src="data/noticias.js"></script>
 <script src="data/social.js"></script>
 <script>
@@ -179,15 +180,8 @@
   // de progresso que o inventário usa (sem isso, ler notícias aqui
   // nunca contaria pros emblemas de "Caçador de Notícias" etc).
   // ===============================================================
-  function getSessionEmail() {
-    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
-  }
+  const { getSessionEmail, escapeHtml } = window.ArenaUtils;
   const sessionEmail = getSessionEmail();
-
-  // Evita que texto de comentário vire HTML/JS injetado no innerHTML.
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-  }
 
   // ===============================================================
   // PROGRESSO DE OBJETIVOS (Inventário/Emblemas) — grava direto na

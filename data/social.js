@@ -15,28 +15,11 @@
 (function (global) {
   "use strict";
 
-  function readJSON(key, fallback) {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-    catch (err) { return fallback; }
+  // Requer data/utils.js carregado ANTES deste script.
+  if (!global.ArenaUtils) {
+    console.error("ArenaSocial: data/utils.js precisa ser carregado antes de data/social.js");
   }
-  function writeJSON(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* silencioso */ }
-  }
-  function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
-  function relativeTime(ts) {
-    const diff = Math.max(0, Date.now() - ts);
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return "agora";
-    if (min < 60) return `há ${min} min`;
-    const h = Math.floor(min / 60);
-    if (h < 24) return `há ${h}h`;
-    const d = Math.floor(h / 24);
-    if (d < 30) return `há ${d}d`;
-    const mo = Math.floor(d / 30);
-    return `há ${mo}${mo === 1 ? " mês" : " meses"}`;
-  }
+  const { readJSON, writeJSON, escapeHtml, relativeTime } = global.ArenaUtils || {};
 
   function key(email) { return `arena-notifications-${email || "demo"}`; }
 

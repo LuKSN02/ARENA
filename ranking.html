@@ -7,6 +7,7 @@
 <meta name="description" content="Veja a classificação dos jogadores mais ativos da Arena, calculada a partir de emblemas, banners e conquistas desbloqueados.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -295,27 +296,7 @@
   // ===============================================================
   // 1) SESSÃO — mesmo padrão usado no resto do site.
   // ===============================================================
-  const SESSION_KEY = "arena-session-email";
-  const USERS_KEY = "arena-demo-users";
-
-  function getSessionEmail() {
-    try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; }
-  }
-  function loadUsers() {
-    try {
-      const raw = localStorage.getItem(USERS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (err) { return []; }
-  }
-  function readJSON(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch (err) { return fallback; }
-  }
-  function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
+  const { getSessionEmail, loadUsers, readJSON, escapeHtml } = window.ArenaUtils;
 
   const sessionEmail = getSessionEmail();
   if (!sessionEmail) {

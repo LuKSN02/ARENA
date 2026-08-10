@@ -6,6 +6,7 @@
 <title>Configurações do Perfil — Arena</title>
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
@@ -807,9 +808,7 @@
   //    sessionStorage) e define a chave de armazenamento do perfil.
   //    Sem sessão, cai num perfil de demonstração local.
   // ===============================================================
-  function getSessionEmail() {
-    try { return sessionStorage.getItem("arena-session-email") || ""; } catch (err) { return ""; }
-  }
+  const { getSessionEmail, escapeHtml } = window.ArenaUtils;
   const sessionEmail = getSessionEmail();
   const profileKey = `arena-profile-${sessionEmail || "demo"}`;
 
@@ -991,9 +990,6 @@
   // Renderiza markdown simples e escapa HTML antes, pra evitar que
   // a bio vire um vetor de injeção de HTML no preview.
   // ---------------------------------------------------------------
-  function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-  }
   function renderBioMarkdown(raw) {
     let safe = escapeHtml(raw || "Sua biografia aparece aqui em tempo real.");
     safe = safe

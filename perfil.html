@@ -7,6 +7,7 @@
 <meta name="description" content="Veja o perfil público de um jogador da Arena: banner, emblemas, conquistas e estatísticas.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="data/utils.js"></script>
 <script src="data/social.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -332,26 +333,7 @@
   // ===============================================================
   // 1) SESSÃO E DADOS BASE
   // ===============================================================
-  const SESSION_KEY = "arena-session-email";
-  const USERS_KEY = "arena-demo-users";
-
-  function getSessionEmail() {
-    try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch (err) { return ""; }
-  }
-  function loadUsers() {
-    try { const raw = localStorage.getItem(USERS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch (err) { return []; }
-  }
-  function readJSON(key, fallback) {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-    catch (err) { return fallback; }
-  }
-  function writeJSON(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* silencioso */ }
-  }
-  function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
+  const { getSessionEmail, loadUsers, readJSON, writeJSON, escapeHtml, relativeTime } = window.ArenaUtils;
 
   // ===============================================================
   // ATIVIDADE RECENTE — chave `arena-activity-<email>` guarda uma
@@ -370,18 +352,6 @@
       list.unshift({ icon, text, at: Date.now() });
       writeJSON(activityKey(email), list.slice(0, 30));
     } catch (err) { /* silencioso */ }
-  }
-  function relativeTime(ts) {
-    const diff = Math.max(0, Date.now() - ts);
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return "agora";
-    if (min < 60) return `há ${min} min`;
-    const h = Math.floor(min / 60);
-    if (h < 24) return `há ${h}h`;
-    const d = Math.floor(h / 24);
-    if (d < 30) return `há ${d}d`;
-    const mo = Math.floor(d / 30);
-    return `há ${mo}${mo === 1 ? " mês" : " meses"}`;
   }
   function renderBioMarkdown(raw) {
     let safe = escapeHtml(raw || "");
