@@ -180,6 +180,7 @@
   @keyframes shopCardIn{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce){ .shop-card{ animation:none; } }
   .shop-card-img{ height:130px; position:relative; overflow:hidden; background: #20242F; }
+  .shop-card-img.media-photo{ background:#EEEFF2; }
   .shop-card-img img{ width:100%; height:100%; object-fit:cover; display:block; }
   .shop-tag{
     position:absolute; top:8px; left:8px; font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
@@ -209,6 +210,133 @@
   /* Variantes de cor da tag por categoria digital/eletrônicos */
   .shop-tag.tag-digital{ background: #8B5CF6; color:#12141A; }
   .shop-tag.tag-eletronicos{ background: #22D3EE; color:#12141A; }
+
+  /* ===================================================================
+     MODAL DE PRODUTO — abre ao clicar em qualquer card (grade ou
+     carrossel de destaques). Reaproveita .modal-overlay/.modal-panel
+     (mesmo padrão do login/cadastro/checkout) só com um modificador de
+     largura. A cor do glow é definida por item via --product-glow
+     (ver glowColorForTag no script), pra combinar com a categoria.
+     =================================================================== */
+  .product-panel{ max-width:560px; max-height: calc(100vh - 110px); overflow-y:auto; }
+  /* Painel de foto do produto — fundo neutro/claro como uma foto de
+     produto de verdade (ex: Mercado Livre, Amazon), em vez do glow
+     dramático de antes. Itens DIGITAIS continuam no canvas escuro,
+     já que são previews animados pensados pra fundo escuro. */
+  .product-modal-media{
+    position:relative; height:320px; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; animation: productMediaIn .2s ease both;
+  }
+  .product-modal-media.media-photo{ background:#EEEFF2; }
+  .product-modal-media.media-digital{
+    background:
+      radial-gradient(circle at 50% 42%, var(--product-glow, rgba(255,70,85,.38)), transparent 65%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,.025) 0 1px, transparent 1px 26px),
+      #14171E;
+  }
+  @keyframes productMediaIn{ from{ opacity:0; } to{ opacity:1; } }
+  /* moldura tipo HUD nos 4 cantos — só faz sentido no canvas escuro dos
+     itens digitais; numa foto de produto de verdade ela mais atrapalha */
+  .product-modal-media-frame{ position:absolute; inset:14px; pointer-events:none; z-index:1; display:none; }
+  .media-digital .product-modal-media-frame{ display:block; }
+  .product-modal-media-frame i{
+    position:absolute; width:16px; height:16px; border: 1.5px solid color-mix(in srgb, var(--product-glow, rgba(255,70,85,.7)) 75%, var(--ink) 25%);
+    opacity:.55;
+  }
+  .product-modal-media-frame i:nth-child(1){ top:0; left:0; border-right:none; border-bottom:none; }
+  .product-modal-media-frame i:nth-child(2){ top:0; right:0; border-left:none; border-bottom:none; }
+  .product-modal-media-frame i:nth-child(3){ bottom:0; left:0; border-right:none; border-top:none; }
+  .product-modal-media-frame i:nth-child(4){ bottom:0; right:0; border-left:none; border-top:none; }
+  .product-modal-media img{ max-width:74%; max-height:74%; object-fit:contain; position:relative; z-index:1; }
+  .media-photo img{ max-width:70%; max-height:70%; filter: drop-shadow(0 14px 18px rgba(0,0,0,.18)); }
+  .media-digital img{ filter: drop-shadow(0 0 30px var(--product-glow, rgba(255,70,85,.55))); }
+  /* previews digitais (molduras/banners/efeitos de nome) são pensados pra
+     caber num quadrado pequeno de card — ampliamos dentro do modal */
+  .product-modal-media .dprev{ transform: scale(1.9); position:relative; z-index:1; }
+  /* estado sem foto (erro de carregamento / sem imagem cadastrada) —
+     em fundo claro (produto físico) vira um placeholder neutro cinza,
+     igual ao que lojas de verdade mostram; nos itens digitais mantém
+     o acento da categoria sobre o canvas escuro */
+  .product-modal-fallback{
+    position:relative; z-index:1; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fallback-card{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .fallback-badge{
+    width:76px; height:76px; display:flex; align-items:center; justify-content:center;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+    animation: fallbackBreathe 2.6s ease-in-out infinite;
+  }
+  .media-digital .fallback-badge{
+    background: color-mix(in srgb, var(--product-glow, rgba(255,70,85,.85)) 14%, #171A22);
+    border: 1px solid color-mix(in srgb, var(--product-glow, rgba(255,70,85,.7)) 50%, var(--border));
+    color: color-mix(in srgb, var(--product-glow, rgba(255,70,85,.9)) 78%, var(--ink) 22%);
+  }
+  .media-photo .fallback-badge{ background:#E1E3E8; border:1px solid #CDD0D8; color:#9297A3; }
+  .fallback-badge svg{ width:30px; height:30px; }
+  @keyframes fallbackBreathe{ 0%,100%{ opacity:.85; transform:scale(1); } 50%{ opacity:1; transform:scale(1.04); } }
+  @media (prefers-reduced-motion: reduce){ .fallback-badge{ animation:none; } }
+  .fallback-info{ display:flex; flex-direction:column; align-items:center; gap:4px; max-width:280px; }
+  .fallback-name{
+    font-family:'Teko', sans-serif; font-size:19px; font-weight:600; letter-spacing:.02em;
+    text-transform:uppercase; text-align:center; line-height:1.05;
+  }
+  .media-digital .fallback-name{ color: var(--ink-soft); }
+  .media-photo .fallback-name{ color:#565A66; }
+  .fallback-caption{ font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; }
+  .media-digital .fallback-caption{ color: var(--muted); }
+  .media-photo .fallback-caption{ color:#9297A3; }
+  /* versão compacta usada nos cards da grade/carrossel — só o badge,
+     sem nome/legenda, já que o espaço ali é bem mais curto */
+  .shop-card-img .product-modal-fallback,
+  .carousel-img .product-modal-fallback{ position:absolute; inset:0; }
+  .shop-card-img .fallback-badge,
+  .carousel-img .fallback-badge{ width:38px; height:38px; }
+  .shop-card-img .fallback-badge svg,
+  .carousel-img .fallback-badge svg{ width:16px; height:16px; }
+  .shop-card-img .fallback-info,
+  .carousel-img .fallback-info{ display:none; }
+  .shop-card-img{ position:relative; }
+  .product-modal-tag{
+    position:absolute; top:12px; left:12px; z-index:2; display:flex; align-items:center; gap:5px;
+    font-family:'JetBrains Mono', monospace; font-size:9px; font-weight:700;
+    padding:4px 9px; text-transform:uppercase; letter-spacing:.03em; background: var(--valorant); color:#12141A;
+  }
+  .product-modal-tag::before{ content:''; width:5px; height:5px; background:#12141A; opacity:.55; border-radius:1px; }
+  .product-modal-tag.tag-digital{ background:#8B5CF6; color:#12141A; }
+  .product-modal-tag.tag-eletronicos{ background:#22D3EE; color:#12141A; }
+  .modal-close.product-modal-close{
+    position:absolute; top:10px; right:10px; z-index:2; width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(10,11,15,.55); border:1px solid var(--border); backdrop-filter: blur(2px);
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .modal-close.product-modal-close:hover{ color:var(--ink); border-color: var(--ink-soft); background: rgba(10,11,15,.8); }
+  .media-photo .modal-close.product-modal-close{ background: rgba(255,255,255,.75); border-color: rgba(0,0,0,.1); color:#565A66; }
+  .media-photo .modal-close.product-modal-close:hover{ background: #fff; color:#20242C; border-color: rgba(0,0,0,.18); }
+  .product-modal-body{ padding:20px 22px 22px; display:flex; flex-direction:column; gap:4px; }
+  .product-modal-name{ font-family:'Teko', sans-serif; font-size:30px; font-weight:600; text-transform:uppercase; letter-spacing:.02em; line-height:1.1; }
+  .product-modal-desc{ font-size:13.5px; color: var(--ink-soft); line-height:1.6; margin-top:6px; }
+  .product-modal-extra{
+    font-size:12.5px; color: var(--muted); line-height:1.65; margin-top:14px; padding:12px 0 12px 12px;
+    border-top:1px solid var(--border); border-left:2px solid color-mix(in srgb, var(--valorant) 55%, var(--border));
+  }
+  .product-modal-footer{
+    margin-top:16px; padding-top:16px; border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .product-modal-price-wrap{ display:flex; flex-direction:column; gap:2px; }
+  .product-modal-price-label{ font-family:'JetBrains Mono', monospace; font-size:9px; letter-spacing:.08em; color: var(--muted); text-transform:uppercase; }
+  .product-modal-price{ font-family:'JetBrains Mono', monospace; font-size:24px; font-weight:700; }
+  .product-modal-add{
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:13px 22px;
+    display:flex; align-items:center; gap:8px; white-space:nowrap;
+    cursor:pointer; background: var(--valorant); color:#12141A; border:1px solid var(--valorant);
+    transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .product-modal-add:hover{ filter:brightness(1.08); transform: translateY(-1px); box-shadow: 0 0 18px color-mix(in srgb, var(--valorant) 55%, transparent); }
+  .shop-card{ cursor:pointer; }
+  .carousel-card{ cursor:pointer; }
 
   /* ===============================================================
      PREVIEW DE ITENS DIGITAIS — gerados via CSS (sem placeholder),
@@ -386,6 +514,7 @@
   .carousel-card{ display:grid; grid-template-columns: 1fr; background: var(--panel); border:1px solid var(--border); overflow:hidden; min-width:0; }
   @media (min-width: 768px){ .carousel-card{ grid-template-columns: 1.1fr 1fr; } }
   .carousel-img{ height:230px; position:relative; overflow:hidden; background:#20242F; min-width:0; }
+  .carousel-img.media-photo{ background:#EEEFF2; }
   @media (min-width: 768px){ .carousel-img{ height:auto; aspect-ratio:1/1; min-height:0; } }
   .carousel-img img{ width:100%; height:100%; object-fit:cover; display:block; max-width:100%; }
   .carousel-badge{
@@ -935,6 +1064,25 @@
   </div>
 </div>
 
+<!-- Modal de produto — aberto ao clicar em qualquer card da loja (grade ou destaques) -->
+<div id="product-overlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal-panel product-panel">
+    <div class="product-modal-media" id="product-modal-media"></div>
+    <div class="product-modal-body">
+      <h2 class="product-modal-name" id="product-modal-name"></h2>
+      <p class="product-modal-desc" id="product-modal-desc"></p>
+      <p class="product-modal-extra" id="product-modal-extra"></p>
+      <div class="product-modal-footer">
+        <div class="product-modal-price-wrap">
+          <span class="product-modal-price-label">Preço</span>
+          <div class="product-modal-price" id="product-modal-price"></div>
+        </div>
+        <button class="product-modal-add" id="product-modal-add">+ ADICIONAR AO CARRINHO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ===============================================================
   // MENU HAMBÚRGUER (mobile)
@@ -1465,6 +1613,67 @@
       return "";
     }
 
+    // Cor do glow atrás da imagem no modal de produto — acompanha a
+    // mesma cor da tag (digital/eletrônicos têm accent próprio, o
+    // resto usa o vermelho padrão da marca).
+    function glowColorForTag(tag) {
+      if (tag === "DIGITAL") return "rgba(139,92,246,.45)";
+      if (tag === "ELETRÔNICOS") return "rgba(34,211,238,.4)";
+      return "rgba(255,70,85,.4)";
+    }
+
+    // Painel de foto: produtos físicos ganham fundo neutro/claro (foto de
+    // produto de verdade); itens digitais mantêm o canvas escuro, já que
+    // os previews animados (molduras, banners, emblemas) foram pensados
+    // pra contraste sobre fundo escuro.
+    function mediaBgClass(tag) {
+      return tag === "DIGITAL" ? "media-digital" : "media-photo";
+    }
+
+    // ===================================================================
+    // MODAL DE PRODUTO — descrição de vitrine (p.desc) é curta de
+    // propósito, pra caber no card. O parágrafo extra abaixo por
+    // categoria dá mais contexto no modal sem precisar cadastrar um
+    // texto longo pra cada um dos itens do catálogo.
+    // ===================================================================
+    const SHOP_DETAILS_BY_TAG = {
+      "VESTUÁRIO": "Peça oficial da coleção Arena. Tecido selecionado pra aguentar lavagens frequentes sem desbotar, com caimento pensado tanto pra maratona de jogo quanto pro dia a dia fora de casa.",
+      "CASA": "Acabamento pensado pra quem monta o cantinho gamer com identidade — resistente ao uso diário e com um visual que não cansa com o tempo.",
+      "SETUP": "Feito pra ficar na mesa o tempo todo: material resistente ao uso contínuo, base estável e um acabamento que combina com o resto do setup Arena.",
+      "ELETRÔNICOS": "Testado pelo time Arena antes de chegar na loja. Garantia de 12 meses e suporte dedicado pra quem joga sério.",
+      "DIGITAL": "Aplicado automaticamente ao seu perfil assim que a compra é confirmada — visível pra qualquer pessoa que visitar sua página na Arena.",
+    };
+
+    const productOverlay = document.getElementById("product-overlay");
+
+    function openProductModal(product) {
+      if (!product) return;
+      const media = document.getElementById("product-modal-media");
+      // reaproveita productMediaHTML (já sabe renderizar preview animado
+      // dos itens digitais) e só troca a tag/close por cima dela
+      media.className = "product-modal-media " + mediaBgClass(product.tag);
+      media.innerHTML = `
+        <span class="product-modal-tag ${tagClass(product.tag)}">${product.tag}</span>
+        <button class="modal-close product-modal-close js-close-product" aria-label="Fechar">✕</button>
+        <div class="product-modal-media-frame"><i></i><i></i><i></i><i></i></div>
+        ${productMediaHTML(product)}
+      `;
+      media.style.setProperty("--product-glow", glowColorForTag(product.tag));
+      media.querySelector(".js-close-product").addEventListener("click", () => closeModal(productOverlay));
+
+      document.getElementById("product-modal-name").textContent = product.name;
+      document.getElementById("product-modal-desc").textContent = product.desc;
+      document.getElementById("product-modal-extra").textContent = SHOP_DETAILS_BY_TAG[product.tag] || "";
+      document.getElementById("product-modal-price").textContent = money(product.price);
+
+      const addBtn = document.getElementById("product-modal-add");
+      addBtn.onclick = () => { addToCart(product.id); closeModal(productOverlay); };
+
+      openModal(productOverlay);
+    }
+
+    productOverlay.addEventListener("click", (e) => { if (e.target === productOverlay) closeModal(productOverlay); });
+
     // Metadados visuais dos emblemas — precisam bater com o que
     // grantDigitalPurchases usa ao equipar (mesmo emoji/rarity/label).
     const SHOP_EMBLEM_META = {
@@ -1563,10 +1772,70 @@
         const variant = p.id.includes("fogo") ? "nameeffect-fire" : p.id.includes("holograma") ? "nameeffect-holo" : "";
         return `<div class="dprev"><span class="dprev-nameeffect ${variant}">ARENA</span></div>`;
       }
-      return `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/500x500/1B1F28/D7DAE1?text=${encodeURIComponent(p.name)}';">`;
+      return productImgWithFallback(p);
+    }
+    // <img> com fallback local — se a foto do produto falhar (link caído,
+    // sem internet), mostra um badge com o ícone da categoria (mesmo
+    // corte de canto usado nos modais da loja) + nome do produto.
+    function fallbackIconSVG(tag) {
+      if (tag === "VESTUÁRIO") {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M8 3 4 6.5l1.7 2.6L8 8v12.5h8V8l2.3 1.1L20 6.5 16 3l-2 1.6a2.2 2.2 0 0 1-4 0L8 3z"></path>
+        </svg>`;
+      }
+      if (tag === "DIGITAL") {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M12 2.5 9.7 8.2l-6.2.5 4.7 4-1.5 6 5.3-3.3 5.3 3.3-1.5-6 4.7-4-6.2-.5L12 2.5z"></path>
+        </svg>`;
+      }
+      if (tag === "ELETRÔNICOS") {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="3" y="4.5" width="18" height="12" rx="1"></rect>
+          <path d="M9 20h6M12 16.5V20"></path>
+        </svg>`;
+      }
+      // CASA / SETUP e demais categorias — caixa genérica de produto
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M3.5 8 12 3.5 20.5 8 12 12.5 3.5 8z"></path>
+        <path d="M3.5 8v9L12 21.5 20.5 17V8"></path>
+        <path d="M12 12.5V21.5"></path>
+      </svg>`;
+    }
+    // Links do placehold.co (usados como placeholder de dados enquanto a
+    // foto real não é cadastrada) já vêm com fundo escuro cravado na
+    // própria imagem — isso destoava do novo painel claro. Tratamos
+    // qualquer link desse serviço como "sem foto real" e mostramos o
+    // fallback direto, sem tentar carregar a imagem.
+    function hasRealPhoto(p) {
+      return !!p.img && !p.img.includes("placehold.co");
+    }
+    function fallbackBlockHTML(p) {
+      return `<div class="product-modal-fallback">
+          <div class="fallback-card">
+            <div class="fallback-badge">${fallbackIconSVG(p.tag)}</div>
+            <div class="fallback-info">
+              <span class="fallback-name">${p.name}</span>
+              <span class="fallback-caption">Foto em breve</span>
+            </div>
+          </div>
+        </div>`;
+    }
+    function productImgWithFallback(p) {
+      if (!hasRealPhoto(p)) return fallbackBlockHTML(p);
+      return `<img src="${p.img}" alt="${p.name}" loading="lazy"
+          onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="product-modal-fallback" style="display:none;">
+          <div class="fallback-card">
+            <div class="fallback-badge">${fallbackIconSVG(p.tag)}</div>
+            <div class="fallback-info">
+              <span class="fallback-name">${p.name}</span>
+              <span class="fallback-caption">Foto em breve</span>
+            </div>
+          </div>
+        </div>`;
     }
     function productMediaHTML(p) {
-      return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/500x500/1B1F28/D7DAE1?text=${encodeURIComponent(p.name)}';">`;
+      return p.tag === "DIGITAL" ? digitalPreviewHTML(p) : productImgWithFallback(p);
     }
 
     function renderFilters() {
@@ -1591,8 +1860,8 @@
       if (!grid) return;
       const list = currentFilter === "TODOS" ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.tag === currentFilter);
       grid.innerHTML = list.map((p, idx) => `
-        <div class="shop-card clip-card" style="--card-delay:${Math.min(idx * 0.03, 0.3)}s">
-          <div class="shop-card-img">
+        <div class="shop-card clip-card" data-open="${p.id}" style="--card-delay:${Math.min(idx * 0.03, 0.3)}s">
+          <div class="shop-card-img ${mediaBgClass(p.tag)}">
             <span class="shop-tag ${tagClass(p.tag)}">${p.tag}</span>
             ${productMediaHTML(p)}
           </div>
@@ -1608,7 +1877,12 @@
         grid.innerHTML = `<div class="text-[12px] font-mono" style="color: var(--muted); grid-column:1/-1;">Nenhum produto nessa categoria por enquanto.</div>`;
       }
       grid.querySelectorAll("[data-add]").forEach(btn => {
-        btn.addEventListener("click", () => addToCart(btn.dataset.add));
+        btn.addEventListener("click", (e) => { e.stopPropagation(); addToCart(btn.dataset.add); });
+      });
+      // Clique em qualquer parte do card (fora do botão) abre o modal
+      // com foto ampliada (com glow) e descrição mais detalhada.
+      grid.querySelectorAll("[data-open]").forEach(card => {
+        card.addEventListener("click", () => openProductModal(SHOP_PRODUCTS.find(p => p.id === card.dataset.open)));
       });
     }
 
@@ -1624,8 +1898,8 @@
       if (!carouselTrack || FEATURED.length === 0) return;
       carouselTrack.innerHTML = FEATURED.map(p => `
         <div class="carousel-slide">
-          <div class="carousel-card clip-card-lg">
-            <div class="carousel-img">
+          <div class="carousel-card clip-card-lg" data-open="${p.id}">
+            <div class="carousel-img ${mediaBgClass(p.tag)}">
               <span class="carousel-badge">${p.badge || "DESTAQUE"}</span>
               ${productMediaHTML(p)}
             </div>
@@ -1642,7 +1916,10 @@
       carouselDots.innerHTML = FEATURED.map((_, i) => `<button class="carousel-dot" data-dot="${i}" aria-label="Ir para destaque ${i + 1}"></button>`).join("");
 
       carouselTrack.querySelectorAll("[data-add]").forEach(btn => {
-        btn.addEventListener("click", () => addToCart(btn.dataset.add));
+        btn.addEventListener("click", (e) => { e.stopPropagation(); addToCart(btn.dataset.add); });
+      });
+      carouselTrack.querySelectorAll("[data-open]").forEach(card => {
+        card.addEventListener("click", () => openProductModal(FEATURED.find(p => p.id === card.dataset.open)));
       });
       carouselDots.querySelectorAll("[data-dot]").forEach(btn => {
         btn.addEventListener("click", () => goToSlide(Number(btn.dataset.dot)));
