@@ -210,6 +210,7 @@
   /* Variantes de cor da tag por categoria digital/eletrônicos */
   .shop-tag.tag-digital{ background: #8B5CF6; color:#12141A; }
   .shop-tag.tag-eletronicos{ background: #22D3EE; color:#12141A; }
+  .shop-tag.tag-jogos{ background: #34D399; color:#12141A; }
 
   /* ===================================================================
      MODAL DE PRODUTO — abre ao clicar em qualquer card (grade ou
@@ -305,6 +306,7 @@
   .product-modal-tag::before{ content:''; width:5px; height:5px; background:#12141A; opacity:.55; border-radius:1px; }
   .product-modal-tag.tag-digital{ background:#8B5CF6; color:#12141A; }
   .product-modal-tag.tag-eletronicos{ background:#22D3EE; color:#12141A; }
+  .product-modal-tag.tag-jogos{ background:#34D399; color:#12141A; }
   .modal-close.product-modal-close{
     position:absolute; top:10px; right:10px; z-index:2; width:28px; height:28px;
     display:flex; align-items:center; justify-content:center;
@@ -605,6 +607,22 @@
     box-shadow: 0 0 14px -2px #FF4655, 0 0 14px -2px #00E5FF;
   }
   @keyframes cyberFrameSpinCheckout{ to{ transform: rotate(360deg); } }
+
+  .checkout-keys-box{ background: var(--ticker-bg); border:1px solid var(--border); padding:14px; margin-top:16px; text-align:left; }
+  .checkout-key-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: var(--panel); border:1px solid var(--border); padding:8px 10px; margin-top:8px;
+  }
+  .checkout-key-row:first-of-type{ margin-top:0; }
+  .checkout-key-info{ min-width:0; }
+  .checkout-key-name{ font-size:11.5px; font-weight:600; color: var(--ink); }
+  .checkout-key-plat{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color: var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .checkout-key-code{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--live);
+    background: color-mix(in srgb, var(--live) 10%, transparent); border:1px solid color-mix(in srgb, var(--live) 35%, transparent);
+    padding:5px 8px; white-space:nowrap; cursor:pointer; transition: opacity .12s ease;
+  }
+  .checkout-key-code:hover{ opacity:.8; }
 
   #shop-toast{
     position:fixed; top:20px; left:50%; transform: translateX(-50%) translateY(-140%);
@@ -1054,6 +1072,11 @@
             <div class="digital-frame-preview"></div>
             <p class="text-[12px]" style="color: var(--muted);" id="checkout-success-frame-text">Seu item digital já foi liberado na sua conta.</p>
             <a href="perfil-config.html" class="btn-neon inline-block font-mono text-[11px] font-semibold px-4 py-2.5 clip-tag mt-3">VER MEU PERFIL</a>
+          </div>
+          <div id="checkout-success-keys" class="hidden checkout-keys-box">
+            <p class="text-[11px] font-mono font-semibold uppercase tracking-wide mb-2" style="color: var(--ink-soft);">Suas chaves/códigos</p>
+            <div id="checkout-success-keys-list"></div>
+            <p class="text-[11px] mt-2" style="color: var(--muted);">Também enviamos uma cópia para o e-mail da sua conta.</p>
           </div>
         </div>
       </div>
@@ -1526,6 +1549,21 @@
       { id: "controle-arena-wireless", name: "Controle Arena Wireless", desc: "Sem fio, bateria de 20h, compatível com PC e principais consoles.", price: 259.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535371624306708490/image_e3fcc5f5.png?ex=6a7785c1&is=6a763441&hm=ec15966537de9e4d147d9d699e6d4e4718dc9dad466b24870bbf1eea3fc33255&=&format=webp&quality=lossless", featured: true, badge: "NOVO" },
       { id: "ssd-arena-portatil-1tb", name: "SSD Portátil Arena 1TB", desc: "Leitura até 1050MB/s, USB-C, case resistente a quedas.", price: 449.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535374956341235773/d945db0c-bce0-44d5-be39-f849a931554c.png?ex=6a7788db&is=6a76375b&hm=8ab9564ddd9dc186aabe366054dbadebd82c0b79d0366774db620feb8ccf7455&=&format=webp&quality=lossless" },
 
+      // ---- JOGOS (chaves digitais — Steam, PS4/PS5, Xbox) ----
+      { id: "jogo-steam-cyber-odyssey", name: "Cyber Odyssey 2088",      desc: "Chave Steam — RPG de ação em mundo aberto cyberpunk.",        price: 129.90, tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key", featured: true, badge: "MAIS VENDIDO" },
+      { id: "jogo-steam-forge-legends", name: "Forge Legends",           desc: "Chave Steam — construção e sobrevivência multiplayer.",       price: 89.90,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key" },
+      { id: "jogo-steam-nova-strike",   name: "Nova Strike",              desc: "Chave Steam — FPS tático competitivo 5v5.",                   price: 99.90,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key" },
+      { id: "jogo-ps5-shadow-realm",    name: "Shadow Realm",             desc: "Código de resgate PSN — aventura de ação para PS5.",         price: 249.90, tag: "JOGOS", platform: "PS5", img: "https://placehold.co/500x500/1B1F28/2563EB?text=PS5+Key", featured: true, badge: "EXCLUSIVO PS5" },
+      { id: "jogo-ps5-velocity-gp",     name: "Velocity GP",              desc: "Código de resgate PSN — corrida arcade para PS5.",           price: 199.90, tag: "JOGOS", platform: "PS5", img: "https://placehold.co/500x500/1B1F28/2563EB?text=PS5+Key" },
+      { id: "jogo-ps4-arena-fighters",  name: "Arena Fighters",           desc: "Código de resgate PSN — luta 1v1 com roster de 30 personagens.", price: 149.90, tag: "JOGOS", platform: "PS4", img: "https://placehold.co/500x500/1B1F28/1D4ED8?text=PS4+Key" },
+      { id: "jogo-ps4-relic-hunters",   name: "Relic Hunters",            desc: "Código de resgate PSN — ação e exploração roguelike.",       price: 119.90, tag: "JOGOS", platform: "PS4", img: "https://placehold.co/500x500/1B1F28/1D4ED8?text=PS4+Key" },
+      { id: "jogo-xbox-iron-vanguard",  name: "Iron Vanguard",            desc: "Código de resgate Xbox — mecha shooter cooperativo.",        price: 219.90, tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key", featured: true, badge: "GAME PASS READY" },
+      { id: "jogo-xbox-frontier-siege", name: "Frontier Siege",           desc: "Código de resgate Xbox — estratégia em tempo real com invasões.", price: 179.90, tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key" },
+      { id: "jogo-xbox-pixel-drift",    name: "Pixel Drift",              desc: "Código de resgate Xbox — corrida arcade estilo retrô.",      price: 69.90,  tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key" },
+      { id: "jogo-steam-gift-card-50",  name: "Gift Card Steam R$50",     desc: "Cartão-presente digital Steam — crédito de R$50 na carteira.", price: 50.00,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Gift+Card" },
+      { id: "jogo-psn-gift-card-50",    name: "Gift Card PSN R$50",       desc: "Cartão-presente digital PlayStation Network — crédito de R$50.", price: 50.00, tag: "JOGOS", platform: "PSN", img: "https://placehold.co/500x500/1B1F28/2563EB?text=Gift+Card" },
+      { id: "jogo-xbox-gift-card-50",   name: "Gift Card Xbox R$50",      desc: "Cartão-presente digital Xbox — crédito de R$50 na loja.",     price: 50.00,  tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Gift+Card" },
+
       // ---- DIGITAL (perfil: molduras, banners e efeitos) ----
       { id: "moldura-cyber-digital", name: "Moldura Cyber (Digital)",  desc: "Moldura de perfil animada para seu avatar na Arena.",     price: 19.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura", featured: true, badge: "EXCLUSIVO DIGITAL" },
       { id: "moldura-ouro-elite",    name: "Moldura Ouro Elite",       desc: "Borda dourada com brilho pulsante, para quem chegou ao topo do ranking.", price: 24.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura" },
@@ -1610,6 +1648,7 @@
     function tagClass(tag) {
       if (tag === "DIGITAL") return "tag-digital";
       if (tag === "ELETRÔNICOS") return "tag-eletronicos";
+      if (tag === "JOGOS") return "tag-jogos";
       return "";
     }
 
@@ -1619,6 +1658,7 @@
     function glowColorForTag(tag) {
       if (tag === "DIGITAL") return "rgba(139,92,246,.45)";
       if (tag === "ELETRÔNICOS") return "rgba(34,211,238,.4)";
+      if (tag === "JOGOS") return "rgba(52,211,153,.45)";
       return "rgba(255,70,85,.4)";
     }
 
@@ -1642,6 +1682,7 @@
       "SETUP": "Feito pra ficar na mesa o tempo todo: material resistente ao uso contínuo, base estável e um acabamento que combina com o resto do setup Arena.",
       "ELETRÔNICOS": "Testado pelo time Arena antes de chegar na loja. Garantia de 12 meses e suporte dedicado pra quem joga sério.",
       "DIGITAL": "Aplicado automaticamente ao seu perfil assim que a compra é confirmada — visível pra qualquer pessoa que visitar sua página na Arena.",
+      "JOGOS": "Chave/código 100% digital, sem envio físico. Assim que o pagamento é confirmado, o código aparece na tela de confirmação e também é enviado para o e-mail da sua conta.",
     };
 
     const productOverlay = document.getElementById("product-overlay");
@@ -1792,6 +1833,14 @@
         return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
           <rect x="3" y="4.5" width="18" height="12" rx="1"></rect>
           <path d="M9 20h6M12 16.5V20"></path>
+        </svg>`;
+      }
+      if (tag === "JOGOS") {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M7 9h10a4 4 0 0 1 4 4.4l-.6 3.4a2.2 2.2 0 0 1-3.9 1L15 16H9l-1.5 1.8a2.2 2.2 0 0 1-3.9-1L3 13.4A4 4 0 0 1 7 9z"></path>
+          <path d="M8.5 11.5v3M7 13h3"></path>
+          <circle cx="16" cy="12" r=".6" fill="currentColor"></circle>
+          <circle cx="17.5" cy="14" r=".6" fill="currentColor"></circle>
         </svg>`;
       }
       // CASA / SETUP e demais categorias — caixa genérica de produto
@@ -2068,10 +2117,16 @@
     let addressFilled = false;
 
     function cartHasPhysical() {
-      return Object.keys(cart).some(id => SHOP_PRODUCTS.find(p => p.id === id)?.tag !== "DIGITAL");
+      return Object.keys(cart).some(id => {
+        const tag = SHOP_PRODUCTS.find(p => p.id === id)?.tag;
+        return tag !== "DIGITAL" && tag !== "JOGOS";
+      });
     }
     function cartDigitalProducts() {
       return Object.keys(cart).map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(p => p && p.tag === "DIGITAL");
+    }
+    function cartGameProducts() {
+      return Object.keys(cart).map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(p => p && p.tag === "JOGOS");
     }
     function getFreteValue() {
       const opt = FRETE_OPTIONS.find(f => f.id === selectedFreteId);
@@ -2324,23 +2379,67 @@
       return equippedNames;
     }
 
+    // Gera um código fake de resgate — só para fins de demonstração visual,
+    // já que a loja não tem um provedor real de chaves conectado.
+    function generateFakeGameCode(platform) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const rand = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      if (platform === "STEAM") return `${rand(5)}-${rand(5)}-${rand(5)}`;
+      if (platform === "PS4" || platform === "PS5" || platform === "PSN") return `${rand(4)}-${rand(4)}-${rand(4)}`;
+      return `${rand(5)}-${rand(5)}-${rand(5)}-${rand(5)}`;
+    }
+
+    function renderGameKeys() {
+      const games = cartGameProducts();
+      const box = document.getElementById("checkout-success-keys");
+      const list = document.getElementById("checkout-success-keys-list");
+      if (games.length === 0) { box.classList.add("hidden"); return; }
+
+      list.innerHTML = games.map(p => {
+        const code = generateFakeGameCode(p.platform);
+        return `
+          <div class="checkout-key-row">
+            <div class="checkout-key-info">
+              <div class="checkout-key-name">${p.name}</div>
+              <div class="checkout-key-plat">${p.platform}</div>
+            </div>
+            <span class="checkout-key-code" data-key-code="${code}" title="Clique para copiar">${code}</span>
+          </div>
+        `;
+      }).join("");
+
+      list.querySelectorAll("[data-key-code]").forEach(el => {
+        el.addEventListener("click", () => {
+          navigator.clipboard?.writeText(el.dataset.keyCode).catch(() => {});
+          showShopToast("✓ CÓDIGO COPIADO");
+        });
+      });
+
+      box.classList.remove("hidden");
+    }
+
     function processCheckoutPayment() {
       // Loga cada item do carrinho no feed de atividade ANTES de
       // limpar o carrinho — inclui físicos e digitais.
       Object.keys(cart).forEach(id => {
         const p = SHOP_PRODUCTS.find(sp => sp.id === id);
-        if (p) logArenaActivity(p.tag === "DIGITAL" ? "🎁" : "🛍", `Comprou "${p.name}"`);
+        if (p) logArenaActivity(p.tag === "DIGITAL" ? "🎁" : p.tag === "JOGOS" ? "🎮" : "🛍", `Comprou "${p.name}"`);
       });
 
       const equippedNames = grantDigitalPurchases();
       const gotDigitalCosmetic = equippedNames.length > 0;
+      const hasGames = cartGameProducts().length > 0;
       // Reflete na hora o item recém-equipado (moldura/banner/emblema/nome RGB)
       // na navbar, sem precisar recarregar a página.
       if (gotDigitalCosmetic && isLoggedIn) applyProfileToNav();
 
       document.getElementById("checkout-success-msg").textContent = cartHasPhysical()
         ? "Seu pedido foi confirmado e já está sendo preparado para envio."
-        : "Seu item digital já está liberado na sua conta.";
+        : hasGames
+          ? "Suas chaves já estão liberadas — confira abaixo."
+          : "Seu item digital já está liberado na sua conta.";
+
+      renderGameKeys();
 
       if (gotDigitalCosmetic) {
         const text = equippedNames.length === 1
