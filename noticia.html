@@ -5,22 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="page-title">Notícia — Arena</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --ticker-bg: #0F1116;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
-    /* --accent / --glow setados via JS conforme game.slug */
-    --accent: #7C8394;
-    --glow: #171A22;
-  }
+  /* --accent e --glow (defaults em data/theme.css) são sobrescritos via JS
+     conforme game.slug — ver document.documentElement.style.setProperty
+     mais abaixo. */
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -161,6 +153,7 @@
   .arena-reaction-count{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--ink-soft); }
 </style>
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
 <script src="data/noticias.js"></script>
 <script src="data/social.js"></script>
 <script>

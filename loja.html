@@ -7,22 +7,17 @@
 <meta name="description" content="Camisetas, bonés, canecas e itens digitais exclusivos da Arena — o portal brasileiro de e-sports.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/products.js"></script>
+<script src="data/profile.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --ticker-bg: #0F1116;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
-    --valorant: #FF4655;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -197,6 +192,62 @@
   }
   .shop-add-btn:hover{ background: var(--valorant); color:#12141A; box-shadow: 0 0 16px color-mix(in srgb, var(--valorant) 55%, transparent); }
 
+  /* ===== WISHLIST (coração no card + botão no modal) ===== */
+  .shop-wish-btn{
+    position:absolute; top:8px; right:8px; z-index:2; width:26px; height:26px; border-radius:999px;
+    display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;
+    background: rgba(10,11,15,.55); border:1px solid var(--border); backdrop-filter: blur(2px);
+    transition: transform .15s ease, background .15s ease;
+  }
+  .shop-wish-btn:hover{ transform: scale(1.12); background: rgba(10,11,15,.8); }
+  .shop-rating{ display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono', monospace; font-size:10.5px; color: var(--gold); }
+  .shop-rating .count{ color: var(--muted); }
+  .star-row{ letter-spacing:1px; }
+
+  .product-modal-toprow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:4px; flex-wrap:wrap; }
+  .product-modal-rating{ display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--gold); }
+  .product-modal-rating .count{ color: var(--muted); font-size:11px; }
+  .product-modal-wish-btn{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700; padding:7px 12px; border-radius:3px;
+    border:1px solid var(--border); background: transparent; color: var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; gap:6px; white-space:nowrap; transition: all .15s ease;
+  }
+  .product-modal-wish-btn:hover{ border-color: var(--valorant); color: var(--ink); }
+  .product-modal-wish-btn.is-active{ border-color: var(--valorant); color: var(--valorant); background: rgba(255,70,85,.08); }
+
+  /* ===== "QUEM COMPROU TAMBÉM COMPROU" ===== */
+  .product-modal-related{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+  .product-modal-section-title{ font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:.05em; color: var(--muted); text-transform:uppercase; margin-bottom:10px; }
+  .related-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+  .related-card{ flex-shrink:0; width:104px; cursor:pointer; }
+  .related-card-img{ width:104px; height:78px; border-radius:4px; overflow:hidden; background: var(--panel-2); position:relative; display:flex; align-items:center; justify-content:center; }
+  .related-card-img.media-photo{ background:#EEEFF2; }
+  .related-card-img img{ width:100%; height:100%; object-fit:cover; }
+  .related-card-name{ font-size:10.5px; margin-top:5px; line-height:1.3; color: var(--ink-soft); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .related-card-price{ font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700; margin-top:2px; }
+
+  /* ===== AVALIAÇÕES ===== */
+  .product-modal-reviews{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+  .review-hint{ font-size:12px; color: var(--muted); margin-bottom:12px; }
+  .review-form{ display:flex; flex-direction:column; gap:9px; padding:12px; background: var(--panel-2); border:1px solid var(--border); margin-bottom:14px; }
+  .review-star-picker{ display:flex; gap:4px; font-size:19px; cursor:pointer; }
+  .review-star-picker span{ opacity:.3; transition: opacity .1s ease; }
+  .review-star-picker span.active{ opacity:1; color: var(--gold); }
+  .review-form textarea{ background: var(--panel); border:1px solid var(--border); color: var(--ink); font-size:12.5px; padding:8px; resize:vertical; min-height:56px; font-family:'Inter',sans-serif; border-radius:2px; }
+  .review-form textarea:focus{ outline:none; border-color: var(--valorant); }
+  .review-submit-btn{ align-self:flex-end; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; padding:8px 16px; background: var(--valorant); color:#12141A; border:none; cursor:pointer; transition: filter .15s ease; }
+  .review-submit-btn:hover{ filter:brightness(1.08); }
+  .review-item{ padding:11px 0; border-bottom:1px solid var(--border); }
+  .review-item:last-child{ border-bottom:none; }
+  .review-item-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .review-item-name{ font-size:12.5px; font-weight:700; }
+  .review-item-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); flex-shrink:0; }
+  .review-item-stars{ color: var(--gold); font-size:12px; margin:2px 0 4px; }
+  .review-item-text{ font-size:12.5px; color: var(--ink-soft); line-height:1.5; }
+
+  /* ===== FILTRO "FAVORITOS" ===== */
+  .shop-filter-btn.is-fav.active{ background: var(--valorant); border-color: var(--valorant); }
+
   /* Filtros de categoria do catálogo */
   #shop-filters{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
   .shop-filter-btn{
@@ -210,7 +261,6 @@
   /* Variantes de cor da tag por categoria digital/eletrônicos */
   .shop-tag.tag-digital{ background: #8B5CF6; color:#12141A; }
   .shop-tag.tag-eletronicos{ background: #22D3EE; color:#12141A; }
-  .shop-tag.tag-jogos{ background: #34D399; color:#12141A; }
 
   /* ===================================================================
      MODAL DE PRODUTO — abre ao clicar em qualquer card (grade ou
@@ -306,7 +356,6 @@
   .product-modal-tag::before{ content:''; width:5px; height:5px; background:#12141A; opacity:.55; border-radius:1px; }
   .product-modal-tag.tag-digital{ background:#8B5CF6; color:#12141A; }
   .product-modal-tag.tag-eletronicos{ background:#22D3EE; color:#12141A; }
-  .product-modal-tag.tag-jogos{ background:#34D399; color:#12141A; }
   .modal-close.product-modal-close{
     position:absolute; top:10px; right:10px; z-index:2; width:28px; height:28px;
     display:flex; align-items:center; justify-content:center;
@@ -387,6 +436,18 @@
     animation: dprev-pulse 2.6s ease-in-out infinite;
   }
   .dprev-ring.ring-gelo::after{ content:""; position:absolute; inset:5px; border-radius:9999px; background:#20242F; }
+  .dprev-ring.ring-esmeralda{
+    background: conic-gradient(from 20deg, #10B981, #A7F3D0, #059669, #10B981);
+    box-shadow: 0 0 18px rgba(16,185,129,.5);
+    animation: dprev-pulse 2.4s ease-in-out infinite, dprev-spin 9s linear infinite;
+  }
+  .dprev-ring.ring-esmeralda::after{ content:""; position:absolute; inset:6px; border-radius:9999px; background:#20242F; }
+  .dprev-ring.ring-eclipse{
+    background: conic-gradient(from 0deg, #1E1B2E, #6D28D9, #1E1B2E, #6D28D9);
+    box-shadow: 0 0 16px rgba(109,40,217,.5);
+    animation: dprev-spin 5s linear infinite;
+  }
+  .dprev-ring.ring-eclipse::after{ content:""; position:absolute; inset:6px; border-radius:9999px; background:#20242F; }
 
   @keyframes dprev-spin{ to{ transform: rotate(360deg); } }
   @keyframes dprev-pulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
@@ -438,6 +499,14 @@
   .dprev-auroraband{ position:absolute; top:-20%; bottom:-20%; width:22%; filter: blur(6px); opacity:.55; animation: dprev-aurora-sway 3.6s ease-in-out infinite; }
   @keyframes dprev-aurora-sway{ 0%,100%{ transform: translateX(0) skewX(-8deg); } 50%{ transform: translateX(10%) skewX(6deg); } }
 
+  .dprev-banner.banner-floresta{ background: linear-gradient(160deg,#0B1F17 0%,#134E33 70%); }
+  .dprev-firefly{ position:absolute; width:4px; height:4px; border-radius:9999px; background:#D9F99D; box-shadow:0 0 6px 2px rgba(217,249,157,.8); animation: dprev-firefly-float ease-in-out infinite; }
+  @keyframes dprev-firefly-float{ 0%,100%{ opacity:.2; transform: translateY(0); } 50%{ opacity:1; transform: translateY(-10px); } }
+
+  .dprev-banner.banner-supernova{ background: radial-gradient(circle at 50% 55%, #FFF3C4 0%, #F97316 35%, #7F1D1D 75%); }
+  .dprev-spark{ position:absolute; top:50%; left:50%; width:3px; height:16px; background:linear-gradient(#FFF3C4,transparent); transform-origin: 50% 0; animation: dprev-spark-burst 1.8s ease-out infinite; }
+  @keyframes dprev-spark-burst{ 0%{ opacity:0; transform: translate(-50%,-50%) rotate(var(--ang,0deg)) scaleY(.3); } 30%{ opacity:1; } 100%{ opacity:0; transform: translate(-50%,-50%) rotate(var(--ang,0deg)) scaleY(1.6); } }
+
   /* Emblema / badge de perfil */
   .dprev-badge{
     width:58%; aspect-ratio:1/1; max-width:110px;
@@ -458,6 +527,18 @@
     animation: dprev-rgb 3.5s linear infinite;
   }
   @keyframes dprev-rgb{ to{ background-position: 300% 0; } }
+  .dprev-nameeffect.nameeffect-gelo, .name-gelo-effect{
+    background: linear-gradient(90deg, #E7FBFF, #38BDF8, #0EA5E9, #E7FBFF);
+    background-size: 300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: dprev-rgb 3s linear infinite;
+  }
+  .dprev-nameeffect.nameeffect-veneno, .name-veneno-effect{
+    background: linear-gradient(90deg, #A3E635, #22C55E, #6D28D9, #A3E635);
+    background-size: 300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: dprev-rgb 2.8s linear infinite;
+  }
   .dprev-nameeffect.nameeffect-fire, .name-fire-effect{
     background: linear-gradient(0deg, #FF4655, #FFD166 55%, #FFF3C4);
     background-size: 100% 250%;
@@ -608,22 +689,6 @@
   }
   @keyframes cyberFrameSpinCheckout{ to{ transform: rotate(360deg); } }
 
-  .checkout-keys-box{ background: var(--ticker-bg); border:1px solid var(--border); padding:14px; margin-top:16px; text-align:left; }
-  .checkout-key-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background: var(--panel); border:1px solid var(--border); padding:8px 10px; margin-top:8px;
-  }
-  .checkout-key-row:first-of-type{ margin-top:0; }
-  .checkout-key-info{ min-width:0; }
-  .checkout-key-name{ font-size:11.5px; font-weight:600; color: var(--ink); }
-  .checkout-key-plat{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color: var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .checkout-key-code{
-    font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--live);
-    background: color-mix(in srgb, var(--live) 10%, transparent); border:1px solid color-mix(in srgb, var(--live) 35%, transparent);
-    padding:5px 8px; white-space:nowrap; cursor:pointer; transition: opacity .12s ease;
-  }
-  .checkout-key-code:hover{ opacity:.8; }
-
   #shop-toast{
     position:fixed; top:20px; left:50%; transform: translateX(-50%) translateY(-140%);
     z-index:90; background: var(--panel); border:1px solid var(--valorant); color: var(--ink);
@@ -667,6 +732,7 @@
           <a href="streamers.html" class="dropdown-item" role="menuitem">🎥 Streamers</a>
           <a href="ranking.html" class="dropdown-item" role="menuitem">🏆 Ranking</a>
           <a href="feed.html" class="dropdown-item" role="menuitem">📡 Feed</a>
+          <a href="mensagens.html" class="dropdown-item" role="menuitem">✉️ Mensagens</a>
         </div>
       </div>
     </nav>
@@ -719,6 +785,7 @@
       <a href="streamers.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">STREAMERS</a>
       <a href="ranking.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">RANKING</a>
       <a href="feed.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">FEED</a>
+      <a href="mensagens.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">MENSAGENS</a>
       <div class="flex items-center gap-3 mt-4">
         <a href="index.html" class="icon-btn flex-1 h-10 flex items-center justify-center gap-2 text-[12px]">🔍 BUSCAR</a>
         <button class="js-open-login btn-neon flex-1 h-10 font-mono text-[12px] font-semibold clip-tag"><span class="js-login-label">LOGIN</span></button>
@@ -927,7 +994,7 @@
       </div>
       <div>
         <label for="signup-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">SENHA</label>
-        <input id="signup-password" type="password" required minlength="4" placeholder="mín. 4 caracteres" class="modal-input">
+        <input id="signup-password" type="password" required minlength="6" placeholder="mín. 6 caracteres" class="modal-input">
       </div>
       <div>
         <label for="signup-password-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR SENHA</label>
@@ -1073,11 +1140,6 @@
             <p class="text-[12px]" style="color: var(--muted);" id="checkout-success-frame-text">Seu item digital já foi liberado na sua conta.</p>
             <a href="perfil-config.html" class="btn-neon inline-block font-mono text-[11px] font-semibold px-4 py-2.5 clip-tag mt-3">VER MEU PERFIL</a>
           </div>
-          <div id="checkout-success-keys" class="hidden checkout-keys-box">
-            <p class="text-[11px] font-mono font-semibold uppercase tracking-wide mb-2" style="color: var(--ink-soft);">Suas chaves/códigos</p>
-            <div id="checkout-success-keys-list"></div>
-            <p class="text-[11px] mt-2" style="color: var(--muted);">Também enviamos uma cópia para o e-mail da sua conta.</p>
-          </div>
         </div>
       </div>
 
@@ -1093,6 +1155,10 @@
     <div class="product-modal-media" id="product-modal-media"></div>
     <div class="product-modal-body">
       <h2 class="product-modal-name" id="product-modal-name"></h2>
+      <div class="product-modal-toprow">
+        <div class="product-modal-rating" id="product-modal-rating"></div>
+        <button type="button" class="product-modal-wish-btn" id="product-modal-wish">🤍 FAVORITAR</button>
+      </div>
       <p class="product-modal-desc" id="product-modal-desc"></p>
       <p class="product-modal-extra" id="product-modal-extra"></p>
       <div class="product-modal-footer">
@@ -1102,6 +1168,8 @@
         </div>
         <button class="product-modal-add" id="product-modal-add">+ ADICIONAR AO CARRINHO</button>
       </div>
+      <div class="product-modal-related" id="product-modal-related"></div>
+      <div class="product-modal-reviews" id="product-modal-reviews"></div>
     </div>
   </div>
 </div>
@@ -1217,68 +1285,18 @@
   let userName = "";
   let userEmail = "";
 
-  function loadProfile(email) {
-    try { const raw = localStorage.getItem(`arena-profile-${email}`); return raw ? JSON.parse(raw) : null; }
-    catch (err) { return null; }
-  }
-  function saveProfilePatch(email, patch) {
-    try {
-      const raw = localStorage.getItem(`arena-profile-${email}`);
-      const profile = raw ? JSON.parse(raw) : {};
-      localStorage.setItem(`arena-profile-${email}`, JSON.stringify({ ...profile, ...patch }));
-    } catch (err) { /* silencioso */ }
-  }
+  // Perfil, inventário e catálogo de emblemas agora vêm de
+  // data/profile.js (fonte única compartilhada com index.html — antes
+  // essas ~50 linhas existiam copiadas nos dois arquivos e já tinham
+  // divergido: este catálogo tinha 3 emblemas — "Guardião da Arena",
+  // "Lenda Viva", "Sombra da Arena" — que nunca existiram no
+  // inventário de verdade, ou seja, ninguém conseguia possuí-los.
+  const {
+    loadProfile, saveProfilePatch,
+    inventoryKey, loadInventoryList, saveInventoryList,
+    EMBLEM_CATALOG, MAX_EQUIPPED_BADGES, normalizeEquippedBadges,
+  } = window.ArenaProfile;
 
-  // ===============================================================
-  // EMBLEMAS — mesmo catálogo (só a parte "emblema") e a mesma chave
-  // de inventário que inventario.html usa, pra equipar/desequipar
-  // direto por aqui refletir lá (e vice-versa) sem duplicar dado real,
-  // só os metadados de exibição (nome/emoji/raridade).
-  // ===============================================================
-  const MAX_EQUIPPED_BADGES = 3;
-  const EMBLEM_CATALOG = {
-    "emblema-primeira-vitoria": { name: "Primeira Vitória", emoji: "⭐", rarity: "comum" },
-    "emblema-cacador-noticias": { name: "Caçador de Notícias", emoji: "📰", rarity: "raro" },
-    "emblema-comentarista": { name: "Comentarista da Arena", emoji: "💬", rarity: "raro" },
-    "emblema-estrategista": { name: "Estrategista", emoji: "🧠", rarity: "raro" },
-    "emblema-coracao-roxo": { name: "Coração Roxo", emoji: "💜", rarity: "epico" },
-    "emblema-veterano": { name: "Veterano da Arena", emoji: "🎖️", rarity: "epico" },
-    "emblema-popular": { name: "Emblema Popular", emoji: "⭐", rarity: "raro" },
-    "emblema-fa-fundador": { name: "Fã Fundador", emoji: "🏆", rarity: "lendario" },
-    "emblema-arena-vip": { name: "Emblema VIP Arena", emoji: "👑", rarity: "lendario" },
-    "emblema-cacador-lendas": { name: "Emblema Caçador de Lendas", emoji: "🐉", rarity: "epico" },
-    "emblema-fundador-cosmico": { name: "Emblema Fundador Cósmico", emoji: "🌌", rarity: "lendario" },
-    "emblema-mestre-arena": { name: "Emblema Mestre da Arena", emoji: "🎯", rarity: "lendario" },
-    "emblema-fenix-renascida": { name: "Emblema Fênix Renascida", emoji: "🔥", rarity: "epico" },
-    "emblema-criador": { name: "Criador", emoji: "🛠️", rarity: "lendario" },
-  };
-  function inventoryKey(email) { return `arena-inventory-${email || "demo"}`; }
-  function loadInventoryList(email) {
-    try { const raw = localStorage.getItem(inventoryKey(email)); return raw ? JSON.parse(raw) : []; }
-    catch (err) { return []; }
-  }
-  function saveInventoryList(email, inv) {
-    try { localStorage.setItem(inventoryKey(email), JSON.stringify(inv)); } catch (err) { /* silencioso */ }
-  }
-  // Se por algum motivo (dado antigo, teste, etc.) houver mais emblemas
-  // equipados do que o limite permite, apara o excesso automaticamente
-  // aqui — assim a poluição visual se resolve sozinha mesmo sem o
-  // usuário clicar em nada.
-  function normalizeEquippedBadges(email) {
-    const inv = loadInventoryList(email);
-    let count = 0;
-    let changed = false;
-    inv.forEach(i => {
-      if (i.equipped && EMBLEM_CATALOG[i.id]) {
-        count++;
-        if (count > MAX_EQUIPPED_BADGES) { i.equipped = false; changed = true; }
-      }
-    });
-    if (changed) saveInventoryList(email, inv);
-    const equippedBadges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
-    saveProfilePatch(email, { equippedBadges });
-    return inv;
-  }
   function toggleBadge(email, id) {
     const inv = loadInventoryList(email);
     const entry = inv.find(i => i.id === id);
@@ -1376,7 +1394,7 @@
     const notifWrap = document.getElementById("notif-wrap");
     notifWrap.classList.toggle("hidden", !isLoggedIn);
     notifWrap.classList.toggle("sm:block", isLoggedIn);
-    if (isLoggedIn) { mountNotifBell(); applyProfileToNav(); }
+    if (isLoggedIn) { mountNotifBell(); applyProfileToNav(); window.ArenaMessages?.mountNavBadge("dm-nav-badge", userEmail); }
     if (typeof window.renderCouponButton === "function") window.renderCouponButton();
   }
 
@@ -1481,7 +1499,7 @@
     const password = document.getElementById("signup-password").value;
     const passwordConfirm = document.getElementById("signup-password-confirm").value;
 
-    if (!name || !email || !password || password.length < 4 || password !== passwordConfirm) {
+    if (!name || !email || !password || password.length < 6 || password !== passwordConfirm) {
       signupError.classList.remove("hidden");
       return;
     }
@@ -1511,86 +1529,12 @@
   // página lê, então tudo fica sincronizado entre as telas.
   // ===============================================================
   (function () {
-    const SHOP_PRODUCTS = [
-      // ---- VESTUÁRIO ----
-      { id: "camiseta-arena-preta",  name: "Camiseta Arena Preta",     desc: "100% algodão, estampa frontal minimalista.",              price: 89.90,  tag: "VESTUÁRIO", img: "https://media.discordapp.net/attachments/1371610452290830386/1535365221286154260/image_41ea9b7f.png?ex=6a777fca&is=6a762e4a&hm=0297642830686c7163ed9f88cabf48dcf831bf274048800271c58fcaf4329d7f&=&format=webp&quality=lossless&width=672&height=864", featured: true, badge: "MAIS VENDIDO" },
-      { id: "bone-arena-snapback",   name: "Boné Arena Snapback",      desc: "Ajuste snapback, logo bordado em 3D.",                     price: 69.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Bon%C3%A9" },
-      { id: "moletom-arena-cinza",   name: "Moletom Arena Cinza",      desc: "Moletom canguru flanelado, forro felpudo, capuz reforçado.", price: 149.90, tag: "VESTUÁRIO", img: "https://media.discordapp.net/attachments/1371610452290830386/1535367606612004864/banana.png?ex=6a778203&is=6a763083&hm=2bcd66111f313b97aa3e6451655abc5eeca96a4ab6550c24555d9e62f2bbe41b&=&format=webp&quality=lossless&width=753&height=968", featured: true, badge: "LANÇAMENTO" },
-      { id: "jaqueta-arena-corta-vento", name: "Jaqueta Arena Corta-Vento", desc: "Tecido impermeável leve, zíper YKK, logo refletivo nas costas.", price: 179.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Jaqueta" },
-      { id: "meia-arena-pro",        name: "Meia Arena Pro (par)",     desc: "Cano médio, compressão leve, respirável para maratonas de jogo.", price: 24.90, tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Meia" },
-      { id: "camiseta-arena-branca",  name: "Camiseta Arena Branca",    desc: "100% algodão, corte unissex, estampa nas costas.",         price: 89.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Camiseta" },
-      { id: "regata-arena-performance", name: "Regata Arena Performance", desc: "Tecido dry-fit leve, ideal para treino ou dia a dia.",   price: 74.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Regata" },
-      { id: "shorts-arena-training",  name: "Shorts Arena Training",   desc: "Elástico ajustável, bolsos com zíper, tecido respirável.",  price: 79.90,  tag: "VESTUÁRIO", img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Shorts" },
-
-      // ---- CASA ----
-      { id: "caneca-arena-neon",     name: "Caneca Arena Neon",        desc: "Cerâmica 325ml com acabamento neon.",                      price: 49.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Caneca" },
-      { id: "luminaria-arena-logo",  name: "Luminária Arena LED",      desc: "Logo recortado em acrílico com base USB e efeito neon.",  price: 89.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Lumin%C3%A1ria" },
-      { id: "almofada-arena",        name: "Almofada Arena 45x45",     desc: "Estampa dupla-face, enchimento antialérgico.",             price: 59.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Almofada" },
-      { id: "tapete-arena-gamer",    name: "Tapete Arena Gamer",       desc: "Base emborrachada antiderrapante, 60x40cm, logo em relevo.", price: 69.90, tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Tapete" },
-      { id: "squeeze-arena-termico", name: "Squeeze Arena Térmico",    desc: "Aço inox 500ml, mantém a temperatura por até 12h.",        price: 54.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/D7DAE1?text=Squeeze" },
-      { id: "porta-copo-arena-led",  name: "Porta-Copo Arena LED",     desc: "Base com luz de presença, logo iluminado ao apoiar o copo.", price: 39.90,  tag: "CASA",       img: "https://placehold.co/500x500/1B1F28/FF4655?text=Porta-Copo" },
-
-      // ---- SETUP ----
-      { id: "mousepad-arena-xl",     name: "Mousepad Arena XL",        desc: "90x40cm, base emborrachada antiderrapante, costura reforçada.", price: 59.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535377948667027556/2f563061-9b7d-43ee-9a41-d946073b5b91.png?ex=6a778ba4&is=6a763a24&hm=9b6d3009e2febf2ce9280db366d9fa4559dac23941283bfb939d6fd6119d6520&=&format=webp&quality=lossless" },
-      { id: "apoio-punho-arena",     name: "Apoio de Punho Arena",     desc: "Espuma viscoelástica, base antiderrapante para teclado e mouse.", price: 34.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378318629666816/2b91d6d6-7105-4ed4-a592-2f2fb39b75f4.png?ex=6a778bfd&is=6a763a7d&hm=e840f9ac66e1ee24150cacdef1e1c64573bad13e8493b36b048a7a16e70fdf2b&=&format=webp&quality=lossless" },
-      { id: "suporte-headset-arena", name: "Suporte de Headset Arena", desc: "Base em metal com braço giratório e organizador de cabos.", price: 79.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378684373115001/05824cb9-8bee-4983-aa0b-69c067f8c90d.png?ex=6a778c54&is=6a763ad4&hm=eaf865f0cda36a32893357418d0647c49b3cfea3aed800926074f8b3e26262cf&=&format=webp&quality=lossless" },
-      { id: "organizador-cabos-arena", name: "Organizador de Cabos Arena", desc: "Kit com 8 clipes adesivos para manter a mesa livre de fiação.", price: 29.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535378964401360997/a891d3c0-1eb7-46e9-b6cd-b4439d9b9ded.png?ex=6a778c97&is=6a763b17&hm=be032ed5891fe53d358e3a6fc9feca70ad015b8da08ac278e04414e9b9372335&=&format=webp&quality=lossless" },
-      { id: "suporte-notebook-arena", name: "Suporte para Notebook Arena", desc: "Alumínio dobrável, 6 níveis de altura, ventilação por baixo.", price: 99.90, tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535379536693428365/4d970979-44b8-4e94-9e25-92682253ceae.png?ex=6a778d1f&is=6a763b9f&hm=cad1d0909085c51dcb7acc5deab0d38e797be70ba2e1c4c6f93aff235e66f698&=&format=webp&quality=lossless" },
-      { id: "hub-usb-arena-4p",      name: "Hub USB Arena 4 Portas",   desc: "USB 3.0, cabo de 30cm, encaixe compacto para o setup.",    price: 44.90,  tag: "SETUP", img: "https://media.discordapp.net/attachments/1371610452290830386/1535380999918059600/41181209-f9b4-4768-807d-97aef4225e0d.png?ex=6a778e7c&is=6a763cfc&hm=2f5a6b9f7791f6eaced5fca5b6ae2ee690be71e7d7d8db816952ffe615ec64a0&=&format=webp&quality=lossless" },
-
-      // ---- ELETRÔNICOS ----
-      { id: "headset-arena-pro",     name: "Headset Arena Pro 7.1",    desc: "Áudio surround virtual, drivers de 50mm, microfone com cancelamento de ruído.", price: 349.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535371540596662272/banana.png?ex=6a7785ad&is=6a76342d&hm=17645d5d187862edfb0b94d7900adbfeb2f7df08e94791282f6eb07663aaa6eb&=&format=webp&quality=lossless", featured: true, badge: "TOP ELETRÔNICOS" },
-      { id: "mouse-arena-precision", name: "Mouse Arena Precision",    desc: "Sensor óptico 26000 DPI, switches ópticos, 200h de bateria.", price: 279.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535375433967739020/6caae325-9a59-4450-9ca9-bf2c73aa350e.png?ex=6a77894d&is=6a7637cd&hm=144e61beaecfedd82918c975d8307a5c339e071bdbd621eb3e624e706e401496&=&format=webp&quality=lossless" },
-      { id: "teclado-arena-mecanico", name: "Teclado Mecânico Arena", desc: "Switches hot-swap, RGB por tecla, estrutura em alumínio escovado.", price: 449.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372010589266094/banana.png?ex=6a77861d&is=6a76349d&hm=6f798e789a9492b44cdbc5db1dff70dcd6eee92b1165300173d79fb517efaf10&=&format=webp&quality=lossless" },
-      { id: "webcam-arena-stream",   name: "Webcam Arena Stream 1440p", desc: "Foco automático, correção de luz em tempo real, tripé incluso.", price: 399.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372323367030894/banana.png?ex=6a778667&is=6a7634e7&hm=6bcef93c6893e0b058a1f05b0decef776621320f3d1341d4866b96a37b78a3ca&=&format=webp&quality=lossless" },
-      { id: "microfone-arena-voice", name: "Microfone Arena Voice USB", desc: "Condensador cardioide, filtro pop incluso, monitoramento em tempo real.", price: 329.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372598685212764/banana.png?ex=6a7786a9&is=6a763529&hm=a92cc5cd914fdb6efcb13c88c74bae0e7c65433d7ad6f1977e8747c6cbd01502&=&format=webp&quality=lossless" },
-      { id: "fone-arena-earbuds",    name: "Fone Arena Earbuds ANC",   desc: "Cancelamento ativo de ruído, latência ultrabaixa para jogos mobile.", price: 219.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535372840856059995/banana.png?ex=6a7786e3&is=6a763563&hm=30c7518d13c25014ce69cf216a8bb7f0e49885d9c61f96a42a49afea3009ec64&=&format=webp&quality=lossless" },
-      { id: "carregador-arena-gan-65w", name: "Carregador Arena GaN 65W", desc: "Compacto, 2 portas (USB-C + USB-A), carga rápida para notebook e celular.", price: 129.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535373379471679528/a62b0fff-7820-4bdd-a4b2-f2d4b3041cee.png?ex=6a778763&is=6a7635e3&hm=543e07effb050133209c7d8fc2f125670d057c70e70cf54e738e73f00137048d&=&format=webp&quality=lossless" },
-      { id: "controle-arena-wireless", name: "Controle Arena Wireless", desc: "Sem fio, bateria de 20h, compatível com PC e principais consoles.", price: 259.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535371624306708490/image_e3fcc5f5.png?ex=6a7785c1&is=6a763441&hm=ec15966537de9e4d147d9d699e6d4e4718dc9dad466b24870bbf1eea3fc33255&=&format=webp&quality=lossless", featured: true, badge: "NOVO" },
-      { id: "ssd-arena-portatil-1tb", name: "SSD Portátil Arena 1TB", desc: "Leitura até 1050MB/s, USB-C, case resistente a quedas.", price: 449.90, tag: "ELETRÔNICOS", img: "https://media.discordapp.net/attachments/1371610452290830386/1535374956341235773/d945db0c-bce0-44d5-be39-f849a931554c.png?ex=6a7788db&is=6a76375b&hm=8ab9564ddd9dc186aabe366054dbadebd82c0b79d0366774db620feb8ccf7455&=&format=webp&quality=lossless" },
-
-      // ---- JOGOS (chaves digitais — Steam, PS4/PS5, Xbox) ----
-      { id: "jogo-steam-cyber-odyssey", name: "Cyber Odyssey 2088",      desc: "Chave Steam — RPG de ação em mundo aberto cyberpunk.",        price: 129.90, tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key", featured: true, badge: "MAIS VENDIDO" },
-      { id: "jogo-steam-forge-legends", name: "Forge Legends",           desc: "Chave Steam — construção e sobrevivência multiplayer.",       price: 89.90,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key" },
-      { id: "jogo-steam-nova-strike",   name: "Nova Strike",              desc: "Chave Steam — FPS tático competitivo 5v5.",                   price: 99.90,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Steam+Key" },
-      { id: "jogo-ps5-shadow-realm",    name: "Shadow Realm",             desc: "Código de resgate PSN — aventura de ação para PS5.",         price: 249.90, tag: "JOGOS", platform: "PS5", img: "https://placehold.co/500x500/1B1F28/2563EB?text=PS5+Key", featured: true, badge: "EXCLUSIVO PS5" },
-      { id: "jogo-ps5-velocity-gp",     name: "Velocity GP",              desc: "Código de resgate PSN — corrida arcade para PS5.",           price: 199.90, tag: "JOGOS", platform: "PS5", img: "https://placehold.co/500x500/1B1F28/2563EB?text=PS5+Key" },
-      { id: "jogo-ps4-arena-fighters",  name: "Arena Fighters",           desc: "Código de resgate PSN — luta 1v1 com roster de 30 personagens.", price: 149.90, tag: "JOGOS", platform: "PS4", img: "https://placehold.co/500x500/1B1F28/1D4ED8?text=PS4+Key" },
-      { id: "jogo-ps4-relic-hunters",   name: "Relic Hunters",            desc: "Código de resgate PSN — ação e exploração roguelike.",       price: 119.90, tag: "JOGOS", platform: "PS4", img: "https://placehold.co/500x500/1B1F28/1D4ED8?text=PS4+Key" },
-      { id: "jogo-xbox-iron-vanguard",  name: "Iron Vanguard",            desc: "Código de resgate Xbox — mecha shooter cooperativo.",        price: 219.90, tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key", featured: true, badge: "GAME PASS READY" },
-      { id: "jogo-xbox-frontier-siege", name: "Frontier Siege",           desc: "Código de resgate Xbox — estratégia em tempo real com invasões.", price: 179.90, tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key" },
-      { id: "jogo-xbox-pixel-drift",    name: "Pixel Drift",              desc: "Código de resgate Xbox — corrida arcade estilo retrô.",      price: 69.90,  tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Xbox+Key" },
-      { id: "jogo-steam-gift-card-50",  name: "Gift Card Steam R$50",     desc: "Cartão-presente digital Steam — crédito de R$50 na carteira.", price: 50.00,  tag: "JOGOS", platform: "STEAM", img: "https://placehold.co/500x500/1B1F28/34D399?text=Gift+Card" },
-      { id: "jogo-psn-gift-card-50",    name: "Gift Card PSN R$50",       desc: "Cartão-presente digital PlayStation Network — crédito de R$50.", price: 50.00, tag: "JOGOS", platform: "PSN", img: "https://placehold.co/500x500/1B1F28/2563EB?text=Gift+Card" },
-      { id: "jogo-xbox-gift-card-50",   name: "Gift Card Xbox R$50",      desc: "Cartão-presente digital Xbox — crédito de R$50 na loja.",     price: 50.00,  tag: "JOGOS", platform: "XBOX", img: "https://placehold.co/500x500/1B1F28/16A34A?text=Gift+Card" },
-
-      // ---- DIGITAL (perfil: molduras, banners e efeitos) ----
-      { id: "moldura-cyber-digital", name: "Moldura Cyber (Digital)",  desc: "Moldura de perfil animada para seu avatar na Arena.",     price: 19.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura", featured: true, badge: "EXCLUSIVO DIGITAL" },
-      { id: "moldura-ouro-elite",    name: "Moldura Ouro Elite",       desc: "Borda dourada com brilho pulsante, para quem chegou ao topo do ranking.", price: 24.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura" },
-      { id: "moldura-neon-glitch",   name: "Moldura Neon Glitch",      desc: "Efeito de distorção neon animado ao redor do avatar.",     price: 22.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Moldura" },
-      { id: "banner-perfil-nebulosa", name: "Banner de Perfil Nebulosa", desc: "Capa animada para o topo do seu perfil, tema espacial roxo/azul.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner", featured: true, badge: "NOVO BANNER" },
-      { id: "banner-perfil-campeao", name: "Banner de Perfil Campeão", desc: "Capa com troféu e confetes animados, ideal pra comemorar vitórias.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner" },
-      { id: "emblema-arena-vip",     name: "Emblema VIP Arena",        desc: "Selo exclusivo ao lado do seu nome em chats e rankings.", price: 34.90,  tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema" },
-      { id: "efeito-nome-arena-rgb", name: "Efeito de Nome RGB",       desc: "Seu nome de usuário ganha um degradê RGB animado em toda a plataforma.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Nome+RGB" },
-      { id: "moldura-plasma-arena",  name: "Moldura Plasma Arena",     desc: "Anel de plasma girando em tons de magenta e violeta ao redor do avatar.", price: 39.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/EC4899?text=Moldura", featured: true, badge: "REVOLUCIONÁRIO" },
-      { id: "moldura-gelo-eterno",   name: "Moldura Gelo Eterno",      desc: "Borda de gelo cristalino com brilho ciano pulsante.",       price: 24.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Moldura" },
-      { id: "banner-perfil-tempestade", name: "Banner de Perfil Tempestade", desc: "Capa animada com relâmpagos cruzando um céu roxo-noturno.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner", video: "banner-tempestade.mp4", featured: true, badge: "REVOLUCIONÁRIO" },
-      { id: "banner-perfil-vaporwave", name: "Banner de Perfil Vaporwave", desc: "Sol retrô sobre um horizonte gradiente rosa e roxo, com grade em movimento.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Banner" },
-      { id: "emblema-cacador-lendas", name: "Emblema Caçador de Lendas", desc: "Selo com brilho pulsante para quem já venceu partidas lendárias.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema" },
-      { id: "emblema-fundador-cosmico", name: "Emblema Fundador Cósmico", desc: "O selo mais raro da Arena — brilho estelar exclusivo ao lado do seu nome.", price: 44.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/8B5CF6?text=Emblema", featured: true, badge: "RARÍSSIMO" },
-      { id: "efeito-nome-fogo",      name: "Efeito de Nome Fogo",      desc: "Seu nome pega fogo com um degradê animado de vermelho a amarelo.", price: 27.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FF4655?text=Nome+Fogo" },
-      { id: "efeito-nome-holograma", name: "Efeito de Nome Holograma", desc: "Seu nome ganha um brilho holográfico que varre ciano, branco e magenta.", price: 32.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/22D3EE?text=Nome+Holo", featured: true, badge: "REVOLUCIONÁRIO" },
-      { id: "banner-perfil-oceano-digital", name: "Banner de Perfil Oceano Digital", desc: "Capa animada com bolhas subindo por um degradê azul profundo.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/0EA5E9?text=Banner" },
-      { id: "banner-perfil-aurora-verde", name: "Banner de Perfil Aurora Verde", desc: "Capa com faixas de aurora boreal esverdeada balançando sobre o céu noturno.", price: 29.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/34D399?text=Banner", featured: true, badge: "NOVO BANNER" },
-      { id: "emblema-mestre-arena",  name: "Emblema Mestre da Arena",  desc: "Selo dourado para quem domina múltiplos jogos da plataforma.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FFD166?text=Emblema", featured: true, badge: "NOVO EMBLEMA" },
-      { id: "emblema-fenix-renascida", name: "Emblema Fênix Renascida", desc: "Selo animado para quem já virou o jogo em partidas decisivas.", price: 34.90, tag: "DIGITAL", img: "https://placehold.co/500x500/1B1F28/FF4655?text=Emblema" },
-    ];
+    const SHOP_PRODUCTS = window.ARENA_PRODUCTS;
 
     const COUPON_ID = "cupom-loja-10";
     const DISCOUNT_RATE = 0.10;
 
     const shopSessionEmail = (typeof getSessionEmail === "function") ? getSessionEmail() : "";
-    const shopInventoryKey = `arena-inventory-${shopSessionEmail || "demo"}`;
 
     let cart = {};
     let couponApplied = false;
@@ -1598,22 +1542,18 @@
     function money(v) { return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
 
     function loadShopInventory() {
-      try { const raw = localStorage.getItem(shopInventoryKey); return raw ? JSON.parse(raw) : []; }
-      catch (err) { return []; }
+      return window.ArenaProfile.loadInventoryList(shopSessionEmail);
     }
     function saveShopInventory(inv) {
-      try { localStorage.setItem(shopInventoryKey, JSON.stringify(inv)); } catch (err) {}
+      window.ArenaProfile.saveInventoryList(shopSessionEmail, inv);
     }
     // Mesma chave `arena-activity-<email>` que perfil.html lê para a
     // seção "Atividade recente".
     function logArenaActivity(icon, text) {
-      try {
-        const key = `arena-activity-${shopSessionEmail || "demo"}`;
-        const raw = localStorage.getItem(key);
-        const list = raw ? JSON.parse(raw) : [];
-        list.unshift({ icon, text, at: Date.now() });
-        localStorage.setItem(key, JSON.stringify(list.slice(0, 30)));
-      } catch (err) { /* silencioso */ }
+      const key = `arena-activity-${shopSessionEmail || "demo"}`;
+      const list = window.ArenaUtils.readJSON(key, []);
+      list.unshift({ icon, text, at: Date.now() });
+      window.ArenaUtils.writeJSON(key, list.slice(0, 30));
     }
     function isCouponAlreadyUsed() {
       const entry = loadShopInventory().find(i => i.id === COUPON_ID);
@@ -1625,6 +1565,122 @@
       if (entry) entry.used = true;
       else inv.push({ id: COUPON_ID, used: true, equipped: false });
       saveShopInventory(inv);
+    }
+
+    // ===================================================================
+    // WISHLIST — `arena-wishlist-<email>`: array de ids de produto.
+    // Só pra quem está logado (assim como reviews) — visitante que
+    // clica no coração é levado direto pro login.
+    // ===================================================================
+    function wishlistKey(email) { return `arena-wishlist-${email || "demo"}`; }
+    function getWishlist() {
+      if (!shopSessionEmail) return [];
+      return window.ArenaUtils.readJSON(wishlistKey(shopSessionEmail), []);
+    }
+    function isWishlisted(id) { return getWishlist().includes(id); }
+    // Retorna true/false (adicionado/removido) ou null se bloqueou por falta de login.
+    function toggleWishlist(id) {
+      if (!shopSessionEmail) {
+        showShopToast("Faça login para favoritar produtos");
+        openModal(loginOverlay);
+        return null;
+      }
+      const list = getWishlist();
+      const idx = list.indexOf(id);
+      let added;
+      if (idx >= 0) { list.splice(idx, 1); added = false; }
+      else { list.push(id); added = true; }
+      window.ArenaUtils.writeJSON(wishlistKey(shopSessionEmail), list);
+      return added;
+    }
+
+    // ===================================================================
+    // HISTÓRICO DE COMPRAS — `arena-purchases-<email>`: registra cada
+    // item comprado (físico ou digital) com data. Usado pra liberar a
+    // avaliação só pra quem realmente comprou o produto.
+    // ===================================================================
+    function purchasesKey(email) { return `arena-purchases-${email || "demo"}`; }
+    function recordPurchase(productId) {
+      const key = purchasesKey(shopSessionEmail);
+      const list = window.ArenaUtils.readJSON(key, []);
+      list.push({ id: productId, at: Date.now() });
+      window.ArenaUtils.writeJSON(key, list);
+    }
+    function hasPurchased(productId) {
+      if (!shopSessionEmail) return false;
+      return window.ArenaUtils.readJSON(purchasesKey(shopSessionEmail), []).some(p => p.id === productId);
+    }
+
+    // ===================================================================
+    // AVALIAÇÕES — `arena-reviews-<productId>`: array (mais nova
+    // primeiro) de { email, name, rating (1-5), text, at }. Uma
+    // avaliação por conta por produto.
+    // ===================================================================
+    function reviewsKey(productId) { return `arena-reviews-${productId}`; }
+    function getReviews(productId) { return window.ArenaUtils.readJSON(reviewsKey(productId), []); }
+    function getReviewStats(productId) {
+      const list = getReviews(productId);
+      if (list.length === 0) return { avg: 0, count: 0 };
+      const avg = list.reduce((sum, r) => sum + r.rating, 0) / list.length;
+      return { avg, count: list.length };
+    }
+    function hasReviewed(productId) {
+      if (!shopSessionEmail) return false;
+      return getReviews(productId).some(r => r.email === shopSessionEmail);
+    }
+    function submitReview(productId, rating, text) {
+      const list = getReviews(productId);
+      list.unshift({
+        email: shopSessionEmail,
+        name: userName || "Jogador Arena",
+        rating,
+        text: (text || "").trim().slice(0, 500),
+        at: Date.now(),
+      });
+      window.ArenaUtils.writeJSON(reviewsKey(productId), list);
+    }
+    function starGlyphs(avg) {
+      const rounded = Math.max(0, Math.min(5, Math.round(avg)));
+      return "★".repeat(rounded) + "☆".repeat(5 - rounded);
+    }
+
+    // ===================================================================
+    // "QUEM COMPROU TAMBÉM COMPROU" — `arena-copurchase`: objeto global
+    // (não por conta — mesmo espírito de dado "compartilhado no
+    // navegador" já documentado em data/messages.js) contando, pra cada
+    // produto, quantas vezes cada outro produto apareceu no mesmo
+    // carrinho: { [idA]: { [idB]: contagem } }. Alimentado a cada
+    // finalização de compra em processCheckoutPayment().
+    // ===================================================================
+    const COPURCHASE_KEY = "arena-copurchase";
+    function recordCopurchases(itemIds) {
+      if (itemIds.length < 2) return;
+      const data = window.ArenaUtils.readJSON(COPURCHASE_KEY, {});
+      itemIds.forEach(a => {
+        itemIds.forEach(b => {
+          if (a === b) return;
+          if (!data[a]) data[a] = {};
+          data[a][b] = (data[a][b] || 0) + 1;
+        });
+      });
+      window.ArenaUtils.writeJSON(COPURCHASE_KEY, data);
+    }
+    // Prioriza quem já foi comprado junto de verdade; completa com
+    // produtos da mesma categoria quando ainda não há dado suficiente
+    // (ex.: produto novo, ou navegador sem histórico de compras ainda).
+    function getRelatedProducts(productId, limit) {
+      const data = window.ArenaUtils.readJSON(COPURCHASE_KEY, {});
+      const co = data[productId] || {};
+      const rankedIds = Object.entries(co).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+      let related = rankedIds.map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(Boolean);
+
+      if (related.length < limit) {
+        const current = SHOP_PRODUCTS.find(p => p.id === productId);
+        const usedIds = new Set([productId, ...related.map(p => p.id)]);
+        const sameTag = SHOP_PRODUCTS.filter(p => current && p.tag === current.tag && !usedIds.has(p.id));
+        related = related.concat(sameTag);
+      }
+      return related.slice(0, limit);
     }
 
     let shopToastTimer;
@@ -1648,7 +1704,6 @@
     function tagClass(tag) {
       if (tag === "DIGITAL") return "tag-digital";
       if (tag === "ELETRÔNICOS") return "tag-eletronicos";
-      if (tag === "JOGOS") return "tag-jogos";
       return "";
     }
 
@@ -1658,7 +1713,6 @@
     function glowColorForTag(tag) {
       if (tag === "DIGITAL") return "rgba(139,92,246,.45)";
       if (tag === "ELETRÔNICOS") return "rgba(34,211,238,.4)";
-      if (tag === "JOGOS") return "rgba(52,211,153,.45)";
       return "rgba(255,70,85,.4)";
     }
 
@@ -1682,7 +1736,6 @@
       "SETUP": "Feito pra ficar na mesa o tempo todo: material resistente ao uso contínuo, base estável e um acabamento que combina com o resto do setup Arena.",
       "ELETRÔNICOS": "Testado pelo time Arena antes de chegar na loja. Garantia de 12 meses e suporte dedicado pra quem joga sério.",
       "DIGITAL": "Aplicado automaticamente ao seu perfil assim que a compra é confirmada — visível pra qualquer pessoa que visitar sua página na Arena.",
-      "JOGOS": "Chave/código 100% digital, sem envio físico. Assim que o pagamento é confirmado, o código aparece na tela de confirmação e também é enviado para o e-mail da sua conta.",
     };
 
     const productOverlay = document.getElementById("product-overlay");
@@ -1710,7 +1763,130 @@
       const addBtn = document.getElementById("product-modal-add");
       addBtn.onclick = () => { addToCart(product.id); closeModal(productOverlay); };
 
+      renderProductRatingBadge(product);
+      renderWishBtn(product);
+      renderRelated(product);
+      renderReviews(product);
+
       openModal(productOverlay);
+    }
+
+    // ---- Nota média (estrelas) no topo do modal ----
+    function renderProductRatingBadge(product) {
+      const el = document.getElementById("product-modal-rating");
+      const stats = getReviewStats(product.id);
+      el.innerHTML = stats.count === 0
+        ? `<span style="color:var(--muted); font-family:'JetBrains Mono', monospace; font-size:11px;">Sem avaliações ainda</span>`
+        : `<span class="star-row">${starGlyphs(stats.avg)}</span><span class="count">${stats.avg.toFixed(1)} · ${stats.count} avalia${stats.count === 1 ? "ção" : "ções"}</span>`;
+    }
+
+    // ---- Botão de favoritar dentro do modal ----
+    function renderWishBtn(product) {
+      const btn = document.getElementById("product-modal-wish");
+      const active = shopSessionEmail && isWishlisted(product.id);
+      btn.classList.toggle("is-active", !!active);
+      btn.innerHTML = active ? "❤️ NOS FAVORITOS" : "🤍 FAVORITAR";
+      btn.onclick = () => {
+        const added = toggleWishlist(product.id);
+        if (added === null) return;
+        showShopToast(added ? "❤️ Adicionado aos favoritos" : "Removido dos favoritos");
+        renderWishBtn(product);
+        renderProducts();
+      };
+    }
+
+    // ---- "Quem comprou também comprou" ----
+    function renderRelated(product) {
+      const wrap = document.getElementById("product-modal-related");
+      const related = getRelatedProducts(product.id, 4);
+      if (related.length === 0) { wrap.innerHTML = ""; return; }
+      wrap.innerHTML = `
+        <div class="product-modal-section-title">Quem comprou, também comprou</div>
+        <div class="related-row">
+          ${related.map(r => `
+            <div class="related-card" data-open-related="${r.id}">
+              <div class="related-card-img ${mediaBgClass(r.tag)}">${productMediaHTML(r)}</div>
+              <div class="related-card-name">${r.name}</div>
+              <div class="related-card-price">${money(r.price)}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      wrap.querySelectorAll("[data-open-related]").forEach(card => {
+        card.addEventListener("click", () => openProductModal(SHOP_PRODUCTS.find(p => p.id === card.dataset.openRelated)));
+      });
+    }
+
+    // ---- Avaliações: lista + formulário (se a conta comprou o item) ----
+    function renderReviews(product) {
+      const wrap = document.getElementById("product-modal-reviews");
+      const reviews = getReviews(product.id);
+      const stats = getReviewStats(product.id);
+      const escapeHtml = window.ArenaUtils.escapeHtml;
+      const relativeTime = window.ArenaUtils.relativeTime;
+
+      let formHTML;
+      if (!shopSessionEmail) {
+        formHTML = `<p class="review-hint">Faça <a href="#" class="js-review-login" style="color: var(--valorant); text-decoration:underline;">login</a> para avaliar este produto.</p>`;
+      } else if (!hasPurchased(product.id)) {
+        formHTML = `<p class="review-hint">Compre este produto para poder avaliá-lo.</p>`;
+      } else if (hasReviewed(product.id)) {
+        formHTML = `<p class="review-hint">Você já avaliou este produto. Obrigado! 🙌</p>`;
+      } else {
+        formHTML = `
+          <div class="review-form">
+            <div class="review-star-picker" id="review-star-picker">
+              ${[1, 2, 3, 4, 5].map(n => `<span data-star="${n}">★</span>`).join("")}
+            </div>
+            <textarea id="review-text-input" maxlength="500" placeholder="Conte como foi sua experiência com o produto (opcional)..."></textarea>
+            <button type="button" class="review-submit-btn" id="review-submit-btn">ENVIAR AVALIAÇÃO</button>
+          </div>
+        `;
+      }
+
+      wrap.innerHTML = `
+        <div class="product-modal-section-title">Avaliações${stats.count > 0 ? ` (${stats.count})` : ""}</div>
+        ${formHTML}
+        <div id="reviews-list">
+          ${reviews.length === 0
+            ? `<p class="review-hint">Ainda não há avaliações pra este produto — seja o primeiro depois de comprar.</p>`
+            : reviews.map(r => `
+              <div class="review-item">
+                <div class="review-item-head">
+                  <span class="review-item-name">${escapeHtml(r.name)}</span>
+                  <span class="review-item-time">${relativeTime(r.at)}</span>
+                </div>
+                <div class="review-item-stars">${starGlyphs(r.rating)}</div>
+                ${r.text ? `<p class="review-item-text">${escapeHtml(r.text)}</p>` : ""}
+              </div>
+            `).join("")}
+        </div>
+      `;
+
+      wrap.querySelector(".js-review-login")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        closeModal(productOverlay);
+        openModal(loginOverlay);
+      });
+
+      const starPicker = document.getElementById("review-star-picker");
+      if (starPicker) {
+        let selected = 0;
+        starPicker.querySelectorAll("[data-star]").forEach(star => {
+          star.addEventListener("click", () => {
+            selected = Number(star.dataset.star);
+            starPicker.querySelectorAll("[data-star]").forEach(s => s.classList.toggle("active", Number(s.dataset.star) <= selected));
+          });
+        });
+        document.getElementById("review-submit-btn").addEventListener("click", () => {
+          if (selected === 0) { showShopToast("Escolha uma nota de 1 a 5 estrelas"); return; }
+          submitReview(product.id, selected, document.getElementById("review-text-input").value);
+          showShopToast("✓ Avaliação enviada, valeu!");
+          renderProductRatingBadge(product);
+          renderReviews(product);
+          renderProducts();
+        });
+      }
     }
 
     productOverlay.addEventListener("click", (e) => { if (e.target === productOverlay) closeModal(productOverlay); });
@@ -1723,6 +1899,9 @@
       "emblema-fundador-cosmico": { label: "FND", emoji: "🌌", rarity: "lendario", color1: "#22D3EE", color2: "#4C2E9E", glow: "rgba(34,211,238,.55)" },
       "emblema-mestre-arena":     { label: "MST", emoji: "🎯", rarity: "lendario", color1: "#FFD166", color2: "#7C2D12", glow: "rgba(255,209,102,.55)" },
       "emblema-fenix-renascida":  { label: "FNX", emoji: "🔥", rarity: "epico",    color1: "#FF4655", color2: "#7C2D12", glow: "rgba(255,70,85,.55)" },
+      "emblema-guardiao-arena":   { label: "GRD", emoji: "🛡️", rarity: "epico",    color1: "#38BDF8", color2: "#0C4A6E", glow: "rgba(56,189,248,.5)" },
+      "emblema-lenda-viva":       { label: "LDV", emoji: "⚡", rarity: "lendario", color1: "#FACC15", color2: "#7C2D12", glow: "rgba(250,204,21,.55)" },
+      "emblema-sombra-arena":     { label: "SMB", emoji: "🗡️", rarity: "epico",    color1: "#6D28D9", color2: "#1E1B2E", glow: "rgba(109,40,217,.55)" },
     };
 
     // ---- Preview gerado dos itens DIGITAIS (substitui a img placeholder) ----
@@ -1733,6 +1912,8 @@
           : p.id.includes("glitch") ? "ring-glitch"
           : p.id.includes("plasma") ? "ring-plasma"
           : p.id.includes("gelo") ? "ring-gelo"
+          : p.id.includes("esmeralda") ? "ring-esmeralda"
+          : p.id.includes("eclipse") ? "ring-eclipse"
           : "ring-cyber";
         return `<div class="dprev">
           <div class="dprev-avatar-slot">
@@ -1796,6 +1977,24 @@
           ).join("");
           return `<div class="dprev"><div class="dprev-banner banner-aurora">${bands}</div></div>`;
         }
+        if (p.id.includes("floresta")) {
+          const fireflies = Array.from({ length: 10 }).map(() => {
+            const top = (Math.random() * 100).toFixed(1);
+            const left = (Math.random() * 100).toFixed(1);
+            const dur = (2 + Math.random() * 1.5).toFixed(2);
+            const delay = (Math.random() * 2).toFixed(2);
+            return `<span class="dprev-firefly" style="top:${top}%; left:${left}%; animation-duration:${dur}s; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-floresta">${fireflies}</div></div>`;
+        }
+        if (p.id.includes("supernova")) {
+          const sparks = Array.from({ length: 10 }).map((_, i) => {
+            const ang = (i * 36).toFixed(0);
+            const delay = (i * 0.15).toFixed(2);
+            return `<span class="dprev-spark" style="--ang:${ang}deg; animation-delay:${delay}s;"></span>`;
+          }).join("");
+          return `<div class="dprev"><div class="dprev-banner banner-supernova">${sparks}</div></div>`;
+        }
         const colors = ["#FF4655", "#FFD166", "#22D3EE", "#8B5CF6", "#34D399"];
         const confetti = Array.from({ length: 16 }).map((_, i) => {
           const left = (Math.random() * 100).toFixed(1);
@@ -1810,7 +2009,11 @@
         return `<div class="dprev"><div class="dprev-badge" style="background:linear-gradient(160deg, ${meta.color1}, ${meta.color2}); box-shadow:0 0 22px ${meta.glow};"><span>${meta.label}</span></div></div>`;
       }
       if (p.id.startsWith("efeito-nome-")) {
-        const variant = p.id.includes("fogo") ? "nameeffect-fire" : p.id.includes("holograma") ? "nameeffect-holo" : "";
+        const variant = p.id.includes("fogo") ? "nameeffect-fire"
+          : p.id.includes("holograma") ? "nameeffect-holo"
+          : p.id.includes("gelo") ? "nameeffect-gelo"
+          : p.id.includes("veneno") ? "nameeffect-veneno"
+          : "";
         return `<div class="dprev"><span class="dprev-nameeffect ${variant}">ARENA</span></div>`;
       }
       return productImgWithFallback(p);
@@ -1833,14 +2036,6 @@
         return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
           <rect x="3" y="4.5" width="18" height="12" rx="1"></rect>
           <path d="M9 20h6M12 16.5V20"></path>
-        </svg>`;
-      }
-      if (tag === "JOGOS") {
-        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M7 9h10a4 4 0 0 1 4 4.4l-.6 3.4a2.2 2.2 0 0 1-3.9 1L15 16H9l-1.5 1.8a2.2 2.2 0 0 1-3.9-1L3 13.4A4 4 0 0 1 7 9z"></path>
-          <path d="M8.5 11.5v3M7 13h3"></path>
-          <circle cx="16" cy="12" r=".6" fill="currentColor"></circle>
-          <circle cx="17.5" cy="14" r=".6" fill="currentColor"></circle>
         </svg>`;
       }
       // CASA / SETUP e demais categorias — caixa genérica de produto
@@ -1893,7 +2088,7 @@
       const tabs = ["TODOS", ...SHOP_TAGS];
       wrap.innerHTML = tabs.map(t => `
         <button class="shop-filter-btn${t === currentFilter ? " active" : ""}" data-filter="${t}">${t}</button>
-      `).join("");
+      `).join("") + `<button class="shop-filter-btn is-fav${currentFilter === "FAVORITOS" ? " active" : ""}" data-filter="FAVORITOS">❤️ FAVORITOS</button>`;
       wrap.querySelectorAll("[data-filter]").forEach(btn => {
         btn.addEventListener("click", () => {
           currentFilter = btn.dataset.filter;
@@ -1907,26 +2102,45 @@
     function renderProducts() {
       const grid = document.getElementById("shop-grid");
       if (!grid) return;
-      const list = currentFilter === "TODOS" ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.tag === currentFilter);
-      grid.innerHTML = list.map((p, idx) => `
+      const wishlist = getWishlist();
+      const baseList = currentFilter === "FAVORITOS"
+        ? SHOP_PRODUCTS.filter(p => wishlist.includes(p.id))
+        : currentFilter === "TODOS" ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.tag === currentFilter);
+      const list = baseList;
+      grid.innerHTML = list.map((p, idx) => {
+        const stats = getReviewStats(p.id);
+        const wished = wishlist.includes(p.id);
+        return `
         <div class="shop-card clip-card" data-open="${p.id}" style="--card-delay:${Math.min(idx * 0.03, 0.3)}s">
           <div class="shop-card-img ${mediaBgClass(p.tag)}">
             <span class="shop-tag ${tagClass(p.tag)}">${p.tag}</span>
+            <button type="button" class="shop-wish-btn" data-wish="${p.id}" aria-label="Favoritar">${wished ? "❤️" : "🤍"}</button>
             ${productMediaHTML(p)}
           </div>
           <div class="shop-body">
             <div class="shop-name">${p.name}</div>
             <div class="shop-desc">${p.desc}</div>
+            ${stats.count > 0 ? `<div class="shop-rating"><span class="star-row">${starGlyphs(stats.avg)}</span><span class="count">(${stats.count})</span></div>` : ""}
             <div class="shop-price">${money(p.price)}</div>
             <button class="shop-add-btn" data-add="${p.id}">+ ADICIONAR</button>
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
       if (list.length === 0) {
-        grid.innerHTML = `<div class="text-[12px] font-mono" style="color: var(--muted); grid-column:1/-1;">Nenhum produto nessa categoria por enquanto.</div>`;
+        grid.innerHTML = `<div class="text-[12px] font-mono" style="color: var(--muted); grid-column:1/-1;">${currentFilter === "FAVORITOS" ? "Você ainda não favoritou nenhum produto." : "Nenhum produto nessa categoria por enquanto."}</div>`;
       }
       grid.querySelectorAll("[data-add]").forEach(btn => {
         btn.addEventListener("click", (e) => { e.stopPropagation(); addToCart(btn.dataset.add); });
+      });
+      grid.querySelectorAll("[data-wish]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const added = toggleWishlist(btn.dataset.wish);
+          if (added === null) return;
+          showShopToast(added ? "❤️ Adicionado aos favoritos" : "Removido dos favoritos");
+          renderProducts();
+        });
       });
       // Clique em qualquer parte do card (fora do botão) abre o modal
       // com foto ampliada (com glow) e descrição mais detalhada.
@@ -2117,16 +2331,10 @@
     let addressFilled = false;
 
     function cartHasPhysical() {
-      return Object.keys(cart).some(id => {
-        const tag = SHOP_PRODUCTS.find(p => p.id === id)?.tag;
-        return tag !== "DIGITAL" && tag !== "JOGOS";
-      });
+      return Object.keys(cart).some(id => SHOP_PRODUCTS.find(p => p.id === id)?.tag !== "DIGITAL");
     }
     function cartDigitalProducts() {
       return Object.keys(cart).map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(p => p && p.tag === "DIGITAL");
-    }
-    function cartGameProducts() {
-      return Object.keys(cart).map(id => SHOP_PRODUCTS.find(p => p.id === id)).filter(p => p && p.tag === "JOGOS");
     }
     function getFreteValue() {
       const opt = FRETE_OPTIONS.find(f => f.id === selectedFreteId);
@@ -2308,12 +2516,18 @@
       "moldura-neon-glitch": "#22D3EE",
       "moldura-plasma-arena": "#EC4899",
       "moldura-gelo-eterno": "#22D3EE",
+      "moldura-esmeralda-mistica": "#10B981",
+      "moldura-sombria-eclipse": "#6D28D9",
     };
     const SHOP_BANNER_GRADIENT = {
       "banner-perfil-nebulosa": "linear-gradient(135deg,#5865F2,#22D3EE)",
       "banner-perfil-campeao": "linear-gradient(135deg,#F59E0B,#FF4655)",
       "banner-perfil-tempestade": "linear-gradient(160deg,#0B1220,#1B1030 70%)",
       "banner-perfil-vaporwave": "linear-gradient(180deg,#2B1055 0%,#6B2A8C 45%,#C23C7E 100%)",
+      "banner-perfil-floresta-mistica": "linear-gradient(160deg,#0B1F17,#134E33 70%)",
+      "banner-perfil-supernova": "linear-gradient(135deg,#F97316,#7F1D1D)",
+      "banner-perfil-oceano-digital": "linear-gradient(180deg,#0B3B66,#0EA5E9)",
+      "banner-perfil-aurora-verde": "linear-gradient(180deg,#0B1220,#0F2E22 55%,#0B1220 100%)",
     };
 
     function grantDigitalPurchases() {
@@ -2323,11 +2537,8 @@
       const equippedNames = [];
 
       try {
-        const raw = localStorage.getItem(shopInventoryKey);
-        const inv = raw ? JSON.parse(raw) : [];
-        const profileKey = `arena-profile-${shopSessionEmail || "demo"}`;
-        const rawProfile = localStorage.getItem(profileKey);
-        const profile = rawProfile ? JSON.parse(rawProfile) : {};
+        const inv = window.ArenaProfile.loadInventoryList(shopSessionEmail);
+        const profile = window.ArenaProfile.loadProfile(shopSessionEmail) || {};
 
         digitalProducts.forEach(p => {
           // Registra a posse do item digital na conta (inventário), igual a qualquer outro item.
@@ -2372,50 +2583,11 @@
           }
         });
 
-        localStorage.setItem(shopInventoryKey, JSON.stringify(inv));
-        localStorage.setItem(profileKey, JSON.stringify(profile));
+        window.ArenaProfile.saveInventoryList(shopSessionEmail, inv);
+        window.ArenaProfile.saveProfilePatch(shopSessionEmail, profile);
       } catch (err) { /* silencioso */ }
 
       return equippedNames;
-    }
-
-    // Gera um código fake de resgate — só para fins de demonstração visual,
-    // já que a loja não tem um provedor real de chaves conectado.
-    function generateFakeGameCode(platform) {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      const rand = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-      if (platform === "STEAM") return `${rand(5)}-${rand(5)}-${rand(5)}`;
-      if (platform === "PS4" || platform === "PS5" || platform === "PSN") return `${rand(4)}-${rand(4)}-${rand(4)}`;
-      return `${rand(5)}-${rand(5)}-${rand(5)}-${rand(5)}`;
-    }
-
-    function renderGameKeys() {
-      const games = cartGameProducts();
-      const box = document.getElementById("checkout-success-keys");
-      const list = document.getElementById("checkout-success-keys-list");
-      if (games.length === 0) { box.classList.add("hidden"); return; }
-
-      list.innerHTML = games.map(p => {
-        const code = generateFakeGameCode(p.platform);
-        return `
-          <div class="checkout-key-row">
-            <div class="checkout-key-info">
-              <div class="checkout-key-name">${p.name}</div>
-              <div class="checkout-key-plat">${p.platform}</div>
-            </div>
-            <span class="checkout-key-code" data-key-code="${code}" title="Clique para copiar">${code}</span>
-          </div>
-        `;
-      }).join("");
-
-      list.querySelectorAll("[data-key-code]").forEach(el => {
-        el.addEventListener("click", () => {
-          navigator.clipboard?.writeText(el.dataset.keyCode).catch(() => {});
-          showShopToast("✓ CÓDIGO COPIADO");
-        });
-      });
-
-      box.classList.remove("hidden");
     }
 
     function processCheckoutPayment() {
@@ -2423,23 +2595,23 @@
       // limpar o carrinho — inclui físicos e digitais.
       Object.keys(cart).forEach(id => {
         const p = SHOP_PRODUCTS.find(sp => sp.id === id);
-        if (p) logArenaActivity(p.tag === "DIGITAL" ? "🎁" : p.tag === "JOGOS" ? "🎮" : "🛍", `Comprou "${p.name}"`);
+        if (p) logArenaActivity(p.tag === "DIGITAL" ? "🎁" : "🛍", `Comprou "${p.name}"`);
       });
+
+      // Histórico de compras (libera avaliação) + coocorrência de itens
+      // no mesmo carrinho (alimenta "quem comprou também comprou").
+      Object.keys(cart).forEach(id => recordPurchase(id));
+      recordCopurchases(Object.keys(cart));
 
       const equippedNames = grantDigitalPurchases();
       const gotDigitalCosmetic = equippedNames.length > 0;
-      const hasGames = cartGameProducts().length > 0;
       // Reflete na hora o item recém-equipado (moldura/banner/emblema/nome RGB)
       // na navbar, sem precisar recarregar a página.
       if (gotDigitalCosmetic && isLoggedIn) applyProfileToNav();
 
       document.getElementById("checkout-success-msg").textContent = cartHasPhysical()
         ? "Seu pedido foi confirmado e já está sendo preparado para envio."
-        : hasGames
-          ? "Suas chaves já estão liberadas — confira abaixo."
-          : "Seu item digital já está liberado na sua conta.";
-
-      renderGameKeys();
+        : "Seu item digital já está liberado na sua conta.";
 
       if (gotDigitalCosmetic) {
         const text = equippedNames.length === 1

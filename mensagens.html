@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mensagens | Arena</title>
+<meta name="description" content="Converse diretamente com outros jogadores da Arena.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
+<script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/social.js"></script>
+<script src="data/messages.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="data/theme.css">
+<style>
+  .rk-card{ background: var(--panel); border:1px solid var(--border); border-radius:14px; }
+
+  /* ===== LAYOUT DE DUAS COLUNAS ===== */
+  #dm-shell{ height: calc(100vh - 65px); min-height: 520px; }
+  #dm-list-col{
+    width:320px; flex-shrink:0; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  #dm-thread-col{ flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+
+  @media (max-width: 767px){
+    #dm-list-col{ width:100%; border-right:none; }
+    #dm-list-col.is-hidden-mobile{ display:none; }
+    #dm-thread-col.is-hidden-mobile{ display:none; }
+  }
+
+  /* ===== BUSCA / NOVA CONVERSA ===== */
+  #dm-search-results{ position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:20; max-height:280px; overflow-y:auto; }
+
+  /* ===== LISTA DE CONVERSAS ===== */
+  .dm-conv-row{
+    display:flex; align-items:center; gap:10px; padding:12px 16px; text-decoration:none; color:inherit;
+    border-bottom:1px solid var(--border); transition: background .12s ease; cursor:pointer; text-align:left; width:100%;
+  }
+  .dm-conv-row:hover{ background: var(--panel-2); }
+  .dm-conv-row.is-active{ background: var(--panel-2); }
+  .dm-conv-avatar{ width:42px; height:42px; border-radius:9999px; object-fit:cover; background: var(--panel-2); flex-shrink:0; }
+  .dm-conv-body{ min-width:0; flex:1; }
+  .dm-conv-name{ font-size:13px; font-weight:600; }
+  .dm-conv-preview{ font-size:12px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .dm-conv-row.has-unread .dm-conv-preview{ color: var(--ink-soft); font-weight:600; }
+  .dm-conv-meta{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+  .dm-conv-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); }
+  .dm-unread-dot{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background: var(--valorant); color:#fff; font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+
+  /* ===== THREAD ===== */
+  #dm-thread-header{ border-bottom:1px solid var(--border); flex-shrink:0; }
+  #dm-messages{ flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .dm-bubble-row{ display:flex; }
+  .dm-bubble-row.is-mine{ justify-content:flex-end; }
+  .dm-bubble{ max-width:72%; padding:9px 13px; border-radius:14px; font-size:13.5px; line-height:1.45; word-wrap:break-word; }
+  .dm-bubble-row:not(.is-mine) .dm-bubble{ background: var(--panel-2); border-bottom-left-radius:4px; color: var(--ink); }
+  .dm-bubble-row.is-mine .dm-bubble{ background: var(--valorant); color:#fff; border-bottom-right-radius:4px; }
+  .dm-bubble-time{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color: var(--muted); margin-top:3px; padding:0 4px; }
+  .dm-bubble-row.is-mine .dm-bubble-time{ text-align:right; }
+  .dm-day-sep{ text-align:center; font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); margin:10px 0 4px; }
+
+  #dm-composer{ border-top:1px solid var(--border); flex-shrink:0; padding:12px 16px; display:flex; gap:10px; align-items:flex-end; }
+  #dm-input{
+    flex:1; resize:none; max-height:120px; background: var(--panel-2); border:1px solid var(--border); border-radius:10px;
+    padding:10px 13px; font-size:13.5px; color: var(--ink); font-family:'Inter', sans-serif; line-height:1.4;
+  }
+  #dm-input:focus{ outline:none; border-color: var(--valorant); }
+  #dm-send-btn{
+    width:38px; height:38px; border-radius:9999px; background: var(--valorant); color:#fff; display:flex;
+    align-items:center; justify-content:center; flex-shrink:0; transition: filter .12s ease, opacity .12s ease;
+  }
+  #dm-send-btn:hover{ filter: brightness(1.1); }
+  #dm-send-btn:disabled{ opacity:.4; pointer-events:none; }
+
+  .dm-empty-state{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px; }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
+      <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+      <a href="campeonatos.html" style="color: var(--muted);" class="hover:opacity-80">🏆 CHAVEAMENTO</a>
+      <a href="streamers.html" style="color: var(--muted);" class="hover:opacity-80">🎥 STREAMERS</a>
+      <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
+      <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
+      <a href="mensagens.html" style="color: var(--ink);" class="hover:opacity-80 relative">
+        ✉️ MENSAGENS
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
+    </nav>
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="hidden" id="notif-wrap"></div>
+      <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2 shrink-0" style="color: var(--muted);">
+        &larr; Voltar para o portal
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Precisa estar logado -->
+<main id="no-session-state" class="hidden max-w-4xl mx-auto px-4 py-10">
+  <div class="rk-card p-10 text-center">
+    <div class="text-4xl mb-3">🔒</div>
+    <h1 class="font-display text-2xl uppercase tracking-wide">Faça login pra ver suas mensagens</h1>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">Entre na sua conta pra conversar com outros jogadores da Arena.</p>
+    <a href="index.html" class="inline-block mt-5 font-mono text-[12px] font-semibold px-5 py-2.5 rounded-lg" style="background: var(--valorant); color:#fff;">IR PARA A HOME</a>
+  </div>
+</main>
+
+<!-- Shell principal -->
+<main id="dm-app" class="hidden max-w-6xl mx-auto">
+  <div id="dm-shell" class="rk-card flex" style="border-radius:0; border-left:none; border-right:none; border-top:none;">
+
+    <!-- Coluna: lista de conversas -->
+    <div id="dm-list-col">
+      <div class="p-4" style="border-bottom:1px solid var(--border);">
+        <p class="font-display text-2xl font-semibold uppercase tracking-wide">Mensagens</p>
+        <div class="relative mt-3">
+          <input id="dm-search-input" type="text" placeholder="Buscar jogador pra conversar..."
+            class="w-full font-mono text-[12px] px-3 py-2.5 rounded-lg" style="background: var(--panel-2); border:1px solid var(--border); color: var(--ink);" autocomplete="off">
+          <div id="dm-search-results" class="hidden rk-card"></div>
+        </div>
+      </div>
+      <div id="dm-conv-list" class="flex-1 overflow-y-auto"></div>
+      <p id="dm-no-conversations" class="hidden text-center py-10 px-6 text-[12.5px]" style="color: var(--muted);">
+        Nenhuma conversa ainda. Busque um jogador acima ou visite o <a href="ranking.html" style="color: var(--valorant); text-decoration:underline;">ranking</a> pra começar.
+      </p>
+    </div>
+
+    <!-- Coluna: thread ativa -->
+    <div id="dm-thread-col">
+      <div id="dm-thread-empty" class="dm-empty-state">
+        <div class="text-4xl mb-3">✉️</div>
+        <h2 class="font-display text-2xl uppercase tracking-wide">Suas mensagens</h2>
+        <p class="text-[13px] mt-2 max-w-xs" style="color: var(--muted);">Escolha uma conversa na lista ou busque um jogador pra começar a falar.</p>
+      </div>
+
+      <div id="dm-thread-active" class="hidden flex flex-col h-full">
+        <div id="dm-thread-header" class="p-4 flex items-center gap-3">
+          <button id="dm-back-btn" class="sm:hidden" style="color: var(--muted);" aria-label="Voltar">←</button>
+          <img id="dm-thread-avatar" class="dm-conv-avatar" src="" alt="">
+          <div class="min-w-0 flex-1">
+            <a id="dm-thread-name" href="#" class="block font-display text-lg font-semibold uppercase tracking-wide truncate" style="color: var(--ink);"></a>
+            <span id="dm-thread-username" class="font-mono text-[11px]" style="color: var(--muted);"></span>
+            <span id="dm-typing-line" class="hidden font-mono text-[11px]" style="color: var(--live);">digitando...</span>
+          </div>
+        </div>
+        <div id="dm-messages"></div>
+        <div id="dm-restricted-notice" class="hidden font-mono text-[11.5px] px-4 py-2.5" style="background: color-mix(in srgb, var(--valorant) 10%, transparent); border-top:1px solid var(--border); color: var(--valorant);"></div>
+        <div id="dm-composer">
+          <textarea id="dm-input" rows="1" placeholder="Escreva uma mensagem..." maxlength="2000"></textarea>
+          <button id="dm-send-btn" disabled aria-label="Enviar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function(){
+  const { getSessionEmail, loadUsers, readJSON, escapeHtml, relativeTime } = window.ArenaUtils;
+  const { getMessages, sendMessage, canMessage, listConversations, markConversationRead, mountNavBadge } = window.ArenaMessages;
+
+  const sessionEmail = getSessionEmail();
+
+  ArenaSocial.initHeaderBell();
+  mountNavBadge("dm-nav-badge", sessionEmail);
+
+  if (!sessionEmail) {
+    document.getElementById("no-session-state").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("dm-app").classList.remove("hidden");
+
+  // ===============================================================
+  // RESOLVER DADOS DE EXIBIÇÃO DE UM JOGADOR A PARTIR DO E-MAIL
+  // (mesmo padrão usado em feed.html)
+  // ===============================================================
+  function resolvePlayerCard(email) {
+    const rec = loadUsers().find(u => u.email === email);
+    if (!rec) return { email, displayName: email, username: email.split("@")[0], avatar: "" };
+    const p = readJSON(`arena-profile-${email}`, {});
+    return {
+      email,
+      displayName: p.displayName || rec.name,
+      username: p.username || rec.name.split(" ")[0].toLowerCase(),
+      avatar: p.avatar || "",
+    };
+  }
+
+  function avatarUrl(player) {
+    return player.avatar || `https://placehold.co/84x84/1B1F28/D7DAE1?text=${encodeURIComponent((player.displayName[0] || "?").toUpperCase())}`;
+  }
+
+  // ===============================================================
+  // LISTA DE CONVERSAS
+  // ===============================================================
+  let activePartner = null;
+
+  function renderConvList() {
+    const conversations = listConversations(sessionEmail, resolvePlayerCard);
+    const listEl = document.getElementById("dm-conv-list");
+    const emptyEl = document.getElementById("dm-no-conversations");
+
+    if (conversations.length === 0) {
+      listEl.innerHTML = "";
+      emptyEl.classList.remove("hidden");
+      return;
+    }
+    emptyEl.classList.add("hidden");
+
+    listEl.innerHTML = conversations.map(c => `
+      <button type="button" class="dm-conv-row ${c.unread > 0 ? "has-unread" : ""} ${c.partner === activePartner ? "is-active" : ""}" data-partner="${escapeHtml(c.partner)}">
+        <img class="dm-conv-avatar" src="${avatarUrl(c.player)}" alt="">
+        <span class="dm-conv-body">
+          <span class="dm-conv-name">${escapeHtml(c.player.displayName)}</span>
+          <span class="dm-conv-preview">${c.lastFrom === sessionEmail ? "Você: " : ""}${escapeHtml(c.lastText)}</span>
+        </span>
+        <span class="dm-conv-meta">
+          <span class="dm-conv-time">${relativeTime(c.lastAt)}</span>
+          ${c.unread > 0 ? `<span class="dm-unread-dot">${c.unread > 9 ? "9+" : c.unread}</span>` : ""}
+        </span>
+      </button>`).join("");
+
+    listEl.querySelectorAll("[data-partner]").forEach(btn => {
+      btn.addEventListener("click", () => openConversation(btn.dataset.partner));
+    });
+  }
+
+  // ===============================================================
+  // THREAD ATIVA
+  // ===============================================================
+  function renderMessages(partner) {
+    const msgs = getMessages(sessionEmail, partner);
+    const wrap = document.getElementById("dm-messages");
+    const { isReadByRecipient } = window.ArenaMessages;
+
+    if (msgs.length === 0) {
+      wrap.innerHTML = `<div class="dm-empty-state"><p class="text-[12.5px]" style="color: var(--muted);">Nenhuma mensagem ainda — diga oi 👋</p></div>`;
+      return;
+    }
+
+    const wasNearBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 60;
+
+    let lastDay = null;
+    wrap.innerHTML = msgs.map(m => {
+      const day = new Date(m.at).toLocaleDateString("pt-BR");
+      const daySep = day !== lastDay ? `<div class="dm-day-sep">${day}</div>` : "";
+      lastDay = day;
+      const isMine = m.from === sessionEmail;
+      const time = new Date(m.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const readMark = isMine
+        ? (isReadByRecipient(sessionEmail, partner, m.at)
+            ? `<span title="Lida" style="color: var(--live);">✓✓</span>`
+            : `<span title="Enviada" style="color: var(--muted);">✓</span>`)
+        : "";
+      return `${daySep}
+        <div class="dm-bubble-row ${isMine ? "is-mine" : ""}">
+          <div>
+            <div class="dm-bubble">${escapeHtml(m.text)}</div>
+            <div class="dm-bubble-time">${time} ${readMark}</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    if (wasNearBottom) wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function openConversation(partnerEmail) {
+    activePartner = partnerEmail;
+    const player = resolvePlayerCard(partnerEmail);
+
+    document.getElementById("dm-thread-empty").classList.add("hidden");
+    document.getElementById("dm-thread-active").classList.remove("hidden");
+
+    document.getElementById("dm-thread-avatar").src = avatarUrl(player);
+    const nameLink = document.getElementById("dm-thread-name");
+    nameLink.textContent = player.displayName;
+    nameLink.href = `perfil.html?user=${encodeURIComponent(partnerEmail)}`;
+    document.getElementById("dm-thread-username").textContent = `@${player.username}`;
+    document.getElementById("dm-typing-line").classList.add("hidden");
+    document.getElementById("dm-thread-username").classList.remove("hidden");
+
+    markConversationRead(sessionEmail, partnerEmail);
+    renderMessages(partnerEmail);
+    renderConvList();
+    mountNavBadge("dm-nav-badge", sessionEmail);
+    applyComposerState(partnerEmail);
+
+    // mobile: esconde a lista, mostra a thread
+    document.getElementById("dm-list-col").classList.add("is-hidden-mobile");
+    document.getElementById("dm-thread-col").classList.remove("is-hidden-mobile");
+
+    document.getElementById("dm-input").focus();
+  }
+
+  document.getElementById("dm-back-btn").addEventListener("click", () => {
+    document.getElementById("dm-list-col").classList.remove("is-hidden-mobile");
+    document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
+  });
+
+  // ===============================================================
+  // ESTADO DO COMPOSER — desabilita/avisa quando a privacidade do
+  // destinatário não permite conversa nova (ver ArenaMessages.canMessage).
+  // ===============================================================
+  const restrictedNotice = document.getElementById("dm-restricted-notice");
+
+  function applyComposerState(partner) {
+    const check = canMessage(sessionEmail, partner);
+    if (check.allowed) {
+      restrictedNotice.classList.add("hidden");
+      input.disabled = false;
+      input.placeholder = "Escreva uma mensagem...";
+      sendBtn.disabled = input.value.trim().length === 0;
+    } else {
+      restrictedNotice.textContent = `🔒 ${check.reason}`;
+      restrictedNotice.classList.remove("hidden");
+      input.disabled = true;
+      input.placeholder = "Você não pode enviar mensagem pra este jogador agora.";
+      sendBtn.disabled = true;
+    }
+  }
+
+  // ===============================================================
+  // ENVIAR MENSAGEM
+  // ===============================================================
+  const input = document.getElementById("dm-input");
+  const sendBtn = document.getElementById("dm-send-btn");
+  let lastTypingPing = 0;
+
+  function autoGrow() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  }
+  input.addEventListener("input", () => {
+    sendBtn.disabled = input.value.trim().length === 0;
+    autoGrow();
+    if (activePartner && input.value.trim().length > 0) {
+      const now = Date.now();
+      if (now - lastTypingPing > 1000) {
+        lastTypingPing = now;
+        window.ArenaMessages.setTyping(sessionEmail, activePartner);
+      }
+    }
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      doSend();
+    }
+  });
+  sendBtn.addEventListener("click", doSend);
+
+  function doSend() {
+    const text = input.value.trim();
+    if (!text || !activePartner) return;
+    const result = sendMessage(sessionEmail, activePartner, text);
+    if (result && result.blocked) {
+      applyComposerState(activePartner); // mostra o aviso, sem limpar o texto digitado
+      return;
+    }
+    input.value = "";
+    input.style.height = "auto";
+    sendBtn.disabled = true;
+    renderMessages(activePartner);
+    renderConvList();
+  }
+
+  // ===============================================================
+  // BUSCA / NOVA CONVERSA
+  // ===============================================================
+  const searchInput = document.getElementById("dm-search-input");
+  const searchResults = document.getElementById("dm-search-results");
+
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    if (q.length === 0) { searchResults.classList.add("hidden"); return; }
+
+    const matches = loadUsers()
+      .filter(u => u.email !== sessionEmail)
+      .map(u => resolvePlayerCard(u.email))
+      .filter(p => p.displayName.toLowerCase().includes(q) || p.username.toLowerCase().includes(q))
+      .slice(0, 6);
+
+    if (matches.length === 0) {
+      searchResults.innerHTML = `<p class="p-3 text-[12px]" style="color: var(--muted);">Nenhum jogador encontrado.</p>`;
+    } else {
+      searchResults.innerHTML = matches.map(p => `
+        <button type="button" class="dm-conv-row" data-start="${escapeHtml(p.email)}" style="border-bottom:1px solid var(--border);">
+          <img class="dm-conv-avatar" src="${avatarUrl(p)}" alt="">
+          <span class="dm-conv-body">
+            <span class="dm-conv-name">${escapeHtml(p.displayName)}</span>
+            <span class="dm-conv-preview">@${escapeHtml(p.username)}</span>
+          </span>
+        </button>`).join("");
+      searchResults.querySelectorAll("[data-start]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          searchInput.value = "";
+          searchResults.classList.add("hidden");
+          openConversation(btn.dataset.start);
+        });
+      });
+    }
+    searchResults.classList.remove("hidden");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!searchResults.contains(e.target) && e.target !== searchInput) searchResults.classList.add("hidden");
+  });
+
+  // ===============================================================
+  // POLLING LEVE — como não há servidor, é assim que a página nota
+  // mensagens novas / status de leitura / "digitando..." vindos de
+  // outra aba do mesmo navegador (ex: outra conta logada ali).
+  // Não mexe no campo de texto, só atualiza o que é só-leitura.
+  // ===============================================================
+  setInterval(() => {
+    if (!activePartner) { renderConvList(); mountNavBadge("dm-nav-badge", sessionEmail); return; }
+
+    markConversationRead(sessionEmail, activePartner); // thread aberta = lida em tempo real
+    renderMessages(activePartner);
+    renderConvList();
+    mountNavBadge("dm-nav-badge", sessionEmail);
+
+    const typingLine = document.getElementById("dm-typing-line");
+    const usernameEl = document.getElementById("dm-thread-username");
+    const isTyping = window.ArenaMessages.isPartnerTyping(sessionEmail, activePartner);
+    typingLine.classList.toggle("hidden", !isTyping);
+    usernameEl.classList.toggle("hidden", isTyping);
+  }, 2000);
+
+  // ===============================================================
+  // INÍCIO — abre direto uma conversa se veio de ?user=, senão só
+  // mostra a lista.
+  // ===============================================================
+  renderConvList();
+  const params = new URLSearchParams(location.search);
+  const startWith = params.get("user");
+  if (startWith && startWith !== sessionEmail) {
+    openConversation(startWith);
+  } else if (window.innerWidth < 768) {
+    // mobile sem conversa aberta: mostra só a lista
+    document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
+  }
+})();
+</script>
+
+</body>
+</html>

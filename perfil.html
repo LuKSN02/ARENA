@@ -7,24 +7,15 @@
 <meta name="description" content="Veja o perfil público de um jogador da Arena: banner, emblemas, conquistas e estatísticas.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --panel-2: #20242F;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
-    --valorant: #FF4655; --valorant-glow: #241016;
-    --discord-blurple: #5865F2;
-    --r-comum: #7C8394; --r-raro: #5865F2; --r-epico: #8B5CF6; --r-lendario: #F59E0B;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -162,6 +153,10 @@
       <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
       <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
       <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+      <a href="mensagens.html" style="color: var(--muted);" class="hover:opacity-80 relative">
+        ✉️ MENSAGENS
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
     </nav>
     <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2 shrink-0" style="color: var(--muted);">
       &larr; Voltar ao ranking
@@ -355,6 +350,7 @@
   }
 
   const sessionEmail = getSessionEmail();
+  window.ArenaMessages?.mountNavBadge("dm-nav-badge", sessionEmail);
   if (!sessionEmail) document.getElementById("no-session-banner").classList.remove("hidden");
 
   const params = new URLSearchParams(location.search);
@@ -626,7 +622,9 @@
     actionButtons.innerHTML = `<a href="perfil-config.html" class="btn-edit">✏️ EDITAR PERFIL</a>`;
   } else if (sessionEmail) {
     const following = isFollowing(sessionEmail, targetEmail);
-    actionButtons.innerHTML = `<button id="follow-btn" class="btn-follow ${following ? "is-following" : ""}">${following ? "✓ SEGUINDO" : "+ SEGUIR"}</button>`;
+    actionButtons.innerHTML = `
+      <a href="mensagens.html?user=${encodeURIComponent(targetEmail)}" class="btn-edit">✉️ MENSAGEM</a>
+      <button id="follow-btn" class="btn-follow ${following ? "is-following" : ""}">${following ? "✓ SEGUINDO" : "+ SEGUIR"}</button>`;
     document.getElementById("follow-btn").addEventListener("click", () => {
       const nowFollowing = toggleFollow(sessionEmail, targetEmail);
       document.getElementById("follow-btn").textContent = nowFollowing ? "✓ SEGUINDO" : "+ SEGUIR";

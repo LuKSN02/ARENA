@@ -7,18 +7,15 @@
 <meta name="description" content="Chaveamento completo dos principais campeonatos de e-sports — acompanhe rodada por rodada quem avança.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E; --panel: #1B1F28; --panel-2: #20242F; --sidebar: #0F1116;
-    --border: rgba(255,255,255,0.08); --ink: #D7DAE1; --ink-soft: #AEB3BE; --muted: #7C8394; --live: #34D399;
-    --valorant: #FF4655;  --valorant-glow: #241016;
-    --lol: #C89B3C;       --lol-glow: #221d10;
-    --cs2: #E8A03D;       --cs2-glow: #241c10;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -55,6 +52,14 @@
   .match-meta.is-live{ color: var(--live); font-weight:700; }
   .team-placeholder{ font-size:12px; color: var(--muted); font-style:italic; }
 
+  /* ===== SKELETON (loading state enquanto getCampeonatos() resolve) ===== */
+  .sk{ background: linear-gradient(90deg, var(--panel) 25%, var(--panel-2) 37%, var(--panel) 63%); background-size: 400% 100%; animation: sk-shimmer 1.4s ease infinite; border-radius:6px; }
+  @keyframes sk-shimmer{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
+  .sk-tab{ height:32px; width:110px; border-radius:8px; flex-shrink:0; }
+  .sk-header{ height:64px; }
+  .sk-match{ height:64px; border-radius:8px; }
+  @media (prefers-reduced-motion: reduce){ .sk{ animation:none; } }
+
   /* ===== NOTIFICAÇÕES (reaproveitado do resto do site) ===== */
 </style>
 </head>
@@ -71,6 +76,10 @@
       <a href="streamers.html" style="color: var(--muted);" class="hover:opacity-80">🎥 STREAMERS</a>
       <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
       <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
+      <a href="mensagens.html" style="color: var(--muted);" class="hover:opacity-80 relative">
+        ✉️ MENSAGENS
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
     </nav>
     <div class="flex items-center gap-3 shrink-0">
       <div class="hidden" id="notif-wrap"></div>
@@ -91,15 +100,34 @@
     </p>
   </div>
 
-  <!-- Abas de campeonato -->
-  <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-6" id="tourney-tabs"></div>
+  <!-- Skeleton — mostrado enquanto ArenaData.getCampeonatos() resolve -->
+  <div id="bracket-skeleton">
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-6">
+      <div class="sk sk-tab"></div><div class="sk sk-tab"></div><div class="sk sk-tab"></div>
+    </div>
+    <div class="sk sk-header mb-6"></div>
+    <div class="flex gap-11">
+      <div class="flex flex-col gap-4" style="width:230px;">
+        <div class="sk sk-match"></div><div class="sk sk-match"></div><div class="sk sk-match"></div><div class="sk sk-match"></div>
+      </div>
+      <div class="flex flex-col gap-4 justify-around" style="width:230px;">
+        <div class="sk sk-match"></div><div class="sk sk-match"></div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Cabeçalho do campeonato selecionado -->
-  <div id="tourney-header" class="flex flex-wrap items-center justify-between gap-3 mb-6 p-5" style="background: var(--panel); border:1px solid var(--border);"></div>
+  <!-- Conteúdo real — hidden até os dados chegarem -->
+  <div id="bracket-real" class="hidden">
+    <!-- Abas de campeonato -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-6" id="tourney-tabs"></div>
 
-  <!-- Chaveamento -->
-  <div id="bracket-scroll">
-    <div class="bracket" id="bracket-root"></div>
+    <!-- Cabeçalho do campeonato selecionado -->
+    <div id="tourney-header" class="flex flex-wrap items-center justify-between gap-3 mb-6 p-5" style="background: var(--panel); border:1px solid var(--border);"></div>
+
+    <!-- Chaveamento -->
+    <div id="bracket-scroll">
+      <div class="bracket" id="bracket-root"></div>
+    </div>
   </div>
 
 </main>
@@ -112,23 +140,11 @@
   const STATUS_LABEL = { "ao-vivo": "AO VIVO", "em-breve": "EM BREVE", "encerrado": "ENCERRADO" };
 
   ArenaSocial.initHeaderBell();
-
-  // ===============================================================
-  // ABAS — uma por campeonato, ordenadas com "ao vivo" primeiro.
-  // ===============================================================
-  const sorted = [...CAMPEONATOS].sort((a, b) => {
-    const order = { "ao-vivo": 0, "em-breve": 1, "encerrado": 2 };
-    return order[a.status] - order[b.status];
-  });
+  window.ArenaMessages?.mountNavBadge("dm-nav-badge", getSessionEmail());
 
   const tabsEl = document.getElementById("tourney-tabs");
-  tabsEl.innerHTML = sorted.map(t => `
-    <button class="tourney-tab font-mono text-[11px] font-semibold px-3 py-2 rounded-md" data-id="${t.id}" style="--card-accent: var(--${t.game});">
-      ${escapeHtml(t.gameLabel.toUpperCase())} ${t.status === "ao-vivo" ? `<span style="color: var(--live);">●</span>` : ""}
-    </button>
-  `).join("");
-
-  let currentId = sorted[0]?.id;
+  let campeonatos = [];
+  let currentId = null;
 
   function renderHeader(t) {
     document.getElementById("tourney-header").innerHTML = `
@@ -176,7 +192,7 @@
 
   function selectTourney(id) {
     currentId = id;
-    const t = CAMPEONATOS.find(c => c.id === id);
+    const t = campeonatos.find(c => c.id === id);
     if (!t) return;
     tabsEl.querySelectorAll(".tourney-tab").forEach(btn => btn.classList.toggle("active", btn.dataset.id === id));
     renderHeader(t);
@@ -189,7 +205,29 @@
     selectTourney(btn.dataset.id);
   });
 
-  if (currentId) selectTourney(currentId);
+  // ===================================================================
+  // CARREGAMENTO — usa ArenaData.getCampeonatos() (data/campeonatos.js),
+  // que devolve uma Promise. Skeleton fica visível até ela resolver;
+  // no dia de trocar o array estático por uma API/Firebase de verdade,
+  // essa função é o único lugar que muda.
+  // ===================================================================
+  window.ArenaData.getCampeonatos().then((data) => {
+    campeonatos = [...data].sort((a, b) => {
+      const order = { "ao-vivo": 0, "em-breve": 1, "encerrado": 2 };
+      return order[a.status] - order[b.status];
+    });
+
+    tabsEl.innerHTML = campeonatos.map(t => `
+      <button class="tourney-tab font-mono text-[11px] font-semibold px-3 py-2 rounded-md" data-id="${t.id}" style="--card-accent: var(--${t.game});">
+        ${escapeHtml(t.gameLabel.toUpperCase())} ${t.status === "ao-vivo" ? `<span style="color: var(--live);">●</span>` : ""}
+      </button>
+    `).join("");
+
+    document.getElementById("bracket-skeleton").classList.add("hidden");
+    document.getElementById("bracket-real").classList.remove("hidden");
+
+    if (campeonatos[0]) selectTourney(campeonatos[0].id);
+  });
 })();
 </script>
 </body>

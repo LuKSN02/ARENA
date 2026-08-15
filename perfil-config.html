@@ -6,26 +6,16 @@
 <title>Configurações do Perfil — Arena</title>
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/profile.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --panel-2: #20242F;
-    --sidebar: #0F1116;
-    --ticker-bg: #0F1116;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
-    --valorant: #FF4655;
-    --valorant-glow: #241016;
-    --discord-blurple: #5865F2;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -445,6 +435,10 @@
     <div class="flex items-center gap-4">
       <div class="hidden" id="notif-wrap"></div>
 
+      <a href="mensagens.html" class="font-mono text-[12px] font-semibold hidden sm:flex items-center gap-2 relative" style="color: var(--muted);">
+        ✉️ Mensagens
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
       <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: #F59E0B;">🏆 Ranking</a>
       <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">
         &larr; Voltar para o portal
@@ -778,22 +772,21 @@
   //    sessionStorage) e define a chave de armazenamento do perfil.
   //    Sem sessão, cai num perfil de demonstração local.
   // ===============================================================
-  const { getSessionEmail, escapeHtml } = window.ArenaUtils;
+  const { getSessionEmail, escapeHtml, loadUsers } = window.ArenaUtils;
+  const { profileKey: makeProfileKey, loadInventoryList } = window.ArenaProfile;
   const sessionEmail = getSessionEmail();
-  const profileKey = `arena-profile-${sessionEmail || "demo"}`;
+  const profileKey = makeProfileKey(sessionEmail);
 
   if (!sessionEmail) {
     document.getElementById("no-session-banner").classList.remove("hidden");
   } else if (window.ArenaSocial) {
     window.ArenaSocial.initHeaderBell();
+    window.ArenaMessages?.mountNavBadge("dm-nav-badge", sessionEmail);
   }
 
   // Nome padrão vindo do cadastro (se existir), pra pré-preencher.
   function getRegisteredUser(email) {
-    try {
-      const users = JSON.parse(localStorage.getItem("arena-demo-users") || "[]");
-      return users.find(u => u.email === email) || null;
-    } catch (err) { return null; }
+    return loadUsers().find(u => u.email === email) || null;
   }
   const registeredUser = sessionEmail ? getRegisteredUser(sessionEmail) : null;
 
@@ -814,11 +807,7 @@
   // é `animated:true`, então recebe o anel giratório em vez de cor sólida.
   // ---------------------------------------------------------------
   function ownsShopItem(itemId) {
-    try {
-      const raw = localStorage.getItem(`arena-inventory-${sessionEmail || "demo"}`);
-      const inv = raw ? JSON.parse(raw) : [];
-      return inv.some(i => i.id === itemId);
-    } catch (err) { return false; }
+    return loadInventoryList(sessionEmail).some(i => i.id === itemId);
   }
   if (ownsShopItem("moldura-cyber-digital")) {
     AVATAR_FRAMES.push({ id: "moldura-cyber-digital", label: "Cyber", color: "#FF4655", animated: true });
@@ -892,20 +881,17 @@
   // de existirem privacy/appearance/connections não perderem os
   // valores padrão de campos novos.
   function loadProfile() {
-    try {
-      const raw = localStorage.getItem(profileKey);
-      if (!raw) return structuredClone(DEFAULT_PROFILE);
-      const saved = JSON.parse(raw);
-      return {
-        ...DEFAULT_PROFILE,
-        ...saved,
-        privacy: { ...DEFAULT_PROFILE.privacy, ...(saved.privacy || {}) },
-        appearance: { ...DEFAULT_PROFILE.appearance, ...(saved.appearance || {}) },
-        connections: { ...DEFAULT_PROFILE.connections, ...(saved.connections || {}) },
-        status: { ...DEFAULT_PROFILE.status, ...(saved.status || {}) },
-        showcase: saved.showcase || [],
-      };
-    } catch (err) { return structuredClone(DEFAULT_PROFILE); }
+    const saved = window.ArenaUtils.readJSON(profileKey, null);
+    if (!saved) return structuredClone(DEFAULT_PROFILE);
+    return {
+      ...DEFAULT_PROFILE,
+      ...saved,
+      privacy: { ...DEFAULT_PROFILE.privacy, ...(saved.privacy || {}) },
+      appearance: { ...DEFAULT_PROFILE.appearance, ...(saved.appearance || {}) },
+      connections: { ...DEFAULT_PROFILE.connections, ...(saved.connections || {}) },
+      status: { ...DEFAULT_PROFILE.status, ...(saved.status || {}) },
+      showcase: saved.showcase || [],
+    };
   }
 
   let savedProfile = loadProfile();               // o que está persistido

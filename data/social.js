@@ -197,6 +197,44 @@
   }
 
   // ===================================================================
+  // NOTIFICAÇÃO DO SISTEMA — quando surge uma notificação nova em
+  // arena-notifications-<email> enquanto a aba está em segundo plano,
+  // mostra também uma notificação do SO (via service worker), pra não
+  // passar despercebida. NÃO é push de verdade — como o site não tem
+  // backend, isso só pega notificação que já foi escrita nesse MESMO
+  // navegador (mesma limitação documentada em data/messages.js pro
+  // "digitando..."). Ainda assim é útil: cobre o caso comum de "tenho
+  // duas abas da Arena abertas, uma de cada conta" ou "troquei de aba
+  // pra outro site e a Arena continua registrando coisa em segundo
+  // plano". Requer permissão concedida via ArenaPWA.requestNotificationPermission().
+  // ===================================================================
+  function showSystemNotification(n) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.showNotification("Arena", {
+        body: n.text,
+        icon: "https://placehold.co/192x192/14171E/FF4655/png?text=A",
+        badge: "https://placehold.co/96x96/14171E/FF4655/png?text=A",
+        tag: n.id,
+        data: { link: n.link || "index.html" },
+      });
+    }).catch(() => { /* silencioso — SO sem suporte ou registro ainda não pronto */ });
+  }
+
+  const SYSTEM_NOTIF_POLL_MS = 5000;
+  function watchForSystemNotifications(email) {
+    if (!email) return;
+    let lastSeenIds = new Set(getAll(email).map(n => n.id));
+    setInterval(() => {
+      if (!document.hidden) { lastSeenIds = new Set(getAll(email).map(n => n.id)); return; }
+      const current = getAll(email);
+      current.filter(n => !lastSeenIds.has(n.id)).forEach(showSystemNotification);
+      lastSeenIds = new Set(current.map(n => n.id));
+    }, SYSTEM_NOTIF_POLL_MS);
+  }
+
+  // ===================================================================
   // HEADER BELL — monta o sino + dropdown dentro de um container vazio
   // (`<div id="notif-wrap" class="hidden"></div>` no header da página),
   // em vez de exigir que cada página copie o markup/CSS do botão e do
@@ -230,17 +268,20 @@
         <div id="notif-list"></div>
       </div>`;
 
-    return mountBell({
+    const mounted = mountBell({
       email: resolvedEmail,
       buttonEl: wrap.querySelector("#notif-btn"),
       dropdownEl: wrap.querySelector("#notif-dropdown"),
       badgeEl: wrap.querySelector("#notif-badge"),
       listEl: wrap.querySelector("#notif-list"),
     });
+    watchForSystemNotifications(resolvedEmail);
+    return mounted;
   }
 
   global.ArenaSocial = {
     notify, getAll, unreadCount, markAllRead, markOneRead, clearAll, mountBell, initHeaderBell, relativeTime,
     getItemReactions, toggleReaction, mountReactions,
+    watchForSystemNotifications,
   };
 })(window);

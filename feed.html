@@ -7,17 +7,15 @@
 <meta name="description" content="Acompanhe o que os jogadores que você segue estão fazendo na Arena.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E; --panel: #1B1F28; --panel-2: #20242F;
-    --border: rgba(255,255,255,0.08); --ink: #D7DAE1; --ink-soft: #AEB3BE; --muted: #7C8394; --live: #34D399;
-    --valorant: #FF4655; --valorant-glow: #241016;
-    --r-comum: #7C8394; --r-raro: #5865F2; --r-epico: #8B5CF6; --r-lendario: #F59E0B;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -43,6 +41,33 @@
   .suggest-card{ display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background: var(--panel-2); }
   .suggest-avatar{ width:34px; height:34px; border-radius:9999px; object-fit:cover; background: var(--panel); flex-shrink:0; }
   .btn-follow-mini{ font-family:'JetBrains Mono', monospace; font-size:10.5px; font-weight:700; padding:5px 10px; border-radius:6px; background: var(--valorant); color:#fff; flex-shrink:0; }
+
+  /* ===== FILTRO POR CATEGORIA ===== */
+  .filter-chip{ border:1px solid var(--border); color: var(--muted); background: transparent; white-space:nowrap; }
+  .filter-chip.active{ border-color: var(--ink-soft); color: var(--ink); background: var(--panel-2); }
+
+  /* ===== EVENTOS AGRUPADOS (mesmo jogador + mesmo dia) ===== */
+  .feed-cluster{ padding:14px 16px; border-bottom:1px solid var(--border); }
+  .feed-cluster:last-child{ border-bottom:none; }
+  .feed-cluster-head{ display:flex; gap:12px; text-decoration:none; color:inherit; }
+  .feed-cluster-head:hover .feed-text b{ text-decoration:underline; }
+  .feed-cluster-events{ margin-top:10px; display:flex; flex-direction:column; gap:10px; padding-left:50px; }
+  .feed-event-line{ display:flex; align-items:flex-start; gap:8px; }
+  .feed-event-line .feed-icon{ font-size:14px; }
+  .feed-event-text{ font-size:12.5px; line-height:1.5; color: var(--ink-soft); flex:1; min-width:0; }
+  .feed-event-time{ font-family:'JetBrains Mono', monospace; font-size:10px; color: var(--muted); flex-shrink:0; }
+
+  /* ===== REAÇÕES RÁPIDAS (markup gerado por ArenaSocial.mountReactions) ===== */
+  .feed-reactions{ display:flex; gap:4px; padding-left:22px; }
+  .arena-reaction-btn{
+    display:flex; align-items:center; gap:3px; font-size:11px; padding:2px 7px; border-radius:999px;
+    border:1px solid var(--border); background: var(--panel-2); color: var(--muted); cursor:pointer;
+  }
+  .arena-reaction-btn:hover{ color: var(--ink); }
+  .arena-reaction-btn.is-active{ border-color: var(--valorant); color: var(--ink); background: rgba(255,70,85,0.08); }
+  .arena-reaction-count{ font-family:'JetBrains Mono', monospace; font-size:10px; }
+
+  .feed-empty-filter{ padding:40px 16px; text-align:center; font-size:12.5px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -55,6 +80,10 @@
     <nav class="hidden sm:flex items-center gap-6 font-mono text-[12px] font-semibold">
       <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
       <a href="loja.html" style="color: var(--muted);" class="hover:opacity-80">🛍 LOJA</a>
+      <a href="mensagens.html" style="color: var(--muted);" class="hover:opacity-80 relative">
+        ✉️ MENSAGENS
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
     </nav>
     <div class="flex items-center gap-3 shrink-0">
       <div class="hidden" id="notif-wrap"></div>
@@ -102,6 +131,9 @@
     </p>
   </div>
 
+  <!-- Filtro por categoria (só aparece quando há feed pra mostrar) -->
+  <div id="feed-filter-bar" class="hidden flex items-center gap-2 overflow-x-auto pb-1 mb-4"></div>
+
   <!-- Feed de verdade -->
   <div id="feed-content" class="hidden rk-card"></div>
 
@@ -130,6 +162,7 @@
   // 2) SINO DE NOTIFICAÇÕES (mesmo padrão do resto do site)
   // ===============================================================
   ArenaSocial.initHeaderBell();
+  window.ArenaMessages?.mountNavBadge("dm-nav-badge", sessionEmail);
 
   if (!sessionEmail) { showOnly("no-session-state"); return; }
 
@@ -174,16 +207,112 @@
     return;
   }
 
+  // ===============================================================
+  // 3.1) CATEGORIAS — os eventos de arena-activity-<email> hoje não
+  // trazem um campo "type" explícito, só icon+text. Um campo `type`
+  // no próprio evento (se algum dia o gerador de atividade passar a
+  // emitir um) tem prioridade; na ausência dele, inferimos pela
+  // combinação de ícone + palavras comuns no texto.
+  // ===============================================================
+  const CATEGORIES = [
+    { id: "todos", label: "TODOS" },
+    { id: "conquistas", label: "🏆 CONQUISTAS" },
+    { id: "partidas", label: "⚔️ PARTIDAS" },
+    { id: "emblemas", label: "🎖️ EMBLEMAS" },
+    { id: "outros", label: "OUTROS" },
+  ];
+
+  function categorize(ev) {
+    if (ev.type) return ev.type;
+    const icon = ev.icon || "";
+    const t = (ev.text || "").toLowerCase();
+    if (icon === "🏆" || t.includes("conquist") || t.includes("venceu") || t.includes("campe")) return "conquistas";
+    if (icon === "🎖️" || icon === "⭐" || t.includes("emblema") || t.includes("nível") || t.includes("subiu")) return "emblemas";
+    if (icon === "⚔️" || icon === "🎮" || t.includes("partida") || t.includes("jogou") || t.includes("derrota") || t.includes("vitória")) return "partidas";
+    return "outros";
+  }
+  events.forEach(ev => { ev.category = categorize(ev); });
+
+  let currentFilter = "todos";
+
+  // ===============================================================
+  // 3.2) AGRUPAMENTO — eventos consecutivos do mesmo jogador no mesmo
+  // dia viram um único cluster (um avatar/nome só, várias linhas de
+  // evento embaixo), em vez de repetir o cabeçalho a cada atividade.
+  // ===============================================================
+  function buildClusters(list) {
+    const clusters = [];
+    list.forEach(ev => {
+      const day = new Date(ev.at).toDateString();
+      const last = clusters[clusters.length - 1];
+      if (last && last.player.email === ev.player.email && last.day === day) {
+        last.events.push(ev);
+      } else {
+        clusters.push({ player: ev.player, day, at: ev.at, events: [ev] });
+      }
+    });
+    return clusters;
+  }
+
+  function eventItemId(ev) {
+    return `feed-${encodeURIComponent(ev.player.email)}-${ev.at}`;
+  }
+
+  function renderFeed() {
+    const filtered = currentFilter === "todos" ? events : events.filter(ev => ev.category === currentFilter);
+    const contentEl = document.getElementById("feed-content");
+
+    if (filtered.length === 0) {
+      contentEl.innerHTML = `<p class="feed-empty-filter">Nada nessa categoria ainda.</p>`;
+      return;
+    }
+
+    const clusters = buildClusters(filtered);
+    contentEl.innerHTML = clusters.map(c => `
+      <div class="feed-cluster">
+        <a href="perfil.html?user=${encodeURIComponent(c.player.email)}" class="feed-cluster-head">
+          <img class="feed-avatar" src="${c.player.avatar || `https://placehold.co/76x76/1B1F28/D7DAE1?text=${encodeURIComponent((c.player.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(c.player.displayName)}">
+          <span class="feed-body">
+            <span class="feed-text"><b>${escapeHtml(c.player.displayName)}</b>${c.events.length > 1 ? ` · ${c.events.length} atividades` : ""}</span>
+            <span class="feed-time">${relativeTime(c.at)}</span>
+          </span>
+        </a>
+        <div class="feed-cluster-events">
+          ${c.events.map(ev => `
+            <div>
+              <div class="feed-event-line">
+                <span class="feed-icon">${ev.icon || "•"}</span>
+                <span class="feed-event-text">${escapeHtml(ev.text)}</span>
+                <span class="feed-event-time">${relativeTime(ev.at)}</span>
+              </div>
+              <div class="feed-reactions" data-reactions-for="${eventItemId(ev)}"></div>
+            </div>
+          `).join("")}
+        </div>
+      </div>`).join("");
+
+    // reação é por evento individual, não por cluster inteiro
+    clusters.forEach(c => c.events.forEach(ev => {
+      const container = contentEl.querySelector(`[data-reactions-for="${eventItemId(ev)}"]`);
+      if (container) ArenaSocial.mountReactions({ itemId: eventItemId(ev), email: sessionEmail, containerEl: container });
+    }));
+  }
+
+  const filterBar = document.getElementById("feed-filter-bar");
+  filterBar.classList.remove("hidden");
+  filterBar.innerHTML = CATEGORIES.map(c => `
+    <button class="filter-chip font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full ${c.id === "todos" ? "active" : ""}" data-cat="${c.id}">${c.label}</button>
+  `).join("");
+  filterBar.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cat]");
+    if (!btn) return;
+    currentFilter = btn.dataset.cat;
+    filterBar.querySelectorAll(".filter-chip").forEach(b => b.classList.toggle("active", b === btn));
+    renderFeed();
+  });
+
   showOnly("feed-content");
-  document.getElementById("feed-content").innerHTML = events.map(ev => `
-    <a href="perfil.html?user=${encodeURIComponent(ev.player.email)}" class="feed-row">
-      <img class="feed-avatar" src="${ev.player.avatar || `https://placehold.co/76x76/1B1F28/D7DAE1?text=${encodeURIComponent((ev.player.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(ev.player.displayName)}">
-      <span class="feed-icon">${ev.icon || "•"}</span>
-      <span class="feed-body">
-        <span class="feed-text"><b>${escapeHtml(ev.player.displayName)}</b> ${escapeHtml(ev.text)}</span>
-        <span class="feed-time">${relativeTime(ev.at)}</span>
-      </span>
-    </a>`).join("");
+  renderFeed();
 
   // ===============================================================
   // 4) SUGESTÕES — mostradas só quando o feed está vazio por falta de

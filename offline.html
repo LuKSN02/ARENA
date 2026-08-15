@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sem conexão | Arena</title>
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="data/theme.css">
+<style>
+  html, body{ background: var(--bg); height:100%; }
+  body{
+    font-family:'Inter', sans-serif; color: var(--ink);
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:24px;
+  }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+  .offline-glyph{ font-size:52px; margin-bottom:10px; opacity:.9; }
+  h1{ font-family:'Teko', sans-serif; font-size:44px; font-weight:600; text-transform:uppercase; letter-spacing:.02em; }
+  p{ color: var(--ink-soft); font-size:14px; max-width:360px; margin:10px auto 26px; line-height:1.6; }
+  button{
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; padding:11px 22px;
+    background: var(--valorant); color:#12141A; border:none; cursor:pointer;
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);
+  }
+</style>
+</head>
+<body>
+  <div>
+    <div class="offline-glyph">📡</div>
+    <h1>Você está offline</h1>
+    <p>Não foi possível carregar essa página agora. Assim que a conexão voltar, a Arena volta ao normal — o que já visitou antes continua acessível.</p>
+    <button onclick="location.reload()">TENTAR DE NOVO</button>
+  </div>
+</body>
+</html>

@@ -71,3 +71,19 @@ const STREAMERS = [
     url: "#",
   },
 ];
+
+/* ===================================================================
+   CAMADA ASSÍNCRONA — mesmo padrão de data/campeonatos.js. STREAMERS
+   continua existindo como array, mas getStreamers() é o jeito
+   preferido de ler a partir de agora: devolve uma Promise, hoje só
+   resolvendo o array estático depois de um atraso simulado. No dia
+   de trocar por uma API de verdade, só o corpo da função muda.
+   =================================================================== */
+const SIMULATED_LATENCY_MS = 450;
+function getStreamers() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(STREAMERS), SIMULATED_LATENCY_MS);
+  });
+}
+
+window.ArenaData = Object.assign(window.ArenaData || {}, { getStreamers });

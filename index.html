@@ -7,34 +7,12 @@
 <meta name="description" content="Notícias, resultados ao vivo e agenda completa de Valorant, LoL, CS2, Dota 2 e outros grandes campeonatos de e-sports.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --panel-2: #20242F;
-    --sidebar: #0F1116;
-    --discord-blurple: #5865F2;
-    --ticker-bg: #0F1116;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
 
-    --valorant: #FF4655;  --valorant-glow: #241016;
-    --lol: #C89B3C;       --lol-glow: #221d10;
-    --cs2: #E8A03D;       --cs2-glow: #241c10;
-    --dota2: #C23C2A;     --dota2-glow: #241412;
-    --fortnite: #8B5CF6;  --fortnite-glow: #1c1428;
-    --cod: #5B90C9;       --cod-glow: #131c26;
-    --freefire: #FF5722;  --freefire-glow: #251510;
-    --apex: #DA3B46;      --apex-glow: #24141a;
-    --mlbb: #17B8A6;      --mlbb-glow: #0f2422;
-    --rocketleague: #2F8EFF; --rocketleague-glow: #101c2c;
-    --eafc: #2ECC71;      --eafc-glow: #10241a;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -116,6 +94,13 @@
   #search-hint{ padding:14px 16px; font-size:12px; color: var(--muted); }
   .search-result-thumb{ width:40px; height:40px; border-radius:4px; object-fit:cover; flex-shrink:0; background: var(--panel); }
   #search-results a{ opacity:0; animation: searchFadeIn .18s ease forwards; }
+  /* ===== BUSCA — seções por categoria (notícias / jogadores / loja) ===== */
+  .search-section-label{
+    font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700; letter-spacing:.06em;
+    color: var(--muted); text-transform:uppercase; padding:10px 16px 6px;
+  }
+  .search-result-thumb.is-round{ border-radius:9999px; object-fit:cover; }
+  .search-result-price{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--ink-soft); flex-shrink:0; }
 
   #filter-bar{
     scrollbar-width: none;      /* Firefox */
@@ -534,6 +519,7 @@
           <a href="streamers.html" class="dropdown-item" role="menuitem">🎥 Streamers</a>
           <a href="ranking.html" class="dropdown-item" role="menuitem">🏆 Ranking</a>
           <a href="feed.html" class="dropdown-item" role="menuitem">📡 Feed</a>
+          <a href="mensagens.html" class="dropdown-item" role="menuitem">✉️ Mensagens</a>
         </div>
       </div>
     </nav>
@@ -541,6 +527,8 @@
     <!-- Ações -->
     <div class="flex items-center gap-2.5 shrink-0">
       <button aria-label="Buscar" class="js-open-search icon-btn hidden sm:flex w-9 h-9 items-center justify-center text-[14px]">🔍</button>
+      <button aria-label="Instalar app" title="Instalar Arena" class="js-pwa-install icon-btn hidden sm:flex w-9 h-9 items-center justify-center text-[14px]">📲</button>
+      <button aria-label="Ativar notificações" title="Ativar notificações do sistema" class="js-notif-enable icon-btn hidden sm:flex w-9 h-9 items-center justify-center text-[14px]">🔔</button>
       <button class="js-open-login btn-neon hidden sm:block font-mono text-[12px] font-semibold px-5 py-2 clip-tag"><span class="js-login-label">LOGIN</span></button>
 
       <!-- Notificações (só aparece logado) -->
@@ -612,6 +600,7 @@
       <a href="streamers.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">STREAMERS</a>
       <a href="ranking.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">RANKING</a>
       <a href="feed.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">FEED</a>
+      <a href="mensagens.html" class="py-2.5 nav-link" style="border-bottom:1px solid var(--border);">MENSAGENS</a>
       <div class="flex items-center gap-3 mt-4">
         <button aria-label="Buscar" class="js-open-search icon-btn flex-1 h-10 flex items-center justify-center gap-2 text-[12px]">🔍 BUSCAR</button>
         <button class="js-open-login btn-neon flex-1 h-10 font-mono text-[12px] font-semibold clip-tag"><span class="js-login-label">LOGIN</span></button>
@@ -858,7 +847,7 @@
   <div class="modal-panel">
     <div class="flex items-center gap-3 p-4" style="border-bottom:1px solid var(--border);">
       <button id="search-submit" class="text-[15px]" style="color: var(--muted);" aria-label="Buscar">🔍</button>
-      <input id="search-input" type="text" placeholder="Buscar notícias, jogos, times... (mín. 3 letras)" autocomplete="off"
+      <input id="search-input" type="text" placeholder="Buscar notícias, jogadores, produtos... (mín. 3 letras)" autocomplete="off"
         class="flex-1 bg-transparent text-[14px]" style="color: var(--ink); outline:none;">
       <button class="modal-close js-close-search text-[13px]" aria-label="Fechar busca">✕</button>
     </div>
@@ -1049,8 +1038,12 @@
 </div>
 
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/profile.js"></script>
 <script src="data/noticias.js"></script>
+<script src="data/products.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <script>
   // ===============================================================
   // MONTA A LISTA ÚNICA DE NOTÍCIAS (todos os jogos) ANTES de
@@ -1344,38 +1337,112 @@
     return label.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   }
 
-  // Simula uma consulta assíncrona (ex.: chamada a uma API de busca).
-  // Hoje resolve na hora contra ALL_NEWS, mas já fica pronta para,
-  // no futuro, virar um fetch('/api/busca?q=...') sem mudar quem chama.
+  // ===============================================================
+  // BUSCA UNIFICADA — notícias (ALL_NEWS), jogadores (ArenaUtils.
+  // loadUsers + perfil) e produtos da loja (window.ARENA_PRODUCTS,
+  // carregado de data/products.js — mesma fonte que loja.html usa,
+  // então o resultado nunca diverge do catálogo real).
+  //
+  // Cada função de categoria devolve uma Promise (mesma "forma" de
+  // antes com queryNews), prontas pra virar um fetch('/api/busca?q=')
+  // real no futuro sem mudar quem chama.
+  // ===============================================================
   function queryNews(q) {
     return new Promise((resolve) => {
       const term = q.toLowerCase();
-      const list = ALL_NEWS.filter(n =>
+      resolve(ALL_NEWS.filter(n =>
         n.title.toLowerCase().includes(term) ||
         n.excerpt.toLowerCase().includes(term) ||
         n.gameLabel.toLowerCase().includes(term)
-      );
-      resolve(list);
+      ));
     });
   }
 
-  function renderResultsList(list, emptyMessage) {
-    if (list.length === 0) {
+  function queryPlayers(q) {
+    return new Promise((resolve) => {
+      const term = q.toLowerCase();
+      const utils = window.ArenaUtils;
+      if (!utils) { resolve([]); return; }
+      const users = utils.loadUsers();
+      const matches = users
+        .map(u => {
+          const profile = utils.readJSON(`arena-profile-${u.email}`, {}) || {};
+          return {
+            email: u.email,
+            displayName: profile.displayName || u.name,
+            username: profile.username || (u.name || "").split(" ")[0].toLowerCase(),
+            avatar: profile.avatar || "",
+          };
+        })
+        .filter(p => p.displayName.toLowerCase().includes(term) || p.username.toLowerCase().includes(term));
+      resolve(matches);
+    });
+  }
+
+  function queryProducts(q) {
+    return new Promise((resolve) => {
+      const term = q.toLowerCase();
+      const products = window.ARENA_PRODUCTS || [];
+      resolve(products.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.desc.toLowerCase().includes(term) ||
+        p.tag.toLowerCase().includes(term)
+      ));
+    });
+  }
+
+  function newsResultHTML(n) {
+    const thumb = `https://placehold.co/64x64/1B1F28/${getGameColorHex(n.slug)}?text=${encodeURIComponent(gameInitials(n.gameLabel))}`;
+    return `
+      <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
+        <img src="${thumb}" alt="" class="search-result-thumb" loading="lazy">
+        <div class="flex-1 min-w-0">
+          <span class="font-mono text-[9px] font-semibold" style="color: var(--${n.slug});">${n.gameLabel.toUpperCase()}</span>
+          <p class="text-[13px] leading-snug line-clamp-2">${n.title}</p>
+        </div>
+      </a>`;
+  }
+
+  function playerResultHTML(p) {
+    const thumb = p.avatar || `https://placehold.co/64x64/1B1F28/D7DAE1?text=${encodeURIComponent((p.displayName[0] || "?").toUpperCase())}`;
+    return `
+      <a href="perfil.html?user=${encodeURIComponent(p.email)}" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
+        <img src="${thumb}" alt="" class="search-result-thumb is-round" loading="lazy">
+        <div class="flex-1 min-w-0">
+          <span class="font-mono text-[9px] font-semibold" style="color: var(--muted);">JOGADOR</span>
+          <p class="text-[13px] leading-snug truncate">${window.ArenaUtils.escapeHtml(p.displayName)} <span style="color: var(--muted);">@${window.ArenaUtils.escapeHtml(p.username)}</span></p>
+        </div>
+      </a>`;
+  }
+
+  function productResultHTML(p) {
+    return `
+      <a href="loja.html" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
+        <img src="${p.img}" alt="" class="search-result-thumb" loading="lazy">
+        <div class="flex-1 min-w-0">
+          <span class="font-mono text-[9px] font-semibold" style="color: var(--muted);">${p.tag}</span>
+          <p class="text-[13px] leading-snug line-clamp-2">${p.name}</p>
+        </div>
+        <span class="search-result-price">${p.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+      </a>`;
+  }
+
+  function renderResultsList(news, players, products, emptyMessage) {
+    if (news.length === 0 && players.length === 0 && products.length === 0) {
       searchResults.innerHTML = `<p class="text-[13px] py-8 text-center" style="color: var(--muted);">${emptyMessage}</p>`;
       return;
     }
-    searchResults.innerHTML = list.slice(0, 8).map(n => {
-      const thumb = `https://placehold.co/64x64/1B1F28/${getGameColorHex(n.slug)}?text=${encodeURIComponent(gameInitials(n.gameLabel))}`;
-      return `
-        <a href="noticia.html?jogo=${n.slug}&id=${n.idx}" class="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors" style="border-bottom:1px solid var(--border);">
-          <img src="${thumb}" alt="" class="search-result-thumb" loading="lazy">
-          <div class="flex-1 min-w-0">
-            <span class="font-mono text-[9px] font-semibold" style="color: var(--${n.slug});">${n.gameLabel.toUpperCase()}</span>
-            <p class="text-[13px] leading-snug line-clamp-2">${n.title}</p>
-          </div>
-        </a>
-      `;
-    }).join("");
+    let html = "";
+    if (players.length > 0) {
+      html += `<div class="search-section-label">Jogadores</div>` + players.slice(0, 4).map(playerResultHTML).join("");
+    }
+    if (products.length > 0) {
+      html += `<div class="search-section-label">Loja</div>` + products.slice(0, 4).map(productResultHTML).join("");
+    }
+    if (news.length > 0) {
+      html += `<div class="search-section-label">Notícias</div>` + news.slice(0, 6).map(newsResultHTML).join("");
+    }
+    searchResults.innerHTML = html;
   }
 
   // Renderização "crua": decide o que mostrar (dica, destaques ou lista
@@ -1385,7 +1452,7 @@
     const q = query.trim();
 
     if (q.length === 0) {
-      renderResultsList(ALL_NEWS.slice(0, 6), "Nenhum resultado.");
+      renderResultsList(ALL_NEWS.slice(0, 6), [], [], "Nenhum resultado.");
       return;
     }
     if (q.length < SEARCH_MIN_CHARS) {
@@ -1393,8 +1460,8 @@
       return;
     }
 
-    const results = await queryNews(q);
-    renderResultsList(results, `Nenhum resultado para "${q}".`);
+    const [news, players, products] = await Promise.all([queryNews(q), queryPlayers(q), queryProducts(q)]);
+    renderResultsList(news, players, products, `Nenhum resultado para "${q}".`);
   }
 
   // Versão com debounce: é a chamada em cada input do usuário.
@@ -1465,70 +1532,17 @@
   // ===============================================================
   const { setSession, clearSession, getSessionEmail } = window.ArenaUtils;
 
-  function loadProfile(email) {
-    try {
-      const raw = localStorage.getItem(`arena-profile-${email}`);
-      return raw ? JSON.parse(raw) : null;
-    } catch (err) { return null; }
-  }
-  function saveProfilePatch(email, patch) {
-    try {
-      const raw = localStorage.getItem(`arena-profile-${email}`);
-      const profile = raw ? JSON.parse(raw) : {};
-      localStorage.setItem(`arena-profile-${email}`, JSON.stringify({ ...profile, ...patch }));
-    } catch (err) { /* silencioso */ }
-  }
+  // Perfil, inventário e catálogo de emblemas agora vêm de
+  // data/profile.js (fonte única compartilhada com loja.html — antes
+  // essas ~45 linhas existiam copiadas nos dois arquivos e já tinham
+  // divergido: loja.html tinha emblemas no catálogo que nunca existiam
+  // no inventário de verdade).
+  const {
+    loadProfile, saveProfilePatch,
+    inventoryKey, loadInventoryList, saveInventoryList,
+    EMBLEM_CATALOG, MAX_EQUIPPED_BADGES, normalizeEquippedBadges,
+  } = window.ArenaProfile;
 
-  // ===============================================================
-  // EMBLEMAS — mesmo catálogo (só a parte "emblema") e mesma chave de
-  // inventário que inventario.html usa, pra equipar/desequipar direto
-  // por aqui refletir lá (e vice-versa) sem duplicar dado real, só os
-  // metadados de exibição (nome/emoji/raridade).
-  // ===============================================================
-  const MAX_EQUIPPED_BADGES = 3;
-  const EMBLEM_CATALOG = {
-    "emblema-primeira-vitoria": { name: "Primeira Vitória", emoji: "⭐", rarity: "comum" },
-    "emblema-cacador-noticias": { name: "Caçador de Notícias", emoji: "📰", rarity: "raro" },
-    "emblema-comentarista": { name: "Comentarista da Arena", emoji: "💬", rarity: "raro" },
-    "emblema-estrategista": { name: "Estrategista", emoji: "🧠", rarity: "raro" },
-    "emblema-coracao-roxo": { name: "Coração Roxo", emoji: "💜", rarity: "epico" },
-    "emblema-veterano": { name: "Veterano da Arena", emoji: "🎖️", rarity: "epico" },
-    "emblema-popular": { name: "Emblema Popular", emoji: "⭐", rarity: "raro" },
-    "emblema-fa-fundador": { name: "Fã Fundador", emoji: "🏆", rarity: "lendario" },
-    "emblema-arena-vip": { name: "Emblema VIP Arena", emoji: "👑", rarity: "lendario" },
-    "emblema-cacador-lendas": { name: "Emblema Caçador de Lendas", emoji: "🐉", rarity: "epico" },
-    "emblema-fundador-cosmico": { name: "Emblema Fundador Cósmico", emoji: "🌌", rarity: "lendario" },
-    "emblema-mestre-arena": { name: "Emblema Mestre da Arena", emoji: "🎯", rarity: "lendario" },
-    "emblema-fenix-renascida": { name: "Emblema Fênix Renascida", emoji: "🔥", rarity: "epico" },
-    "emblema-criador": { name: "Criador", emoji: "🛠️", rarity: "lendario" },
-  };
-  function inventoryKey(email) { return `arena-inventory-${email || "demo"}`; }
-  function loadInventoryList(email) {
-    try { const raw = localStorage.getItem(inventoryKey(email)); return raw ? JSON.parse(raw) : []; }
-    catch (err) { return []; }
-  }
-  function saveInventoryList(email, inv) {
-    try { localStorage.setItem(inventoryKey(email), JSON.stringify(inv)); } catch (err) { /* silencioso */ }
-  }
-  // Se por algum motivo (dado antigo, teste, etc.) houver mais emblemas
-  // equipados do que o limite permite, apara o excesso automaticamente
-  // aqui — assim a poluição visual se resolve sozinha, sem precisar
-  // que o usuário clique em nada.
-  function normalizeEquippedBadges(email) {
-    const inv = loadInventoryList(email);
-    let count = 0;
-    let changed = false;
-    inv.forEach(i => {
-      if (i.equipped && EMBLEM_CATALOG[i.id]) {
-        count++;
-        if (count > MAX_EQUIPPED_BADGES) { i.equipped = false; changed = true; }
-      }
-    });
-    if (changed) saveInventoryList(email, inv);
-    const equippedBadges = inv.filter(i => i.equipped && EMBLEM_CATALOG[i.id]).map(i => ({ id: i.id, ...EMBLEM_CATALOG[i.id] }));
-    saveProfilePatch(email, { equippedBadges });
-    return inv;
-  }
   function toggleBadge(email, id) {
     const inv = loadInventoryList(email);
     const entry = inv.find(i => i.id === id);
@@ -1750,6 +1764,7 @@
     if (isLoggedIn) {
       mountNotifBell();
       applyProfileToNav();
+      window.ArenaMessages?.mountNavBadge("dm-nav-badge", userEmail);
     }
   }
 

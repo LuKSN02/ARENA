@@ -6,29 +6,16 @@
 <title>Meu Inventário — Arena</title>
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/profile.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E;
-    --panel: #1B1F28;
-    --panel-2: #20242F;
-    --sidebar: #0F1116;
-    --border: rgba(255,255,255,0.08);
-    --ink: #D7DAE1;
-    --ink-soft: #AEB3BE;
-    --muted: #7C8394;
-    --live: #34D399;
-    --valorant: #FF4655;
-    --discord-blurple: #5865F2;
-
-    --r-comum: #7C8394;
-    --r-raro: #5865F2;
-    --r-epico: #8B5CF6;
-    --r-lendario: #F59E0B;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -224,6 +211,10 @@
     <div class="flex items-center gap-4">
       <div class="hidden" id="notif-wrap"></div>
 
+      <a href="mensagens.html" class="font-mono text-[12px] font-semibold hidden sm:flex items-center gap-2 relative" style="color: var(--muted);">
+        ✉️ Mensagens
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
       <a href="ranking.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--r-lendario);">🏆 Ranking</a>
       <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">&larr; Voltar para o portal</a>
     </div>
@@ -305,14 +296,15 @@
   // 1) SESSÃO — getSessionEmail() vem de data/utils.js (também
   //    recupera a sessão "lembrada" de 30 dias, não só a da aba).
   // ===============================================================
-  const { getSessionEmail } = window.ArenaUtils;
+  const { getSessionEmail, readJSON, loadUsers } = window.ArenaUtils;
+  const { inventoryKey: makeInventoryKey, loadInventoryList, saveInventoryList, loadProfile: loadProfileShared, saveProfilePatch } = window.ArenaProfile;
   const sessionEmail = getSessionEmail();
-  const inventoryKey = `arena-inventory-${sessionEmail || "demo"}`;
-  const profileKey = `arena-profile-${sessionEmail || "demo"}`;
+  const inventoryKey = makeInventoryKey(sessionEmail);
   if (!sessionEmail) {
     document.getElementById("no-session-banner").classList.remove("hidden");
   } else if (window.ArenaSocial) {
     window.ArenaSocial.initHeaderBell();
+    window.ArenaMessages?.mountNavBadge("dm-nav-badge", sessionEmail);
   }
 
   // ===============================================================
@@ -444,11 +436,8 @@
   //    backend). Cupons têm `used`; banners/emblemas têm `equipped`.
   // ===============================================================
   function loadInventory() {
-    let inv = null;
-    try {
-      const raw = localStorage.getItem(inventoryKey);
-      if (raw) inv = JSON.parse(raw);
-    } catch (err) { inv = null; }
+    let inv = loadInventoryList(sessionEmail);
+    if (inv.length === 0) inv = null; // trata "nunca salvo" igual a "vazio", pra sempre conceder o kit inicial abaixo
 
     // Kit inicial "comum" (sem requisito de desbloqueio) — normalmente é
     // concedido na primeira visita a esta página. Mas se o usuário comprar
@@ -473,7 +462,7 @@
     return inv;
   }
   function saveInventory(inv) {
-    try { localStorage.setItem(inventoryKey, JSON.stringify(inv)); } catch (err) { /* silencioso */ }
+    saveInventoryList(sessionEmail, inv);
   }
 
   let inventory = loadInventory(); // [{id, used?, equipped?}]
@@ -560,11 +549,8 @@
   // desalinhar do que o perfil público realmente mostra.
   function countMyFollowers() {
     const email = sessionEmail || "demo";
-    let users = [];
-    try { users = JSON.parse(localStorage.getItem("arena-demo-users") || "[]"); } catch (err) { users = []; }
-    return users.filter(u => {
-      let following = [];
-      try { following = JSON.parse(localStorage.getItem(`arena-following-${u.email}`) || "[]"); } catch (err) { following = []; }
+    return loadUsers().filter(u => {
+      const following = readJSON(`arena-following-${u.email}`, []);
       return following.includes(email);
     }).length;
   }
@@ -612,14 +598,10 @@
   //    nas outras telas sem duplicar lógica.
   // ===============================================================
   function loadProfile() {
-    try {
-      const raw = localStorage.getItem(profileKey);
-      return raw ? JSON.parse(raw) : {};
-    } catch (err) { return {}; }
+    return loadProfileShared(sessionEmail) || {};
   }
   function patchProfile(patch) {
-    const profile = { ...loadProfile(), ...patch };
-    try { localStorage.setItem(profileKey, JSON.stringify(profile)); } catch (err) { /* silencioso */ }
+    saveProfilePatch(sessionEmail, patch);
   }
 
   function equipBanner(item) {

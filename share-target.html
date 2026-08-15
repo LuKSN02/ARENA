@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compartilhar com a Arena</title>
+<meta name="description" content="Compartilhe links e textos direto para uma conversa na Arena.">
+<link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
+<script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
+<script src="data/social.js"></script>
+<script src="data/messages.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="data/theme.css">
+<style>
+  html, body{ background: var(--bg); }
+  body{ font-family:'Inter', sans-serif; color: var(--ink); }
+  .font-display{ font-family:'Teko', sans-serif; }
+  .font-mono{ font-family:'JetBrains Mono', monospace; }
+  .rk-card{ background: var(--panel); border:1px solid var(--border); border-radius:14px; }
+
+  .share-preview{ padding:14px; border:1px solid var(--border); border-radius:10px; background: var(--panel-2); }
+  .share-preview-title{ font-size:13px; font-weight:600; color: var(--ink); }
+  .share-preview-text{ font-size:12.5px; color: var(--ink-soft); margin-top:4px; line-height:1.5; }
+  .share-preview-url{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--valorant); margin-top:6px; word-break:break-all; display:block; }
+
+  .recipient-row{
+    display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px;
+    background: var(--panel-2); cursor:pointer; text-align:left; width:100%; transition: border-color .12s ease;
+  }
+  .recipient-row:hover{ border-color: var(--ink-soft); }
+  .recipient-row.is-sent{ opacity:.55; pointer-events:none; }
+  .recipient-avatar{ width:34px; height:34px; border-radius:9999px; object-fit:cover; background: var(--panel); flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<header style="border-bottom:1px solid var(--border);">
+  <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <a href="index.html" class="font-display text-3xl font-bold tracking-wide shrink-0" style="color: var(--ink);">
+      ARENA<span style="color: var(--valorant);">.</span>
+    </a>
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="hidden" id="notif-wrap"></div>
+      <a href="index.html" class="font-mono text-[12px] font-semibold flex items-center gap-2" style="color: var(--muted);">
+        &larr; Voltar para o portal
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-10">
+
+  <div class="mb-8">
+    <p class="font-mono text-[11px] font-semibold tracking-wide" style="color: var(--valorant);">📤 COMPARTILHADO PARA A ARENA</p>
+    <h1 class="font-display text-4xl sm:text-5xl font-semibold uppercase tracking-wide mt-1">Enviar pra alguém</h1>
+    <p class="text-[13px] sm:text-[14px] mt-2 max-w-2xl" style="color: var(--ink-soft);">
+      Escolha quem vai receber isso como mensagem direta.
+    </p>
+  </div>
+
+  <!-- Precisa estar logado -->
+  <div id="no-session-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">🔒</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Faça login primeiro</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">Entre na sua conta pra poder mandar isso pra alguém.</p>
+    <a href="index.html" class="inline-block mt-5 font-mono text-[12px] font-semibold px-5 py-2.5 rounded-lg" style="background: var(--valorant); color:#fff;">IR PARA A HOME</a>
+  </div>
+
+  <!-- Nada foi recebido (acesso direto à página, sem share) -->
+  <div id="no-payload-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">📭</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Nada pra compartilhar</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      Essa página é o destino do compartilhamento do sistema — abra o menu "Compartilhar" do seu aparelho e escolha a Arena.
+    </p>
+  </div>
+
+  <!-- Não segue ninguém ainda -->
+  <div id="no-following-state" class="hidden rk-card p-10 text-center">
+    <div class="text-4xl mb-3">👥</div>
+    <h2 class="font-display text-2xl uppercase tracking-wide">Você ainda não segue ninguém</h2>
+    <p class="text-[13px] mt-2 max-w-md mx-auto" style="color: var(--muted);">
+      Só dá pra mandar mensagem pra quem você segue de volta (ou quem libera DM de estranhos). Visite o
+      <a href="ranking.html" style="color: var(--valorant); text-decoration:underline;">ranking</a> pra começar a seguir gente.
+    </p>
+  </div>
+
+  <!-- Conteúdo principal -->
+  <div id="share-content" class="hidden flex flex-col gap-6">
+    <div>
+      <p class="font-mono text-[11px] font-semibold mb-2" style="color: var(--muted);">O QUE VOCÊ ESTÁ COMPARTILHANDO</p>
+      <div id="share-preview" class="share-preview"></div>
+    </div>
+
+    <div>
+      <p class="font-mono text-[11px] font-semibold mb-2" style="color: var(--muted);">ENVIAR PARA</p>
+      <div id="recipient-list" class="flex flex-col gap-2"></div>
+      <p id="send-feedback" class="hidden font-mono text-[11px] mt-3" style="color: var(--live);"></p>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(function(){
+  const { getSessionEmail, loadUsers, readJSON, escapeHtml } = window.ArenaUtils;
+  const sessionEmail = getSessionEmail();
+
+  function showOnly(id) {
+    ["no-session-state", "no-payload-state", "no-following-state", "share-content"].forEach(x =>
+      document.getElementById(x).classList.toggle("hidden", x !== id));
+  }
+
+  ArenaSocial.initHeaderBell();
+
+  if (!sessionEmail) { showOnly("no-session-state"); return; }
+
+  // ===============================================================
+  // 1) LÊ O QUE FOI COMPARTILHADO — o manifest declara share_target
+  //    com method:"GET", então o navegador simplesmente navega pra cá
+  //    com ?title=&text=&url= já preenchidos. Sem service worker
+  //    envolvido nesse fluxo.
+  // ===============================================================
+  const params = new URLSearchParams(location.search);
+  const shared = {
+    title: (params.get("title") || "").trim(),
+    text: (params.get("text") || "").trim(),
+    url: (params.get("url") || "").trim(),
+  };
+  const hasPayload = shared.title || shared.text || shared.url;
+
+  if (!hasPayload) { showOnly("no-payload-state"); return; }
+
+  // Mensagem final que vai ser enviada como DM — junta só as partes
+  // que vieram preenchidas.
+  const messageText = [shared.title, shared.text, shared.url].filter(Boolean).join("\n");
+
+  document.getElementById("share-preview").innerHTML = `
+    ${shared.title ? `<span class="share-preview-title">${escapeHtml(shared.title)}</span>` : ""}
+    ${shared.text ? `<span class="share-preview-text">${escapeHtml(shared.text)}</span>` : ""}
+    ${shared.url ? `<a href="${escapeHtml(shared.url)}" target="_blank" rel="noopener" class="share-preview-url">${escapeHtml(shared.url)}</a>` : ""}
+  `;
+
+  // ===============================================================
+  // 2) LISTA DE DESTINATÁRIOS — reaproveita "seguindo" como a lista
+  //    mais provável de gente com quem dá pra falar (mesma lógica de
+  //    "amigo" já usada em ArenaMessages.canMessage).
+  // ===============================================================
+  function followingKey(email) { return `arena-following-${email}`; }
+  function getFollowing(email) { return readJSON(followingKey(email), []); }
+
+  function resolvePlayerCard(email) {
+    const rec = loadUsers().find(u => u.email === email);
+    if (!rec) return null;
+    const p = readJSON(`arena-profile-${email}`, {});
+    return {
+      email,
+      displayName: p.displayName || rec.name,
+      username: p.username || rec.name.split(" ")[0].toLowerCase(),
+      avatar: p.avatar || "",
+    };
+  }
+
+  const followingEmails = getFollowing(sessionEmail);
+  if (followingEmails.length === 0) { showOnly("no-following-state"); return; }
+
+  const recipients = followingEmails.map(resolvePlayerCard).filter(Boolean);
+
+  showOnly("share-content");
+  const listEl = document.getElementById("recipient-list");
+  listEl.innerHTML = recipients.map(r => `
+    <button type="button" class="recipient-row" data-email="${escapeHtml(r.email)}">
+      <img class="recipient-avatar" src="${r.avatar || `https://placehold.co/68x68/1B1F28/D7DAE1?text=${encodeURIComponent((r.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(r.displayName)}">
+      <span class="flex-1 min-w-0">
+        <span class="block text-[12.5px] font-semibold truncate">${escapeHtml(r.displayName)}</span>
+        <span class="block font-mono text-[10.5px]" style="color: var(--muted);">@${escapeHtml(r.username)}</span>
+      </span>
+    </button>`).join("");
+
+  const feedback = document.getElementById("send-feedback");
+
+  listEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-email]");
+    if (!btn) return;
+    const toEmail = btn.dataset.email;
+    const result = window.ArenaMessages.sendMessage(sessionEmail, toEmail, messageText);
+
+    if (!result || result.blocked) {
+      feedback.textContent = result?.reason || "Não foi possível enviar essa mensagem.";
+      feedback.style.color = "var(--valorant)";
+      feedback.classList.remove("hidden");
+      return;
+    }
+
+    btn.classList.add("is-sent");
+    feedback.textContent = "Enviado! Redirecionando pra conversa...";
+    feedback.style.color = "var(--live)";
+    feedback.classList.remove("hidden");
+    setTimeout(() => { location.href = `mensagens.html?user=${encodeURIComponent(toEmail)}`; }, 900);
+  });
+})();
+</script>
+
+</body>
+</html>

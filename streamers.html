@@ -7,23 +7,15 @@
 <meta name="description" content="Conheça os streamers e criadores de conteúdo parceiros da Arena — quem está ao vivo agora e onde assistir.">
 <link rel="icon" type="image/png" href="https://placehold.co/64x64/14171E/FF4655/png?text=A">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
+<script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  :root{
-    --bg: #14171E; --panel: #1B1F28; --panel-2: #20242F; --sidebar: #0F1116;
-    --border: rgba(255,255,255,0.08); --ink: #D7DAE1; --ink-soft: #AEB3BE; --muted: #7C8394; --live: #34D399;
-    --valorant: #FF4655;  --valorant-glow: #241016;
-    --lol: #C89B3C;       --lol-glow: #221d10;
-    --cs2: #E8A03D;       --cs2-glow: #241c10;
-    --dota2: #C23C2A;     --dota2-glow: #241412;
-    --fortnite: #8B5CF6;  --fortnite-glow: #1c1428;
-    --cod: #5B90C9;       --cod-glow: #131c26;
-    --freefire: #FF5722;  --freefire-glow: #251510;
-    --apex: #DA3B46;      --apex-glow: #24141a;
-  }
   html, body{ background: var(--bg); }
   body{ font-family:'Inter', sans-serif; color: var(--ink); }
   .font-display{ font-family:'Teko', sans-serif; }
@@ -47,6 +39,13 @@
   .filter-chip{ border:1px solid var(--border); color: var(--muted); background: transparent; white-space:nowrap; }
   .filter-chip.active{ border-color: var(--ink-soft); color: var(--ink); background: var(--panel-2); }
 
+  /* ===== SKELETON (loading state enquanto getStreamers() resolve) ===== */
+  .sk{ background: linear-gradient(90deg, var(--panel) 25%, var(--panel-2) 37%, var(--panel) 63%); background-size: 400% 100%; animation: sk-shimmer 1.4s ease infinite; border-radius:6px; }
+  @keyframes sk-shimmer{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
+  .sk-chip{ height:30px; width:90px; border-radius:999px; flex-shrink:0; }
+  .sk-card{ height:168px; border-radius:4px 4px 4px 4px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+  @media (prefers-reduced-motion: reduce){ .sk{ animation:none; } }
+
   /* ===== NOTIFICAÇÕES (reaproveitado do resto do site) ===== */
 </style>
 </head>
@@ -63,6 +62,10 @@
       <a href="streamers.html" style="color: var(--ink);" class="hover:opacity-80">🎥 STREAMERS</a>
       <a href="ranking.html" style="color: var(--muted);" class="hover:opacity-80">🏆 RANKING</a>
       <a href="feed.html" style="color: var(--muted);" class="hover:opacity-80">📡 FEED</a>
+      <a href="mensagens.html" style="color: var(--muted);" class="hover:opacity-80 relative">
+        ✉️ MENSAGENS
+        <span id="dm-nav-badge" class="hidden" style="position:absolute; top:-8px; right:-14px; background: var(--valorant); color:#fff; font-size:9px; font-weight:700; padding:1px 4px; border-radius:999px;"></span>
+      </a>
     </nav>
     <div class="flex items-center gap-3 shrink-0">
       <div class="hidden" id="notif-wrap"></div>
@@ -83,12 +86,26 @@
     </p>
   </div>
 
-  <!-- Filtro por jogo -->
-  <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-8" id="game-filter-bar"></div>
+  <!-- Skeleton — mostrado enquanto ArenaData.getStreamers() resolve -->
+  <div id="streamers-skeleton">
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-8">
+      <div class="sk sk-chip"></div><div class="sk sk-chip"></div><div class="sk sk-chip"></div><div class="sk sk-chip"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div>
+      <div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div>
+    </div>
+  </div>
 
-  <!-- Grid de streamers -->
-  <div id="streamers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-  <p id="streamers-empty" class="hidden py-12 text-center font-mono text-[12px]" style="color: var(--muted);">Nenhum criador encontrado para este filtro.</p>
+  <!-- Conteúdo real — hidden até os dados chegarem -->
+  <div id="streamers-real" class="hidden">
+    <!-- Filtro por jogo -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-8" id="game-filter-bar"></div>
+
+    <!-- Grid de streamers -->
+    <div id="streamers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    <p id="streamers-empty" class="hidden py-12 text-center font-mono text-[12px]" style="color: var(--muted);">Nenhum criador encontrado para este filtro.</p>
+  </div>
 
 </main>
 
@@ -98,28 +115,16 @@
   const { getSessionEmail, escapeHtml, formatCount } = window.ArenaUtils;
 
   ArenaSocial.initHeaderBell();
-
-  // ===============================================================
-  // FILTRO DE JOGO — monta os chips a partir dos jogos que realmente
-  // aparecem em STREAMERS (data/streamers.js), então nunca sobra
-  // filtro vazio.
-  // ===============================================================
-  const gamesInUse = [];
-  STREAMERS.forEach(s => {
-    if (!gamesInUse.find(g => g.slug === s.game)) gamesInUse.push({ slug: s.game, label: s.gameLabel });
-  });
+  window.ArenaMessages?.mountNavBadge("dm-nav-badge", getSessionEmail());
 
   const filterBar = document.getElementById("game-filter-bar");
-  filterBar.innerHTML = [`<button class="filter-chip active font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="todos">TODOS</button>`]
-    .concat(gamesInUse.map(g => `<button class="filter-chip font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="${g.slug}">${g.label.toUpperCase()}</button>`))
-    .join("");
-
+  let streamers = [];
   let currentFilter = "todos";
 
   function renderGrid() {
     const grid = document.getElementById("streamers-grid");
     const empty = document.getElementById("streamers-empty");
-    const list = STREAMERS
+    const list = streamers
       .filter(s => currentFilter === "todos" || s.game === currentFilter)
       // ao vivo primeiro, depois por nº de seguidores
       .sort((a, b) => (b.isLive - a.isLive) || (b.followers - a.followers));
@@ -156,13 +161,36 @@
       </a>
     `).join("");
   }
-  renderGrid();
 
   filterBar.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-game]");
     if (!btn) return;
     currentFilter = btn.dataset.game;
     filterBar.querySelectorAll(".filter-chip").forEach(b => b.classList.toggle("active", b === btn));
+    renderGrid();
+  });
+
+  // ===================================================================
+  // CARREGAMENTO — ArenaData.getStreamers() (data/streamers.js) devolve
+  // uma Promise; skeleton fica visível até resolver. No dia de trocar
+  // o array estático por uma API de verdade, só essa função muda.
+  // ===================================================================
+  window.ArenaData.getStreamers().then((data) => {
+    streamers = data;
+
+    // FILTRO DE JOGO — monta os chips a partir dos jogos que realmente
+    // aparecem em STREAMERS, então nunca sobra filtro vazio.
+    const gamesInUse = [];
+    streamers.forEach(s => {
+      if (!gamesInUse.find(g => g.slug === s.game)) gamesInUse.push({ slug: s.game, label: s.gameLabel });
+    });
+    filterBar.innerHTML = [`<button class="filter-chip active font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="todos">TODOS</button>`]
+      .concat(gamesInUse.map(g => `<button class="filter-chip font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full" data-game="${g.slug}">${g.label.toUpperCase()}</button>`))
+      .join("");
+
+    document.getElementById("streamers-skeleton").classList.add("hidden");
+    document.getElementById("streamers-real").classList.remove("hidden");
+
     renderGrid();
   });
 })();
