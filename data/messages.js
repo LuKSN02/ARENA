@@ -1,99 +1,86 @@
 /* ===================================================================
-   ARENA — MESSAGES.JS  (migrado pra Firestore, tempo real de verdade)
+   ARENA — MESSAGES.JS  (DMs de volta pro localStorage)
 
-   MUDANÇA DE FUNDO: antes tudo vivia no localStorage de quem enviava,
-   e "sincronizar" com outra conta só funcionava se fosse o MESMO
-   navegador (mesmo localStorage). Isso não existe mais — agora duas
-   contas em dois computadores diferentes conversam de verdade, porque
-   os dados moram no Firestore, não no navegador.
+   POR QUÊ: este módulo tinha sido migrado pra depender do Firestore
+   (data/firebase-config.js), mas esse arquivo nunca chegou a ser
+   configurado — sem ele, `ArenaFirebase.db` fica undefined, e QUALQUER
+   chamada que toca o Firestore (inclusive `mountNavBadge`, chamado por
+   quase toda página do site pra mostrar o badge de mensagens não
+   lidas no menu) lança uma exceção e quebra o resto do <script> da
+   página. Como isso só acontecia depois que a sessão já estava
+   resolvida, o efeito só apareceu depois que o login voltou a
+   funcionar de verdade (ver data/utils.js).
 
-   ISSO TAMBÉM MUDA A FORMA DE LER DADOS: no localStorage, ler uma
-   conversa era síncrono (getMessages() devolvia o array na hora). No
-   Firestore, a forma certa de "ler e continuar recebendo atualizações"
-   é INSCREVER-SE (onSnapshot), não pedir uma vez só. Por isso as
-   funções de leitura mudaram de `getX()` (devolve valor) pra
-   `subscribeX(..., callback)` (chama `callback` toda vez que algo
-   muda, e devolve uma função `unsubscribe` pra parar de escutar).
+   Este arquivo volta a guardar tudo em localStorage, mesma
+   abordagem "demo" de antes da migração. A API pública
+   (`window.ArenaMessages`) continua IDÊNTICA em nome/assinatura —
+   inclusive o estilo "subscribe" com callback + função de
+   unsubscribe — pra não quebrar mensagens.html, share-target.html
+   nem o badge de navegação usado em quase toda página.
 
-   MAPA MENTAL — o que cada função antiga virou:
+   LIMITAÇÃO (igual antes da migração pro Firestore): como não há
+   backend, isso só sincroniza entre ABAS DO MESMO NAVEGADOR (via
+   evento nativo `storage`, que só dispara em OUTRAS abas — a própria
+   aba que escreveu se atualiza via um CustomEvent interno). Duas
+   contas em dois computadores diferentes não conversam de verdade
+   até o Firebase ser configurado.
 
-     getMessages(a, b)               → subscribeMessages(a, b, cb)
-     listConversations(email, fn)    → subscribeConversationList(email, fn, cb)
-     getTotalUnread(email)           → subscribeTotalUnread(email, cb)
-     getUnreadCount(email, partner)  → incluso dentro do item da lista
-                                        que subscribeConversationList já
-                                        devolve (campo `unread`)
-     isPartnerTyping(email, partner) → subscribeTyping(email, partner, cb)
-     sendMessage(...)                → continua chamando igual, mas
-                                        agora devolve uma Promise (antes
-                                        devolvia o resultado na hora)
-     markConversationRead(...)       → continua igual, mas devolve Promise
-     canMessage(...)                 → CONTINUA SÍNCRONA — ainda lê
-                                        privacidade/seguindo do
-                                        localStorage (perfil e seguir
-                                        ainda não foram migrados)
-     mountNavBadge(elementId, email) → continua igual de fora, mas por
-                                        dentro agora é uma inscrição
-                                        (o badge atualiza sozinho, sem
-                                        precisar chamar de novo)
+   ESTRUTURA NO LOCALSTORAGE:
+     arena-dm-conversations                → array de resumos:
+       { key, participants:[a,b], lastText, lastFrom, lastAt,
+         unread:{email:n}, reads:{email:ts}, typing:{email:ts} }
+     arena-dm-msgs-<conversationKey>        → array de mensagens:
+       { from, text, at }
 
-   ESTRUTURA NO FIRESTORE:
-     conversations/{conversationId}
-       participants: [emailA, emailB]
-       lastText, lastFrom, lastAt   → resumo pra montar a lista lateral
-       unread: { [email]: number }  → contador por participante
-       reads:  { [email]: number }  → timestamp de "até quando esse
-                                       participante já leu" (usado pro
-                                       ✓✓ nas próprias mensagens)
-       typing: { [email]: number }  → timestamp do último "tô digitando"
+   `conversationKey` continua sendo os dois e-mails ordenados e
+   juntos, igual sempre foi.
 
-     conversations/{conversationId}/messages/{messageId}
-       from, text, at
-
-   `conversationId` continua sendo os dois e-mails ordenados e juntos
-   (mesma função conversationKey de antes), então dá pra migrar dados
-   antigos do localStorage mantendo os mesmos IDs de conversa se algum
-   dia você quiser rodar um script de importação.
-
-   Requer data/utils.js (e portanto data/firebase-config.js) carregados
-   ANTES deste script.
+   Requer data/utils.js carregado ANTES deste script.
    =================================================================== */
 (function (global) {
   "use strict";
 
-  if (!global.ArenaFirebase) {
-    console.error("ArenaMessages: data/firebase-config.js precisa ser carregado antes de data/messages.js");
-  }
   if (!global.ArenaUtils) {
     console.error("ArenaMessages: data/utils.js precisa ser carregado antes de data/messages.js");
   }
-  const { db } = global.ArenaFirebase || {};
-  const { readJSON } = global.ArenaUtils || {};
+  const { readJSON, writeJSON } = global.ArenaUtils || {};
 
   const TYPING_TTL_MS = 3000;
+  const CONV_LIST_KEY = "arena-dm-conversations";
+  const MSG_KEY_PREFIX = "arena-dm-msgs-";
+  const LOCAL_EVENT = "arena-dm-changed";
 
-  // ===== ID DA CONVERSA — mesma lógica de sempre: ordena os e-mails
-  // antes de montar a chave, então A→B e B→A caem no mesmo doc. =====
+  // ===== ID DA CONVERSA — ordena os e-mails antes de montar a chave,
+  // então A→B e B→A caem sempre na mesma conversa. =====
   function conversationKey(emailA, emailB) {
     return [emailA, emailB].sort().join("::");
   }
 
-  function conversationRef(emailA, emailB) {
-    return db.collection("conversations").doc(conversationKey(emailA, emailB));
+  function messagesKey(emailA, emailB) {
+    return MSG_KEY_PREFIX + conversationKey(emailA, emailB);
+  }
+
+  function loadConvList() { return readJSON(CONV_LIST_KEY, []); }
+  function saveConvList(list) { writeJSON(CONV_LIST_KEY, list); }
+  function findConvEntry(list, key) { return list.find(c => c.key === key); }
+
+  function upsertConvEntry(entry) {
+    const list = loadConvList();
+    const idx = list.findIndex(c => c.key === entry.key);
+    if (idx >= 0) list[idx] = entry; else list.push(entry);
+    saveConvList(list);
+  }
+
+  // Avisa quem está com uma inscrição aberta NESTA MESMA aba (o evento
+  // nativo "storage" só dispara em outras abas/janelas).
+  function notifyChange(key) {
+    global.dispatchEvent(new CustomEvent(LOCAL_EVENT, { detail: { key } }));
   }
 
   // ===================================================================
-  // PERMISSÃO DE ENVIO — inalterada em espírito, ainda síncrona: lê
-  // privacidade (arena-profile-<email>) e seguidores (arena-following-
-  // <email>) do localStorage, porque esses dois ainda não migraram pra
-  // Firestore. No dia que migrarem, só o corpo desta função muda — quem
-  // chama continua igual.
-  //
+  // PERMISSÃO DE ENVIO — inalterada: lê privacidade
+  // (arena-profile-<email>) e seguidores (arena-following-<email>).
   //   1) já existe conversa com mensagem trocada → sempre permite.
-  //      (aqui isso vira "sempre permite", já que checar histórico
-  //      exigiria uma leitura assíncrona; o Firestore Security Rules é
-  //      quem faz a checagem de verdade do lado do servidor — ver nota
-  //      de regras no fim do arquivo)
   //   2) destinatário tem allowDmFromStrangers ligado → permite.
   //   3) remetente e destinatário se seguem mutuamente → permite.
   //   4) caso contrário → bloqueia.
@@ -119,162 +106,215 @@
   }
 
   // ===================================================================
-  // ENVIAR — agora assíncrono (Promise). A checagem de "já existe
-  // conversa" (item 1 de canMessage) é feita aqui, lendo o doc antes de
-  // decidir bloquear, já que aqui dentro já estamos em contexto async.
+  // ENVIAR — continua devolvendo uma Promise (pra não quebrar o
+  // .then()/.catch() que mensagens.html e share-target.html já usam),
+  // mas agora resolve na hora, sem round-trip de rede.
   // ===================================================================
   function sendMessage(fromEmail, toEmail, text) {
     const clean = (text || "").trim();
     if (!fromEmail || !toEmail || !clean) return Promise.resolve(null);
 
-    const ref = conversationRef(fromEmail, toEmail);
+    const key = conversationKey(fromEmail, toEmail);
+    const msgs = readJSON(MSG_KEY_PREFIX + key, []);
+    const alreadyTalked = msgs.length > 0;
+    const check = canMessage(fromEmail, toEmail);
+    if (!alreadyTalked && !check.allowed) {
+      return Promise.resolve({ blocked: true, reason: check.reason });
+    }
 
-    return ref.get().then((snap) => {
-      const alreadyTalked = snap.exists && snap.data().lastAt;
-      const check = canMessage(fromEmail, toEmail);
-      if (!alreadyTalked && !check.allowed) {
-        return { blocked: true, reason: check.reason };
-      }
+    const now = Date.now();
+    const msg = { from: fromEmail, text: clean.slice(0, 2000), at: now };
+    msgs.push(msg);
+    writeJSON(MSG_KEY_PREFIX + key, msgs);
 
-      const now = Date.now();
-      const msg = { from: fromEmail, text: clean.slice(0, 2000), at: now };
+    const list = loadConvList();
+    const prev = findConvEntry(list, key) || { key, participants: [fromEmail, toEmail], unread: {}, reads: {}, typing: {} };
+    const entry = {
+      key,
+      participants: [fromEmail, toEmail],
+      lastText: msg.text,
+      lastFrom: fromEmail,
+      lastAt: now,
+      unread: { ...(prev.unread || {}), [toEmail]: ((prev.unread || {})[toEmail] || 0) + 1 },
+      // quem manda já "leu" a própria mensagem
+      reads: { ...(prev.reads || {}), [fromEmail]: now },
+      typing: prev.typing || {},
+    };
+    upsertConvEntry(entry);
+    notifyChange(key);
 
-      return ref.collection("messages").add(msg).then(() => {
-        const prev = snap.exists ? snap.data() : {};
-        const prevUnread = prev.unread || {};
-        const prevReads = prev.reads || {};
+    if (global.ArenaSocial) {
+      global.ArenaSocial.notify(toEmail, "✉️", "te enviou uma mensagem", `mensagens.html?user=${encodeURIComponent(fromEmail)}`, fromEmail);
+    }
 
-        return ref.set({
-          participants: [fromEmail, toEmail],
-          lastText: msg.text,
-          lastFrom: fromEmail,
-          lastAt: now,
-          unread: { ...prevUnread, [toEmail]: (prevUnread[toEmail] || 0) + 1 },
-          // quem manda já "leu" a própria mensagem
-          reads: { ...prevReads, [fromEmail]: now },
-        }, { merge: true });
-      }).then(() => {
-        if (global.ArenaSocial) {
-          global.ArenaSocial.notify(toEmail, "✉️", "te enviou uma mensagem", `mensagens.html?user=${encodeURIComponent(fromEmail)}`, fromEmail);
-        }
-        return msg;
-      });
-    });
+    return Promise.resolve(msg);
   }
 
   // ===================================================================
-  // MENSAGENS DE UMA CONVERSA — inscrição em tempo real, ordenada da
-  // mais antiga pra mais nova (igual ao array antigo). Chame a função
-  // de unsubscribe devolvida quando a página/tela for desmontada.
-  //
-  //   const unsub = ArenaMessages.subscribeMessages(meuEmail, outroEmail, (msgs) => {
-  //     renderizarMensagens(msgs);
-  //   });
-  //   // mais tarde, se precisar: unsub();
+  // MENSAGENS DE UMA CONVERSA — chama `callback` na hora com o estado
+  // atual e de novo toda vez que mudar (nesta aba via CustomEvent
+  // interno, em outras abas via evento nativo "storage"). Devolve uma
+  // função de unsubscribe, igual à versão Firestore.
   // ===================================================================
   function subscribeMessages(emailA, emailB, callback) {
-    return conversationRef(emailA, emailB)
-      .collection("messages")
-      .orderBy("at", "asc")
-      .onSnapshot((snap) => {
-        callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, (err) => console.warn("ArenaMessages: falha ao escutar mensagens.", err));
+    const key = conversationKey(emailA, emailB);
+    const storageKey = MSG_KEY_PREFIX + key;
+
+    function refresh() { callback(readJSON(storageKey, [])); }
+    refresh();
+
+    function onStorage(e) { if (!e.key || e.key === storageKey) refresh(); }
+    function onLocal(e) { if (e.detail && e.detail.key === key) refresh(); }
+    global.addEventListener("storage", onStorage);
+    global.addEventListener(LOCAL_EVENT, onLocal);
+
+    return () => {
+      global.removeEventListener("storage", onStorage);
+      global.removeEventListener(LOCAL_EVENT, onLocal);
+    };
   }
 
   // ===================================================================
-  // LISTA DE CONVERSAS — inscrição em tempo real de todas as conversas
-  // de `email`, mais recente primeiro, já com `unread` calculado.
-  // `resolveFn` (opcional) recebe o e-mail do parceiro e devolve os
-  // dados de exibição (nome, avatar, username) — mesma ideia de antes.
+  // LISTA DE CONVERSAS — todas as conversas de `email`, mais recente
+  // primeiro, já com `unread` calculado. `resolveFn` (opcional) recebe
+  // o e-mail do parceiro e devolve os dados de exibição.
   // ===================================================================
   function subscribeConversationList(email, resolveFn, callback) {
-    return db.collection("conversations")
-      .where("participants", "array-contains", email)
-      .onSnapshot((snap) => {
-        const list = snap.docs
-          .map(d => {
-            const data = d.data();
-            const partner = data.participants.find(p => p !== email);
-            return {
-              id: d.id,
-              partner,
-              lastText: data.lastText,
-              lastFrom: data.lastFrom,
-              lastAt: data.lastAt,
-              unread: (data.unread && data.unread[email]) || 0,
-              player: typeof resolveFn === "function" ? resolveFn(partner) : null,
-            };
-          })
-          .sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
-        callback(list);
-      }, (err) => console.warn("ArenaMessages: falha ao escutar lista de conversas.", err));
+    function refresh() {
+      const list = loadConvList()
+        .filter(c => c.participants.includes(email))
+        .map(c => {
+          const partner = c.participants.find(p => p !== email);
+          return {
+            id: c.key,
+            partner,
+            lastText: c.lastText,
+            lastFrom: c.lastFrom,
+            lastAt: c.lastAt,
+            unread: (c.unread && c.unread[email]) || 0,
+            player: typeof resolveFn === "function" ? resolveFn(partner) : null,
+          };
+        })
+        .sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
+      callback(list);
+    }
+    refresh();
+
+    function onStorage(e) { if (!e.key || e.key === CONV_LIST_KEY) refresh(); }
+    function onLocal() { refresh(); }
+    global.addEventListener("storage", onStorage);
+    global.addEventListener(LOCAL_EVENT, onLocal);
+
+    return () => {
+      global.removeEventListener("storage", onStorage);
+      global.removeEventListener(LOCAL_EVENT, onLocal);
+    };
   }
 
   // ===== LEITURA — marca como lida (zera unread + atualiza reads) =====
   function markConversationRead(email, partner) {
-    const ref = conversationRef(email, partner);
-    return ref.get().then((snap) => {
-      const prev = snap.exists ? snap.data() : {};
-      return ref.set({
-        unread: { ...(prev.unread || {}), [email]: 0 },
-        reads: { ...(prev.reads || {}), [email]: Date.now() },
-      }, { merge: true });
-    });
+    const key = conversationKey(email, partner);
+    const list = loadConvList();
+    const prev = findConvEntry(list, key) || { key, participants: [email, partner], unread: {}, reads: {}, typing: {} };
+    const entry = {
+      ...prev,
+      participants: [email, partner],
+      unread: { ...(prev.unread || {}), [email]: 0 },
+      reads: { ...(prev.reads || {}), [email]: Date.now() },
+    };
+    upsertConvEntry(entry);
+    notifyChange(key);
+    return Promise.resolve();
   }
 
   // ===== TOTAL NÃO LIDAS — soma unread[email] de todas as conversas =====
   function subscribeTotalUnread(email, callback) {
-    return db.collection("conversations")
-      .where("participants", "array-contains", email)
-      .onSnapshot((snap) => {
-        const total = snap.docs.reduce((sum, d) => sum + ((d.data().unread || {})[email] || 0), 0);
-        callback(total);
-      }, (err) => console.warn("ArenaMessages: falha ao escutar total não lidas.", err));
+    function refresh() {
+      const total = loadConvList()
+        .filter(c => c.participants.includes(email))
+        .reduce((sum, c) => sum + ((c.unread || {})[email] || 0), 0);
+      callback(total);
+    }
+    refresh();
+
+    function onStorage(e) { if (!e.key || e.key === CONV_LIST_KEY) refresh(); }
+    function onLocal() { refresh(); }
+    global.addEventListener("storage", onStorage);
+    global.addEventListener(LOCAL_EVENT, onLocal);
+
+    return () => {
+      global.removeEventListener("storage", onStorage);
+      global.removeEventListener(LOCAL_EVENT, onLocal);
+    };
   }
 
   // Usado pro "✓✓" nas próprias mensagens: compara o horário da
   // mensagem com o último "reads" que o destinatário registrou.
   function subscribeReadReceipt(fromEmail, toEmail, callback) {
-    return conversationRef(fromEmail, toEmail).onSnapshot((snap) => {
-      const reads = snap.exists ? (snap.data().reads || {}) : {};
+    const key = conversationKey(fromEmail, toEmail);
+    function refresh() {
+      const entry = findConvEntry(loadConvList(), key);
+      const reads = entry ? (entry.reads || {}) : {};
       callback(reads[toEmail] || 0);
-    }, (err) => console.warn("ArenaMessages: falha ao escutar confirmação de leitura.", err));
+    }
+    refresh();
+
+    function onStorage(e) { if (!e.key || e.key === CONV_LIST_KEY) refresh(); }
+    function onLocal(e) { if (e.detail && e.detail.key === key) refresh(); }
+    global.addEventListener("storage", onStorage);
+    global.addEventListener(LOCAL_EVENT, onLocal);
+
+    return () => {
+      global.removeEventListener("storage", onStorage);
+      global.removeEventListener(LOCAL_EVENT, onLocal);
+    };
   }
 
   // ===================================================================
-  // "DIGITANDO..." — agora de verdade entre contas/dispositivos
-  // diferentes (antes só funcionava entre abas do mesmo navegador).
-  // setTyping é "fire and forget" — chame a cada tecla digitada (com
-  // um debounce simples do lado de quem chama, pra não escrever no
-  // Firestore a cada tecla; ex: só a cada ~1s enquanto digita).
+  // "DIGITANDO..." — só funciona entre abas do MESMO navegador (mesma
+  // limitação de antes da migração pro Firestore). setTyping é "fire
+  // and forget" — chame a cada tecla digitada, com debounce simples do
+  // lado de quem chama.
   // ===================================================================
   function setTyping(email, partner) {
-    conversationRef(email, partner).set({
-      typing: { [email]: Date.now() },
-    }, { merge: true }).catch(() => { /* silencioso */ });
+    const key = conversationKey(email, partner);
+    const list = loadConvList();
+    const prev = findConvEntry(list, key) || { key, participants: [email, partner], unread: {}, reads: {}, typing: {} };
+    const entry = { ...prev, participants: [email, partner], typing: { ...(prev.typing || {}), [email]: Date.now() } };
+    upsertConvEntry(entry);
+    notifyChange(key);
   }
 
-  // Chamado da perspectiva de quem está OLHANDO a conversa: "o meu
-  // parceiro está digitando pra mim agora?". Reavalia o TTL a cada
-  // snapshot recebido; como o Firestore não avisa sozinho quando um
-  // timestamp "expira" sem nova escrita, quem chama pode combinar isso
-  // com um setInterval leve (~1s) na tela de conversa se quiser que o
-  // indicador suma sozinho mesmo sem nova mensagem chegando.
+  // Chamado da perspectiva de quem está OLHANDO a conversa. Reavalia o
+  // TTL a cada mudança recebida E também a cada ~1s por conta própria
+  // (via setInterval interno), assim o indicador some sozinho mesmo
+  // sem nenhuma escrita nova chegando.
   function subscribeTyping(email, partner, callback) {
-    return conversationRef(email, partner).onSnapshot((snap) => {
-      const typing = snap.exists ? (snap.data().typing || {}) : {};
+    const key = conversationKey(email, partner);
+    function refresh() {
+      const entry = findConvEntry(loadConvList(), key);
+      const typing = entry ? (entry.typing || {}) : {};
       const ts = typing[partner];
       callback(!!ts && (Date.now() - ts < TYPING_TTL_MS));
-    }, (err) => console.warn("ArenaMessages: falha ao escutar indicador de digitação.", err));
+    }
+    refresh();
+
+    function onStorage(e) { if (!e.key || e.key === CONV_LIST_KEY) refresh(); }
+    function onLocal(e) { if (e.detail && e.detail.key === key) refresh(); }
+    global.addEventListener("storage", onStorage);
+    global.addEventListener(LOCAL_EVENT, onLocal);
+    const interval = setInterval(refresh, 1000);
+
+    return () => {
+      global.removeEventListener("storage", onStorage);
+      global.removeEventListener(LOCAL_EVENT, onLocal);
+      clearInterval(interval);
+    };
   }
 
   // ===================================================================
-  // BADGE DE NAV — agora se atualiza sozinho (inscrição), não precisa
-  // mais ser chamado de novo pra refletir mensagens novas chegando.
+  // BADGE DE NAV — usado por quase toda página do site.
   //   ArenaMessages.mountNavBadge("dm-nav-badge", meuEmail)
-  // Devolve a função de unsubscribe, caso a página queira parar de
-  // escutar em algum momento (opcional — a maioria das páginas do
-  // projeto não desmonta nada, então isso é raramente necessário).
   // ===================================================================
   function mountNavBadge(elementId, email) {
     const el = document.getElementById(elementId);
@@ -296,17 +336,4 @@
     setTyping, subscribeTyping,
     mountNavBadge,
   };
-
-  // ===================================================================
-  // NOTA SOBRE FIRESTORE SECURITY RULES — como agora os dados moram no
-  // servidor (não mais isolados no localStorage de cada um), a
-  // aplicação de privacidade descrita em canMessage() PRECISA também
-  // existir como regra de segurança no Firestore, senão é só uma
-  // sugestão de UI que qualquer um pode ignorar direto pela API.
-  // Esboço do que a regra da coleção `conversations/{id}/messages`
-  // deveria checar: o `request.auth.token.email` de quem escreve tem
-  // que estar em `participants` do doc pai, e (se for a primeira
-  // mensagem da conversa) valer as mesmas regras 2/3 de canMessage.
-  // Posso escrever essas regras (firestore.rules) quando você quiser.
-  // ===================================================================
 })(window);
