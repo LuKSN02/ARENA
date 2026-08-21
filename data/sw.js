@@ -23,7 +23,7 @@
    IMPORTANTE: sempre que mudar PRECACHE_URLS ou a lógica abaixo, subir
    o CACHE_VERSION — isso invalida o cache antigo nos clientes.
    =================================================================== */
-const CACHE_VERSION = "arena-v2";
+const CACHE_VERSION = "arena-v3";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
