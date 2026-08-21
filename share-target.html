@@ -9,6 +9,10 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171E">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="data/firebase-config.js"></script>
 <script src="data/utils.js"></script>
 <script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
@@ -107,100 +111,114 @@
 
 <script>
 (function(){
-  const { getSessionEmail, loadUsers, readJSON, escapeHtml } = window.ArenaUtils;
-  const sessionEmail = getSessionEmail();
+  const { loadUsers, readJSON, escapeHtml, onAuthReady } = window.ArenaUtils;
 
   function showOnly(id) {
     ["no-session-state", "no-payload-state", "no-following-state", "share-content"].forEach(x =>
       document.getElementById(x).classList.toggle("hidden", x !== id));
   }
 
-  ArenaSocial.initHeaderBell();
+  // Toda a lógica da página depende de saber se há sessão — e isso
+  // agora é assíncrono (Firebase Auth), então ela inteira mora dentro
+  // de onAuthReady em vez de rodar direto no carregamento do script.
+  onAuthReady((sessionEmail) => {
+    ArenaSocial.initHeaderBell({ email: sessionEmail });
 
-  if (!sessionEmail) { showOnly("no-session-state"); return; }
+    if (!sessionEmail) { showOnly("no-session-state"); return; }
 
-  // ===============================================================
-  // 1) LÊ O QUE FOI COMPARTILHADO — o manifest declara share_target
-  //    com method:"GET", então o navegador simplesmente navega pra cá
-  //    com ?title=&text=&url= já preenchidos. Sem service worker
-  //    envolvido nesse fluxo.
-  // ===============================================================
-  const params = new URLSearchParams(location.search);
-  const shared = {
-    title: (params.get("title") || "").trim(),
-    text: (params.get("text") || "").trim(),
-    url: (params.get("url") || "").trim(),
-  };
-  const hasPayload = shared.title || shared.text || shared.url;
-
-  if (!hasPayload) { showOnly("no-payload-state"); return; }
-
-  // Mensagem final que vai ser enviada como DM — junta só as partes
-  // que vieram preenchidas.
-  const messageText = [shared.title, shared.text, shared.url].filter(Boolean).join("\n");
-
-  document.getElementById("share-preview").innerHTML = `
-    ${shared.title ? `<span class="share-preview-title">${escapeHtml(shared.title)}</span>` : ""}
-    ${shared.text ? `<span class="share-preview-text">${escapeHtml(shared.text)}</span>` : ""}
-    ${shared.url ? `<a href="${escapeHtml(shared.url)}" target="_blank" rel="noopener" class="share-preview-url">${escapeHtml(shared.url)}</a>` : ""}
-  `;
-
-  // ===============================================================
-  // 2) LISTA DE DESTINATÁRIOS — reaproveita "seguindo" como a lista
-  //    mais provável de gente com quem dá pra falar (mesma lógica de
-  //    "amigo" já usada em ArenaMessages.canMessage).
-  // ===============================================================
-  function followingKey(email) { return `arena-following-${email}`; }
-  function getFollowing(email) { return readJSON(followingKey(email), []); }
-
-  function resolvePlayerCard(email) {
-    const rec = loadUsers().find(u => u.email === email);
-    if (!rec) return null;
-    const p = readJSON(`arena-profile-${email}`, {});
-    return {
-      email,
-      displayName: p.displayName || rec.name,
-      username: p.username || rec.name.split(" ")[0].toLowerCase(),
-      avatar: p.avatar || "",
+    // ===============================================================
+    // 1) LÊ O QUE FOI COMPARTILHADO — o manifest declara share_target
+    //    com method:"GET", então o navegador simplesmente navega pra cá
+    //    com ?title=&text=&url= já preenchidos. Sem service worker
+    //    envolvido nesse fluxo.
+    // ===============================================================
+    const params = new URLSearchParams(location.search);
+    const shared = {
+      title: (params.get("title") || "").trim(),
+      text: (params.get("text") || "").trim(),
+      url: (params.get("url") || "").trim(),
     };
-  }
+    const hasPayload = shared.title || shared.text || shared.url;
 
-  const followingEmails = getFollowing(sessionEmail);
-  if (followingEmails.length === 0) { showOnly("no-following-state"); return; }
+    if (!hasPayload) { showOnly("no-payload-state"); return; }
 
-  const recipients = followingEmails.map(resolvePlayerCard).filter(Boolean);
+    // Mensagem final que vai ser enviada como DM — junta só as partes
+    // que vieram preenchidas.
+    const messageText = [shared.title, shared.text, shared.url].filter(Boolean).join("\n");
 
-  showOnly("share-content");
-  const listEl = document.getElementById("recipient-list");
-  listEl.innerHTML = recipients.map(r => `
-    <button type="button" class="recipient-row" data-email="${escapeHtml(r.email)}">
-      <img class="recipient-avatar" src="${r.avatar || `https://placehold.co/68x68/1B1F28/D7DAE1?text=${encodeURIComponent((r.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(r.displayName)}">
-      <span class="flex-1 min-w-0">
-        <span class="block text-[12.5px] font-semibold truncate">${escapeHtml(r.displayName)}</span>
-        <span class="block font-mono text-[10.5px]" style="color: var(--muted);">@${escapeHtml(r.username)}</span>
-      </span>
-    </button>`).join("");
+    document.getElementById("share-preview").innerHTML = `
+      ${shared.title ? `<span class="share-preview-title">${escapeHtml(shared.title)}</span>` : ""}
+      ${shared.text ? `<span class="share-preview-text">${escapeHtml(shared.text)}</span>` : ""}
+      ${shared.url ? `<a href="${escapeHtml(shared.url)}" target="_blank" rel="noopener" class="share-preview-url">${escapeHtml(shared.url)}</a>` : ""}
+    `;
 
-  const feedback = document.getElementById("send-feedback");
+    // ===============================================================
+    // 2) LISTA DE DESTINATÁRIOS — reaproveita "seguindo" como a lista
+    //    mais provável de gente com quem dá pra falar (mesma lógica de
+    //    "amigo" já usada em ArenaMessages.canMessage). Segue e
+    //    perfil ainda são localStorage (não migrados nesta etapa);
+    //    loadUsers() agora é o cache do Firestore (data/utils.js).
+    // ===============================================================
+    function followingKey(email) { return `arena-following-${email}`; }
+    function getFollowing(email) { return readJSON(followingKey(email), []); }
 
-  listEl.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-email]");
-    if (!btn) return;
-    const toEmail = btn.dataset.email;
-    const result = window.ArenaMessages.sendMessage(sessionEmail, toEmail, messageText);
-
-    if (!result || result.blocked) {
-      feedback.textContent = result?.reason || "Não foi possível enviar essa mensagem.";
-      feedback.style.color = "var(--valorant)";
-      feedback.classList.remove("hidden");
-      return;
+    function resolvePlayerCard(email) {
+      const rec = loadUsers().find(u => u.email === email);
+      if (!rec) return null;
+      const p = readJSON(`arena-profile-${email}`, {});
+      return {
+        email,
+        displayName: p.displayName || rec.name,
+        username: p.username || rec.name.split(" ")[0].toLowerCase(),
+        avatar: p.avatar || "",
+      };
     }
 
-    btn.classList.add("is-sent");
-    feedback.textContent = "Enviado! Redirecionando pra conversa...";
-    feedback.style.color = "var(--live)";
-    feedback.classList.remove("hidden");
-    setTimeout(() => { location.href = `mensagens.html?user=${encodeURIComponent(toEmail)}`; }, 900);
+    const followingEmails = getFollowing(sessionEmail);
+    if (followingEmails.length === 0) { showOnly("no-following-state"); return; }
+
+    const recipients = followingEmails.map(resolvePlayerCard).filter(Boolean);
+
+    showOnly("share-content");
+    const listEl = document.getElementById("recipient-list");
+    listEl.innerHTML = recipients.map(r => `
+      <button type="button" class="recipient-row" data-email="${escapeHtml(r.email)}">
+        <img class="recipient-avatar" src="${r.avatar || `https://placehold.co/68x68/1B1F28/D7DAE1?text=${encodeURIComponent((r.displayName[0] || "?").toUpperCase())}`}" alt="${escapeHtml(r.displayName)}">
+        <span class="flex-1 min-w-0">
+          <span class="block text-[12.5px] font-semibold truncate">${escapeHtml(r.displayName)}</span>
+          <span class="block font-mono text-[10.5px]" style="color: var(--muted);">@${escapeHtml(r.username)}</span>
+        </span>
+      </button>`).join("");
+
+    const feedback = document.getElementById("send-feedback");
+
+    // sendMessage agora devolve uma Promise (antes devolvia o
+    // resultado na hora) — a única mudança real aqui é o .then().
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-email]");
+      if (!btn) return;
+      const toEmail = btn.dataset.email;
+
+      window.ArenaMessages.sendMessage(sessionEmail, toEmail, messageText).then((result) => {
+        if (!result || result.blocked) {
+          feedback.textContent = result?.reason || "Não foi possível enviar essa mensagem.";
+          feedback.style.color = "var(--valorant)";
+          feedback.classList.remove("hidden");
+          return;
+        }
+
+        btn.classList.add("is-sent");
+        feedback.textContent = "Enviado! Redirecionando pra conversa...";
+        feedback.style.color = "var(--live)";
+        feedback.classList.remove("hidden");
+        setTimeout(() => { location.href = `mensagens.html?user=${encodeURIComponent(toEmail)}`; }, 900);
+      }).catch((err) => {
+        console.error("ArenaMessages.sendMessage falhou:", err);
+        feedback.textContent = "Erro ao enviar. Tente de novo.";
+        feedback.style.color = "var(--valorant)";
+        feedback.classList.remove("hidden");
+      });
+    });
   });
 })();
 </script>

@@ -9,6 +9,10 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171E">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="data/firebase-config.js"></script>
 <script src="data/utils.js"></script>
 <script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
@@ -170,290 +174,338 @@
 
 <script>
 (function(){
-  const { getSessionEmail, loadUsers, readJSON, escapeHtml, relativeTime } = window.ArenaUtils;
-  const { getMessages, sendMessage, canMessage, listConversations, markConversationRead, mountNavBadge } = window.ArenaMessages;
+  const { loadUsers, readJSON, escapeHtml, relativeTime, onAuthReady } = window.ArenaUtils;
+  const {
+    canMessage, sendMessage, setTyping,
+    subscribeMessages, subscribeConversationList,
+    markConversationRead, subscribeReadReceipt, subscribeTyping,
+    mountNavBadge,
+  } = window.ArenaMessages;
 
-  const sessionEmail = getSessionEmail();
-
-  ArenaSocial.initHeaderBell();
-  mountNavBadge("dm-nav-badge", sessionEmail);
-
-  if (!sessionEmail) {
-    document.getElementById("no-session-state").classList.remove("hidden");
-    return;
-  }
-  document.getElementById("dm-app").classList.remove("hidden");
-
-  // ===============================================================
-  // RESOLVER DADOS DE EXIBIÇÃO DE UM JOGADOR A PARTIR DO E-MAIL
-  // (mesmo padrão usado em feed.html)
-  // ===============================================================
-  function resolvePlayerCard(email) {
-    const rec = loadUsers().find(u => u.email === email);
-    if (!rec) return { email, displayName: email, username: email.split("@")[0], avatar: "" };
-    const p = readJSON(`arena-profile-${email}`, {});
-    return {
-      email,
-      displayName: p.displayName || rec.name,
-      username: p.username || rec.name.split(" ")[0].toLowerCase(),
-      avatar: p.avatar || "",
-    };
-  }
-
-  function avatarUrl(player) {
-    return player.avatar || `https://placehold.co/84x84/1B1F28/D7DAE1?text=${encodeURIComponent((player.displayName[0] || "?").toUpperCase())}`;
-  }
-
-  // ===============================================================
-  // LISTA DE CONVERSAS
-  // ===============================================================
-  let activePartner = null;
-
-  function renderConvList() {
-    const conversations = listConversations(sessionEmail, resolvePlayerCard);
-    const listEl = document.getElementById("dm-conv-list");
-    const emptyEl = document.getElementById("dm-no-conversations");
-
-    if (conversations.length === 0) {
-      listEl.innerHTML = "";
-      emptyEl.classList.remove("hidden");
-      return;
-    }
-    emptyEl.classList.add("hidden");
-
-    listEl.innerHTML = conversations.map(c => `
-      <button type="button" class="dm-conv-row ${c.unread > 0 ? "has-unread" : ""} ${c.partner === activePartner ? "is-active" : ""}" data-partner="${escapeHtml(c.partner)}">
-        <img class="dm-conv-avatar" src="${avatarUrl(c.player)}" alt="">
-        <span class="dm-conv-body">
-          <span class="dm-conv-name">${escapeHtml(c.player.displayName)}</span>
-          <span class="dm-conv-preview">${c.lastFrom === sessionEmail ? "Você: " : ""}${escapeHtml(c.lastText)}</span>
-        </span>
-        <span class="dm-conv-meta">
-          <span class="dm-conv-time">${relativeTime(c.lastAt)}</span>
-          ${c.unread > 0 ? `<span class="dm-unread-dot">${c.unread > 9 ? "9+" : c.unread}</span>` : ""}
-        </span>
-      </button>`).join("");
-
-    listEl.querySelectorAll("[data-partner]").forEach(btn => {
-      btn.addEventListener("click", () => openConversation(btn.dataset.partner));
-    });
-  }
-
-  // ===============================================================
-  // THREAD ATIVA
-  // ===============================================================
-  function renderMessages(partner) {
-    const msgs = getMessages(sessionEmail, partner);
-    const wrap = document.getElementById("dm-messages");
-    const { isReadByRecipient } = window.ArenaMessages;
-
-    if (msgs.length === 0) {
-      wrap.innerHTML = `<div class="dm-empty-state"><p class="text-[12.5px]" style="color: var(--muted);">Nenhuma mensagem ainda — diga oi 👋</p></div>`;
-      return;
-    }
-
-    const wasNearBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 60;
-
-    let lastDay = null;
-    wrap.innerHTML = msgs.map(m => {
-      const day = new Date(m.at).toLocaleDateString("pt-BR");
-      const daySep = day !== lastDay ? `<div class="dm-day-sep">${day}</div>` : "";
-      lastDay = day;
-      const isMine = m.from === sessionEmail;
-      const time = new Date(m.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-      const readMark = isMine
-        ? (isReadByRecipient(sessionEmail, partner, m.at)
-            ? `<span title="Lida" style="color: var(--live);">✓✓</span>`
-            : `<span title="Enviada" style="color: var(--muted);">✓</span>`)
-        : "";
-      return `${daySep}
-        <div class="dm-bubble-row ${isMine ? "is-mine" : ""}">
-          <div>
-            <div class="dm-bubble">${escapeHtml(m.text)}</div>
-            <div class="dm-bubble-time">${time} ${readMark}</div>
-          </div>
-        </div>`;
-    }).join("");
-
-    if (wasNearBottom) wrap.scrollTop = wrap.scrollHeight;
-  }
-
-  function openConversation(partnerEmail) {
-    activePartner = partnerEmail;
-    const player = resolvePlayerCard(partnerEmail);
-
-    document.getElementById("dm-thread-empty").classList.add("hidden");
-    document.getElementById("dm-thread-active").classList.remove("hidden");
-
-    document.getElementById("dm-thread-avatar").src = avatarUrl(player);
-    const nameLink = document.getElementById("dm-thread-name");
-    nameLink.textContent = player.displayName;
-    nameLink.href = `perfil.html?user=${encodeURIComponent(partnerEmail)}`;
-    document.getElementById("dm-thread-username").textContent = `@${player.username}`;
-    document.getElementById("dm-typing-line").classList.add("hidden");
-    document.getElementById("dm-thread-username").classList.remove("hidden");
-
-    markConversationRead(sessionEmail, partnerEmail);
-    renderMessages(partnerEmail);
-    renderConvList();
+  // Toda a página depende de saber se há sessão — e isso agora é
+  // assíncrono (Firebase Auth) — então ela inteira mora dentro de
+  // onAuthReady, igual às outras páginas já migradas.
+  onAuthReady((sessionEmail) => {
+    ArenaSocial.initHeaderBell({ email: sessionEmail });
     mountNavBadge("dm-nav-badge", sessionEmail);
-    applyComposerState(partnerEmail);
 
-    // mobile: esconde a lista, mostra a thread
-    document.getElementById("dm-list-col").classList.add("is-hidden-mobile");
-    document.getElementById("dm-thread-col").classList.remove("is-hidden-mobile");
-
-    document.getElementById("dm-input").focus();
-  }
-
-  document.getElementById("dm-back-btn").addEventListener("click", () => {
-    document.getElementById("dm-list-col").classList.remove("is-hidden-mobile");
-    document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
-  });
-
-  // ===============================================================
-  // ESTADO DO COMPOSER — desabilita/avisa quando a privacidade do
-  // destinatário não permite conversa nova (ver ArenaMessages.canMessage).
-  // ===============================================================
-  const restrictedNotice = document.getElementById("dm-restricted-notice");
-
-  function applyComposerState(partner) {
-    const check = canMessage(sessionEmail, partner);
-    if (check.allowed) {
-      restrictedNotice.classList.add("hidden");
-      input.disabled = false;
-      input.placeholder = "Escreva uma mensagem...";
-      sendBtn.disabled = input.value.trim().length === 0;
-    } else {
-      restrictedNotice.textContent = `🔒 ${check.reason}`;
-      restrictedNotice.classList.remove("hidden");
-      input.disabled = true;
-      input.placeholder = "Você não pode enviar mensagem pra este jogador agora.";
-      sendBtn.disabled = true;
-    }
-  }
-
-  // ===============================================================
-  // ENVIAR MENSAGEM
-  // ===============================================================
-  const input = document.getElementById("dm-input");
-  const sendBtn = document.getElementById("dm-send-btn");
-  let lastTypingPing = 0;
-
-  function autoGrow() {
-    input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 120) + "px";
-  }
-  input.addEventListener("input", () => {
-    sendBtn.disabled = input.value.trim().length === 0;
-    autoGrow();
-    if (activePartner && input.value.trim().length > 0) {
-      const now = Date.now();
-      if (now - lastTypingPing > 1000) {
-        lastTypingPing = now;
-        window.ArenaMessages.setTyping(sessionEmail, activePartner);
-      }
-    }
-  });
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      doSend();
-    }
-  });
-  sendBtn.addEventListener("click", doSend);
-
-  function doSend() {
-    const text = input.value.trim();
-    if (!text || !activePartner) return;
-    const result = sendMessage(sessionEmail, activePartner, text);
-    if (result && result.blocked) {
-      applyComposerState(activePartner); // mostra o aviso, sem limpar o texto digitado
+    if (!sessionEmail) {
+      document.getElementById("no-session-state").classList.remove("hidden");
       return;
     }
-    input.value = "";
-    input.style.height = "auto";
-    sendBtn.disabled = true;
-    renderMessages(activePartner);
-    renderConvList();
-  }
+    document.getElementById("dm-app").classList.remove("hidden");
 
-  // ===============================================================
-  // BUSCA / NOVA CONVERSA
-  // ===============================================================
-  const searchInput = document.getElementById("dm-search-input");
-  const searchResults = document.getElementById("dm-search-results");
+    // ===============================================================
+    // RESOLVER DADOS DE EXIBIÇÃO DE UM JOGADOR A PARTIR DO E-MAIL
+    // (mesmo padrão usado em feed.html). loadUsers() agora é o cache
+    // do Firestore (data/utils.js); perfil ainda é localStorage (não
+    // migrado nesta etapa).
+    // ===============================================================
+    function resolvePlayerCard(email) {
+      const rec = loadUsers().find(u => u.email === email);
+      if (!rec) return { email, displayName: email, username: email.split("@")[0], avatar: "" };
+      const p = readJSON(`arena-profile-${email}`, {});
+      return {
+        email,
+        displayName: p.displayName || rec.name,
+        username: p.username || rec.name.split(" ")[0].toLowerCase(),
+        avatar: p.avatar || "",
+      };
+    }
 
-  searchInput.addEventListener("input", () => {
-    const q = searchInput.value.trim().toLowerCase();
-    if (q.length === 0) { searchResults.classList.add("hidden"); return; }
+    function avatarUrl(player) {
+      return player.avatar || `https://placehold.co/84x84/1B1F28/D7DAE1?text=${encodeURIComponent((player.displayName[0] || "?").toUpperCase())}`;
+    }
 
-    const matches = loadUsers()
-      .filter(u => u.email !== sessionEmail)
-      .map(u => resolvePlayerCard(u.email))
-      .filter(p => p.displayName.toLowerCase().includes(q) || p.username.toLowerCase().includes(q))
-      .slice(0, 6);
+    // ===============================================================
+    // LISTA DE CONVERSAS — antes era lida sob demanda (listConversations)
+    // e re-lida a cada 2s por um setInterval; agora é uma inscrição
+    // (subscribeConversationList) que já chama de volta sozinha toda
+    // vez que alguma conversa muda no Firestore, então renderConvList
+    // só existe pra desenhar o `latestConversations` mais recente.
+    // ===============================================================
+    let activePartner = null;
+    let latestConversations = [];
 
-    if (matches.length === 0) {
-      searchResults.innerHTML = `<p class="p-3 text-[12px]" style="color: var(--muted);">Nenhum jogador encontrado.</p>`;
-    } else {
-      searchResults.innerHTML = matches.map(p => `
-        <button type="button" class="dm-conv-row" data-start="${escapeHtml(p.email)}" style="border-bottom:1px solid var(--border);">
-          <img class="dm-conv-avatar" src="${avatarUrl(p)}" alt="">
+    function renderConvList() {
+      const listEl = document.getElementById("dm-conv-list");
+      const emptyEl = document.getElementById("dm-no-conversations");
+
+      if (latestConversations.length === 0) {
+        listEl.innerHTML = "";
+        emptyEl.classList.remove("hidden");
+        return;
+      }
+      emptyEl.classList.add("hidden");
+
+      listEl.innerHTML = latestConversations.map(c => `
+        <button type="button" class="dm-conv-row ${c.unread > 0 ? "has-unread" : ""} ${c.partner === activePartner ? "is-active" : ""}" data-partner="${escapeHtml(c.partner)}">
+          <img class="dm-conv-avatar" src="${avatarUrl(c.player)}" alt="">
           <span class="dm-conv-body">
-            <span class="dm-conv-name">${escapeHtml(p.displayName)}</span>
-            <span class="dm-conv-preview">@${escapeHtml(p.username)}</span>
+            <span class="dm-conv-name">${escapeHtml(c.player.displayName)}</span>
+            <span class="dm-conv-preview">${c.lastFrom === sessionEmail ? "Você: " : ""}${escapeHtml(c.lastText)}</span>
+          </span>
+          <span class="dm-conv-meta">
+            <span class="dm-conv-time">${relativeTime(c.lastAt)}</span>
+            ${c.unread > 0 ? `<span class="dm-unread-dot">${c.unread > 9 ? "9+" : c.unread}</span>` : ""}
           </span>
         </button>`).join("");
-      searchResults.querySelectorAll("[data-start]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          searchInput.value = "";
-          searchResults.classList.add("hidden");
-          openConversation(btn.dataset.start);
-        });
+
+      listEl.querySelectorAll("[data-partner]").forEach(btn => {
+        btn.addEventListener("click", () => openConversation(btn.dataset.partner));
       });
     }
-    searchResults.classList.remove("hidden");
+
+    subscribeConversationList(sessionEmail, resolvePlayerCard, (list) => {
+      latestConversations = list;
+      renderConvList();
+    });
+
+    // ===============================================================
+    // THREAD ATIVA — cada conversa aberta liga três inscrições
+    // (mensagens, "digitando...", confirmação de leitura). Ao trocar
+    // de conversa, cancelamos as três de antes antes de abrir as
+    // novas — senão a thread antiga ficaria escutando o Firestore pra
+    // sempre em segundo plano, gastando leitura à toa.
+    // ===============================================================
+    let latestMessages = [];
+    let partnerReadAt = 0;
+    let unsubMessages = null;
+    let unsubTyping = null;
+    let unsubReadReceipt = null;
+
+    function renderMessages() {
+      const wrap = document.getElementById("dm-messages");
+
+      if (latestMessages.length === 0) {
+        wrap.innerHTML = `<div class="dm-empty-state"><p class="text-[12.5px]" style="color: var(--muted);">Nenhuma mensagem ainda — diga oi 👋</p></div>`;
+        return;
+      }
+
+      const wasNearBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 60;
+
+      let lastDay = null;
+      wrap.innerHTML = latestMessages.map(m => {
+        const day = new Date(m.at).toLocaleDateString("pt-BR");
+        const daySep = day !== lastDay ? `<div class="dm-day-sep">${day}</div>` : "";
+        lastDay = day;
+        const isMine = m.from === sessionEmail;
+        const time = new Date(m.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        // antes: isReadByRecipient(...) lido na hora. agora: compara
+        // com partnerReadAt, que vem da inscrição subscribeReadReceipt.
+        const readMark = isMine
+          ? (partnerReadAt >= m.at
+              ? `<span title="Lida" style="color: var(--live);">✓✓</span>`
+              : `<span title="Enviada" style="color: var(--muted);">✓</span>`)
+          : "";
+        return `${daySep}
+          <div class="dm-bubble-row ${isMine ? "is-mine" : ""}">
+            <div>
+              <div class="dm-bubble">${escapeHtml(m.text)}</div>
+              <div class="dm-bubble-time">${time} ${readMark}</div>
+            </div>
+          </div>`;
+      }).join("");
+
+      if (wasNearBottom) wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function openConversation(partnerEmail) {
+      activePartner = partnerEmail;
+      const player = resolvePlayerCard(partnerEmail);
+
+      document.getElementById("dm-thread-empty").classList.add("hidden");
+      document.getElementById("dm-thread-active").classList.remove("hidden");
+
+      document.getElementById("dm-thread-avatar").src = avatarUrl(player);
+      const nameLink = document.getElementById("dm-thread-name");
+      nameLink.textContent = player.displayName;
+      nameLink.href = `perfil.html?user=${encodeURIComponent(partnerEmail)}`;
+      document.getElementById("dm-thread-username").textContent = `@${player.username}`;
+      document.getElementById("dm-typing-line").classList.add("hidden");
+      document.getElementById("dm-thread-username").classList.remove("hidden");
+
+      markConversationRead(sessionEmail, partnerEmail);
+      applyComposerState(partnerEmail);
+
+      // cancela as inscrições da conversa anterior (se houver) antes
+      // de abrir as desta
+      if (unsubMessages) unsubMessages();
+      if (unsubTyping) unsubTyping();
+      if (unsubReadReceipt) unsubReadReceipt();
+
+      latestMessages = [];
+      partnerReadAt = 0;
+
+      unsubMessages = subscribeMessages(sessionEmail, partnerEmail, (msgs) => {
+        latestMessages = msgs;
+        renderMessages();
+        // thread aberta = lida em tempo real, toda vez que chega mensagem nova
+        markConversationRead(sessionEmail, partnerEmail);
+      });
+
+      unsubReadReceipt = subscribeReadReceipt(sessionEmail, partnerEmail, (readAt) => {
+        partnerReadAt = readAt;
+        renderMessages();
+      });
+
+      unsubTyping = subscribeTyping(sessionEmail, partnerEmail, (isTyping) => {
+        document.getElementById("dm-typing-line").classList.toggle("hidden", !isTyping);
+        document.getElementById("dm-thread-username").classList.toggle("hidden", isTyping);
+      });
+
+      // mobile: esconde a lista, mostra a thread
+      document.getElementById("dm-list-col").classList.add("is-hidden-mobile");
+      document.getElementById("dm-thread-col").classList.remove("is-hidden-mobile");
+
+      document.getElementById("dm-input").focus();
+    }
+
+    document.getElementById("dm-back-btn").addEventListener("click", () => {
+      document.getElementById("dm-list-col").classList.remove("is-hidden-mobile");
+      document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
+    });
+
+    // ===============================================================
+    // ESTADO DO COMPOSER — desabilita/avisa quando a privacidade do
+    // destinatário não permite conversa nova (ver ArenaMessages.canMessage,
+    // ainda síncrona porque lê privacidade/seguidores do localStorage).
+    // ===============================================================
+    const restrictedNotice = document.getElementById("dm-restricted-notice");
+
+    function applyComposerState(partner) {
+      const check = canMessage(sessionEmail, partner);
+      if (check.allowed) {
+        restrictedNotice.classList.add("hidden");
+        input.disabled = false;
+        input.placeholder = "Escreva uma mensagem...";
+        sendBtn.disabled = input.value.trim().length === 0;
+      } else {
+        restrictedNotice.textContent = `🔒 ${check.reason}`;
+        restrictedNotice.classList.remove("hidden");
+        input.disabled = true;
+        input.placeholder = "Você não pode enviar mensagem pra este jogador agora.";
+        sendBtn.disabled = true;
+      }
+    }
+
+    // ===============================================================
+    // ENVIAR MENSAGEM — sendMessage agora devolve uma Promise (antes
+    // devolvia o resultado na hora). Limpamos o campo de forma
+    // otimista e devolvemos o texto de volta se der erro/bloqueio —
+    // a thread em si não precisa mais ser re-renderizada manualmente
+    // aqui, porque subscribeMessages já vai receber a mensagem nova
+    // sozinho assim que ela for gravada no Firestore.
+    // ===============================================================
+    const input = document.getElementById("dm-input");
+    const sendBtn = document.getElementById("dm-send-btn");
+    let lastTypingPing = 0;
+
+    function autoGrow() {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    }
+    input.addEventListener("input", () => {
+      sendBtn.disabled = input.value.trim().length === 0;
+      autoGrow();
+      if (activePartner && input.value.trim().length > 0) {
+        const now = Date.now();
+        if (now - lastTypingPing > 1000) {
+          lastTypingPing = now;
+          setTyping(sessionEmail, activePartner);
+        }
+      }
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        doSend();
+      }
+    });
+    sendBtn.addEventListener("click", doSend);
+
+    function doSend() {
+      const text = input.value.trim();
+      if (!text || !activePartner) return;
+      const partner = activePartner;
+
+      input.value = "";
+      input.style.height = "auto";
+      sendBtn.disabled = true;
+
+      sendMessage(sessionEmail, partner, text).then((result) => {
+        if (result && result.blocked) {
+          // não foi enviada — devolve o texto digitado pro campo
+          input.value = text;
+          autoGrow();
+          applyComposerState(partner);
+        }
+      }).catch((err) => {
+        console.error("ArenaMessages.sendMessage falhou:", err);
+        input.value = text;
+        autoGrow();
+        sendBtn.disabled = input.value.trim().length === 0;
+      });
+    }
+
+    // ===============================================================
+    // BUSCA / NOVA CONVERSA — loadUsers() agora é o cache do Firestore
+    // (data/utils.js); resto igual a antes.
+    // ===============================================================
+    const searchInput = document.getElementById("dm-search-input");
+    const searchResults = document.getElementById("dm-search-results");
+
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (q.length === 0) { searchResults.classList.add("hidden"); return; }
+
+      const matches = loadUsers()
+        .filter(u => u.email !== sessionEmail)
+        .map(u => resolvePlayerCard(u.email))
+        .filter(p => p.displayName.toLowerCase().includes(q) || p.username.toLowerCase().includes(q))
+        .slice(0, 6);
+
+      if (matches.length === 0) {
+        searchResults.innerHTML = `<p class="p-3 text-[12px]" style="color: var(--muted);">Nenhum jogador encontrado.</p>`;
+      } else {
+        searchResults.innerHTML = matches.map(p => `
+          <button type="button" class="dm-conv-row" data-start="${escapeHtml(p.email)}" style="border-bottom:1px solid var(--border);">
+            <img class="dm-conv-avatar" src="${avatarUrl(p)}" alt="">
+            <span class="dm-conv-body">
+              <span class="dm-conv-name">${escapeHtml(p.displayName)}</span>
+              <span class="dm-conv-preview">@${escapeHtml(p.username)}</span>
+            </span>
+          </button>`).join("");
+        searchResults.querySelectorAll("[data-start]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            searchInput.value = "";
+            searchResults.classList.add("hidden");
+            openConversation(btn.dataset.start);
+          });
+        });
+      }
+      searchResults.classList.remove("hidden");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!searchResults.contains(e.target) && e.target !== searchInput) searchResults.classList.add("hidden");
+    });
+
+    // ===============================================================
+    // INÍCIO — abre direto uma conversa se veio de ?user=, senão só
+    // mostra a lista. Não existe mais setInterval de polling: lista de
+    // conversas, mensagens, "digitando...", confirmação de leitura e
+    // badge de nav já se atualizam sozinhos via onSnapshot do Firestore.
+    // ===============================================================
+    const params = new URLSearchParams(location.search);
+    const startWith = params.get("user");
+    if (startWith && startWith !== sessionEmail) {
+      openConversation(startWith);
+    } else if (window.innerWidth < 768) {
+      // mobile sem conversa aberta: mostra só a lista
+      document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
+    }
   });
-
-  document.addEventListener("click", (e) => {
-    if (!searchResults.contains(e.target) && e.target !== searchInput) searchResults.classList.add("hidden");
-  });
-
-  // ===============================================================
-  // POLLING LEVE — como não há servidor, é assim que a página nota
-  // mensagens novas / status de leitura / "digitando..." vindos de
-  // outra aba do mesmo navegador (ex: outra conta logada ali).
-  // Não mexe no campo de texto, só atualiza o que é só-leitura.
-  // ===============================================================
-  setInterval(() => {
-    if (!activePartner) { renderConvList(); mountNavBadge("dm-nav-badge", sessionEmail); return; }
-
-    markConversationRead(sessionEmail, activePartner); // thread aberta = lida em tempo real
-    renderMessages(activePartner);
-    renderConvList();
-    mountNavBadge("dm-nav-badge", sessionEmail);
-
-    const typingLine = document.getElementById("dm-typing-line");
-    const usernameEl = document.getElementById("dm-thread-username");
-    const isTyping = window.ArenaMessages.isPartnerTyping(sessionEmail, activePartner);
-    typingLine.classList.toggle("hidden", !isTyping);
-    usernameEl.classList.toggle("hidden", isTyping);
-  }, 2000);
-
-  // ===============================================================
-  // INÍCIO — abre direto uma conversa se veio de ?user=, senão só
-  // mostra a lista.
-  // ===============================================================
-  renderConvList();
-  const params = new URLSearchParams(location.search);
-  const startWith = params.get("user");
-  if (startWith && startWith !== sessionEmail) {
-    openConversation(startWith);
-  } else if (window.innerWidth < 768) {
-    // mobile sem conversa aberta: mostra só a lista
-    document.getElementById("dm-thread-col").classList.add("is-hidden-mobile");
-  }
 })();
 </script>
 

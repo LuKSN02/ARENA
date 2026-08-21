@@ -92,16 +92,14 @@ const CAMPEONATOS = [
    quebra nada que já lê a variável direto), mas a partir de agora as
    páginas devem preferir getCampeonatos(), que devolve uma Promise.
    Hoje ela só resolve o array estático depois de um atraso simulado
-   (pra já validar o loading state contra algo parecido com rede real)
-   — no dia da migração pra Firebase/PandaScore, só o CORPO dessa
-   função muda (pra um fetch/onSnapshot de verdade); nenhuma página
-   que já chama getCampeonatos() precisa ser tocada.
+   via ArenaUtils.simulateLatency() (pra já validar o loading state
+   contra algo parecido com rede real) — no dia da migração pra
+   Firebase/PandaScore, só o CORPO dessa função muda (pra um
+   fetch/onSnapshot de verdade); nenhuma página que já chama
+   getCampeonatos() precisa ser tocada.
    =================================================================== */
-const SIMULATED_LATENCY_MS = 450;
 function getCampeonatos() {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(CAMPEONATOS), SIMULATED_LATENCY_MS);
-  });
+  return window.ArenaUtils.simulateLatency(CAMPEONATOS);
 }
 
 window.ArenaData = Object.assign(window.ArenaData || {}, { getCampeonatos });

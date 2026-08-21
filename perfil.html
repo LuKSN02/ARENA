@@ -10,16 +10,13 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171E">
 <script src="data/utils.js"></script>
+<script src="data/profile.js"></script>
 <script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
 <script src="data/messages.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="data/theme.css">
 <style>
-  html, body{ background: var(--bg); }
-  body{ font-family:'Inter', sans-serif; color: var(--ink); }
-  .font-display{ font-family:'Teko', sans-serif; }
-  .font-mono{ font-family:'JetBrains Mono', monospace; }
 
   .rk-card{ background: var(--panel); border:1px solid var(--border); border-radius:14px; }
 
@@ -388,18 +385,10 @@
     { key: "discord", label: "Discord", color: "#5865F2", initial: "D" },
     { key: "twitch", label: "Twitch", color: "#9146FF", initial: "T" },
   ];
-  const ITEM_RARITY = {
-    "banner-neon-grade":"comum","banner-sinal-ao-vivo":"raro","banner-chamas-furia":"raro",
-    "banner-nebulosa-roxa":"epico","banner-aurora-cyber":"lendario","emblema-primeira-vitoria":"comum",
-    "emblema-cacador-noticias":"raro","emblema-comentarista":"raro","emblema-estrategista":"raro",
-    "emblema-coracao-roxo":"epico","emblema-veterano":"epico","emblema-fa-fundador":"lendario",
-    "moldura-cyber-digital":"epico","moldura-ouro-elite":"lendario","moldura-neon-glitch":"epico",
-    "banner-perfil-nebulosa":"epico","banner-perfil-campeao":"epico","banner-perfil-tempestade":"epico",
-    "banner-perfil-vaporwave":"epico","moldura-plasma-arena":"lendario","moldura-gelo-eterno":"epico",
-    "emblema-arena-vip":"lendario","emblema-cacador-lendas":"epico","emblema-fundador-cosmico":"lendario",
-    "banner-perfil-oceano-digital":"epico","banner-perfil-aurora-verde":"epico","emblema-mestre-arena":"lendario",
-    "emblema-fenix-renascida":"epico","cupom-loja-10":"comum","cupom-chat-vip":"raro","emblema-popular":"raro",
-  };
+  // Fonte única em data/profile.js (ArenaProfile.ITEM_RARITY_LOOKUP) —
+  // antes vinha copiado aqui e em ranking.html, e as duas cópias podiam
+  // divergir sempre que um item novo entrasse no catálogo.
+  const ITEM_RARITY = window.ArenaProfile.ITEM_RARITY_LOOKUP;
   const RARITY_XP = { comum: 10, raro: 25, epico: 50, lendario: 100 };
   const XP_PER_LEVEL = 150;
 

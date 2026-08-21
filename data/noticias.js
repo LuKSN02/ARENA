@@ -145,13 +145,11 @@ const GAMES = {
    direto e não foram migradas pra loading state ainda); getNoticias()
    é o caminho novo, assíncrono, pras páginas que forem adotando o
    padrão — hoje resolve o mesmo objeto estático depois de um atraso
-   simulado, e no dia de trocar por CMS/Firebase só o corpo dela muda.
+   simulado via ArenaUtils.simulateLatency(), e no dia de trocar por
+   CMS/Firebase só o corpo dela muda.
    =================================================================== */
-const SIMULATED_LATENCY_MS = 450;
 function getNoticias() {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(GAMES), SIMULATED_LATENCY_MS);
-  });
+  return window.ArenaUtils.simulateLatency(GAMES);
 }
 
 window.ArenaData = Object.assign(window.ArenaData || {}, { getNoticias });

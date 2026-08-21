@@ -905,37 +905,19 @@
       <button type="button" id="login-back-to-signin-1" class="font-mono text-[11.5px] font-semibold text-center" style="color: var(--muted);">← Voltar para o login</button>
     </form>
 
-    <!-- ===== TELA 3 — LINK "ENVIADO" (confirmação + simulação de demo) ===== -->
+    <!-- ===== TELA 3 — LINK ENVIADO (agora de verdade, via Firebase Auth) =====
+         A troca de senha em si acontece numa página que o próprio
+         Firebase hospeda, fora deste modal — por isso não existe mais
+         uma "Tela 4" aqui dentro. -->
     <div id="login-forgot-sent" class="login-view hidden p-5 flex flex-col gap-3" data-view="forgot-sent">
       <div class="text-3xl">📬</div>
       <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">
         Se esse e-mail existir na Arena, enviamos um link de redefinição — confira sua caixa de entrada (e o spam).
-        O link expira em 30 minutos.
+        O link expira em 1 hora.
       </p>
-      <p class="text-[11px]" style="color: var(--muted);">
-        🔧 Modo demonstração: este protótipo não envia e-mails de verdade. Clique abaixo pra simular a abertura do link.
-      </p>
-      <button type="button" id="login-simulate-link-btn" class="btn-outline-mini">SIMULAR ABERTURA DO LINK</button>
+      <button type="button" id="login-resend-btn" class="btn-outline-mini">REENVIAR E-MAIL</button>
       <button type="button" id="login-back-to-signin-2" class="font-mono text-[11.5px] font-semibold text-center mt-1" style="color: var(--muted);">← Voltar para o login</button>
     </div>
-
-    <!-- ===== TELA 4 — DEFINIR NOVA SENHA ===== -->
-    <form id="login-reset-form" class="login-view hidden p-5 flex flex-col gap-3" data-view="forgot-reset">
-      <p class="text-[13px] leading-relaxed" style="color: var(--ink-soft);">Escolha uma nova senha pra sua conta.</p>
-      <div>
-        <label for="login-reset-password" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">NOVA SENHA</label>
-        <input id="login-reset-password" type="password" required minlength="6" placeholder="mín. 6 caracteres" class="modal-input" autocomplete="new-password">
-        <div class="pw-strength" id="login-reset-strength-bar" data-level="0"><span></span><span></span><span></span></div>
-        <span id="login-reset-password-hint" class="field-hint">Use 8+ caracteres com letras e números pra uma senha forte.</span>
-      </div>
-      <div>
-        <label for="login-reset-confirm" class="font-mono text-[10px] font-semibold block mb-1.5" style="color: var(--muted);">CONFIRMAR NOVA SENHA</label>
-        <input id="login-reset-confirm" type="password" required minlength="6" placeholder="repita a senha" class="modal-input" autocomplete="new-password">
-        <span id="login-reset-confirm-hint" class="field-hint"></span>
-      </div>
-      <span id="login-reset-error" class="text-[12px] hidden"></span>
-      <button type="submit" class="btn-neon font-mono text-[12px] font-semibold px-5 py-2.5 clip-tag mt-1">REDEFINIR SENHA</button>
-    </form>
   </div>
 </div>
 
@@ -1037,6 +1019,10 @@
   <span>🎉</span><span id="signup-toast-text">Conta criada com sucesso!</span>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="data/firebase-config.js"></script>
 <script src="data/utils.js"></script>
 <script src="data/pwa.js"></script>
 <script src="data/profile.js"></script>
@@ -1504,14 +1490,17 @@
   searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeModal(searchOverlay); });
 
   // ===============================================================
-  // "BANCO" DE USUÁRIOS — persistido no localStorage do navegador.
-  // Sem backend real, mas agora o login só funciona se o e-mail e
-  // a senha baterem com uma conta criada no cadastro.
+  // "BANCO" DE USUÁRIOS — agora Firestore (coleção "users"), acessado
+  // através do cache síncrono que data/utils.js mantém atualizado em
+  // tempo real. loadUsers() continua com o mesmo nome de sempre;
+  // registerUser/loginUser/logoutUser são as novas funções de verdade
+  // (login/senha agora são validados pelo Firebase Auth, não mais
+  // comparados manualmente contra o array local).
   // ===============================================================
-  const { loadUsers, saveUsers } = window.ArenaUtils;
+  const { loadUsers, registerUser, loginUser, logoutUser, onAuthReady } = window.ArenaUtils;
 
   // ===============================================================
-  // LOGIN — exige e-mail e senha cadastrados previamente.
+  // LOGIN
   // ===============================================================
   const loginOverlay = document.getElementById("login-overlay");
   const loginForm = document.getElementById("login-form");
@@ -1522,15 +1511,14 @@
   let userEmail = "";
 
   // ===============================================================
-  // SESSÃO — por padrão vive só no sessionStorage (dura a aba). Se a
-  // pessoa marcar "Manter conectado" no login, também guardamos uma
-  // cópia persistente no localStorage com validade de 30 dias — ao
-  // reabrir o navegador, getSessionEmail() recupera essa cópia e
-  // "espelha" de volta pro sessionStorage da aba atual. É esse e-mail
-  // que perfil-config.html usa pra saber de quem carregar/salvar o
-  // perfil (banner, avatar, bio etc.), guardado em outra chave.
+  // SESSÃO — agora é o Firebase Auth de verdade (ver data/utils.js).
+  // getSessionEmail() continua existindo com o mesmo nome, mas quem a
+  // alimenta é o listener onAuthStateChanged do Firebase — e esse
+  // listener é ASSÍNCRONO. Por isso a restauração de sessão logo
+  // abaixo roda dentro de ArenaUtils.onAuthReady(), em vez de rodar
+  // direto no carregamento do script como antes.
   // ===============================================================
-  const { setSession, clearSession, getSessionEmail } = window.ArenaUtils;
+  const { getSessionEmail } = window.ArenaUtils;
 
   // Perfil, inventário e catálogo de emblemas agora vêm de
   // data/profile.js (fonte única compartilhada com loja.html — antes
@@ -1780,17 +1768,43 @@
     window.ArenaSocial.initHeaderBell({ email: getSessionEmail() });
   }
 
-  // Restaura a sessão ao carregar a página (ex: voltando de perfil-config.html)
-  (function restoreSession() {
-    const email = getSessionEmail();
+  // Restaura a sessão ao carregar a página (ex: voltando de perfil-config.html).
+  // Mesma ideia de antes, mas dentro de onAuthReady — ver aviso acima
+  // sobre a checagem de sessão do Firebase ser assíncrona. Se o doc do
+  // usuário no Firestore ainda não tiver chegado no cache local nesse
+  // instante exato (janela bem curta, logo na primeira carga), o
+  // listener "arena-auth-changed" abaixo cobre esse caso assim que o
+  // cache terminar de sincronizar.
+  onAuthReady((email) => {
     if (!email) return;
     const match = loadUsers().find(u => u.email === email);
-    if (!match) { clearSession(); return; }
+    if (!match) return;
     isLoggedIn = true;
     userEmail = email;
     userName = match.name.split(" ")[0];
     updateLoginUI();
-  })();
+  });
+
+  // Mantém a UI sincronizada com o Firebase Auth em tempo real — cobre
+  // tanto "cache de usuários ainda carregando" (acima) quanto login/
+  // logout feito em outra aba do mesmo navegador.
+  window.addEventListener("arena-auth-changed", (e) => {
+    const email = e.detail.email;
+    if (email && !isLoggedIn) {
+      const match = loadUsers().find(u => u.email === email);
+      if (match) {
+        isLoggedIn = true;
+        userEmail = email;
+        userName = match.name.split(" ")[0];
+        updateLoginUI();
+      }
+    } else if (!email && isLoggedIn) {
+      isLoggedIn = false;
+      userName = "";
+      userEmail = "";
+      updateLoginUI();
+    }
+  });
 
   document.querySelectorAll(".js-open-login").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1844,12 +1858,11 @@
   }
 
   function doLogout() {
-    isLoggedIn = false;
-    userName = "";
-    userEmail = "";
-    clearSession();
+    // logoutUser() dispara onAuthStateChanged do Firebase, que por sua
+    // vez dispara "arena-auth-changed" (ver listener acima) — é ele
+    // quem zera isLoggedIn/userName/userEmail e chama updateLoginUI().
+    logoutUser();
     closeUserDropdown();
-    updateLoginUI();
   }
   document.getElementById("js-logout").addEventListener("click", doLogout);
   document.getElementById("js-logout-mobile").addEventListener("click", doLogout);
@@ -1867,7 +1880,6 @@
     "signin": `Entrar na <span style="color: var(--valorant);">Arena</span>`,
     "forgot-email": `Recuperar <span style="color: var(--valorant);">senha</span>`,
     "forgot-sent": `Verifique seu <span style="color: var(--valorant);">e-mail</span>`,
-    "forgot-reset": `Nova <span style="color: var(--valorant);">senha</span>`,
   };
   let forgotPasswordEmail = ""; // guarda o e-mail em recuperação entre as telas
 
@@ -1881,29 +1893,35 @@
     e.preventDefault();
     const email = document.getElementById("login-email").value.trim().toLowerCase();
     const password = document.getElementById("login-password").value;
+    const remember = document.getElementById("login-remember").checked;
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
 
     if (!email || !password) {
       loginError.textContent = "Preencha e-mail e senha para continuar.";
       loginError.classList.remove("hidden");
       return;
     }
+    loginError.classList.add("hidden");
+    submitBtn.disabled = true;
 
-    const match = loadUsers().find(u => u.email === email && u.password === password);
-    if (!match) {
+    loginUser(email, password, remember).then((cred) => {
+      const match = loadUsers().find(u => u.email === cred.user.email);
+      isLoggedIn = true;
+      userEmail = cred.user.email;
+      userName = (match && match.name ? match.name : (cred.user.displayName || userEmail)).split(" ")[0];
+      updateLoginUI();
+      closeModal(loginOverlay);
+      loginForm.reset();
+      document.getElementById("login-remember").checked = true; // volta ao padrão pra próxima vez
+    }).catch(() => {
+      // Firebase Auth não distingue "e-mail não cadastrado" de "senha
+      // errada" por padrão (ambos caem em auth/invalid-credential) —
+      // mesma mensagem genérica de antes, só que agora vindo do Firebase.
       loginError.textContent = "E-mail ou senha incorretos. Ainda não tem conta? Cadastre-se.";
       loginError.classList.remove("hidden");
-      return;
-    }
-    loginError.classList.add("hidden");
-
-    isLoggedIn = true;
-    userName = match.name.split(" ")[0];
-    userEmail = match.email;
-    setSession(userEmail, document.getElementById("login-remember").checked);
-    updateLoginUI();
-    closeModal(loginOverlay);
-    loginForm.reset();
-    document.getElementById("login-remember").checked = true; // volta ao padrão pra próxima vez
+    }).finally(() => {
+      submitBtn.disabled = false;
+    });
   });
 
   document.getElementById("login-forgot-link").addEventListener("click", () => {
@@ -1926,92 +1944,26 @@
       return;
     }
     forgotEmailError.classList.add("hidden");
-    // Por segurança, NUNCA revelamos se o e-mail existe ou não na base
-    // — a mensagem na próxima tela é sempre a mesma, exista a conta ou não.
     forgotPasswordEmail = email;
+
+    // Dispara o e-mail de verdade via Firebase Auth — o Firebase cuida
+    // do link/token de uso único e da página de troca de senha. Por
+    // segurança, NUNCA revelamos se o e-mail existe ou não na base:
+    // a tela seguinte é sempre a mesma, dê certo ou não, então o erro
+    // (se houver) só vai pro console, nunca pra UI.
+    window.ArenaUtils.resetPassword(email).catch((err) => {
+      console.warn("Falha ao enviar e-mail de redefinição:", err.code);
+    });
     showLoginView("forgot-sent");
   });
 
-  // ----- Tela 3: confirmação (link "enviado") -----
-  document.getElementById("login-simulate-link-btn").addEventListener("click", () => {
-    // Demo: em produção isso seria o destino do link recebido por e-mail,
-    // validado por um token de uso único com expiração curta no backend.
-    document.getElementById("login-reset-form").reset();
-    document.getElementById("login-reset-strength-bar").dataset.level = "0";
-    [document.getElementById("login-reset-password"), document.getElementById("login-reset-confirm")].forEach(el => el.classList.remove("is-error", "is-ok"));
-    document.getElementById("login-reset-password-hint").textContent = "Use 8+ caracteres com letras e números pra uma senha forte.";
-    document.getElementById("login-reset-password-hint").className = "field-hint";
-    document.getElementById("login-reset-confirm-hint").textContent = "";
-    showLoginView("forgot-reset");
-  });
-
-  // ----- Tela 4: definir nova senha -----
-  const resetForm = document.getElementById("login-reset-form");
-  const resetPasswordInput = document.getElementById("login-reset-password");
-  const resetPasswordHint = document.getElementById("login-reset-password-hint");
-  const resetStrengthBar = document.getElementById("login-reset-strength-bar");
-  const resetConfirmInput = document.getElementById("login-reset-confirm");
-  const resetConfirmHint = document.getElementById("login-reset-confirm-hint");
-  const resetError = document.getElementById("login-reset-error");
-
-  resetPasswordInput.addEventListener("input", () => {
-    const pw = resetPasswordInput.value;
-    const level = pw.length < 6 ? 0 : Math.max(1, Math.min(3,
-      (pw.length >= 8 ? 1 : 0) + ((/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) ? 1 : 0) + ((/[^a-zA-Z0-9]/.test(pw) || pw.length >= 12) ? 1 : 0)
-    ));
-    resetStrengthBar.dataset.level = String(level);
-    if (!pw) { resetPasswordHint.textContent = "Use 8+ caracteres com letras e números pra uma senha forte."; resetPasswordHint.className = "field-hint"; }
-    else if (pw.length < 6) { resetPasswordHint.textContent = `Faltam ${6 - pw.length} caractere(s) — mínimo de 6.`; resetPasswordHint.className = "field-hint is-error"; }
-    else if (level <= 1) { resetPasswordHint.textContent = "Senha fraca — tente misturar letras e números."; resetPasswordHint.className = "field-hint"; }
-    else if (level === 2) { resetPasswordHint.textContent = "Senha boa."; resetPasswordHint.className = "field-hint is-ok"; }
-    else { resetPasswordHint.textContent = "Senha forte ✓"; resetPasswordHint.className = "field-hint is-ok"; }
-    if (resetConfirmInput.value) resetConfirmInput.dispatchEvent(new Event("input"));
-  });
-  resetConfirmInput.addEventListener("input", () => {
-    if (!resetConfirmInput.value) { resetConfirmHint.textContent = ""; resetConfirmHint.className = "field-hint"; resetConfirmInput.classList.remove("is-error", "is-ok"); return; }
-    if (resetConfirmInput.value !== resetPasswordInput.value) {
-      resetConfirmInput.classList.add("is-error"); resetConfirmInput.classList.remove("is-ok");
-      resetConfirmHint.textContent = "As senhas não coincidem."; resetConfirmHint.className = "field-hint is-error";
-    } else {
-      resetConfirmInput.classList.add("is-ok"); resetConfirmInput.classList.remove("is-error");
-      resetConfirmHint.textContent = "Senhas iguais ✓"; resetConfirmHint.className = "field-hint is-ok";
-    }
-  });
-
-  resetForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const pw = resetPasswordInput.value;
-    const confirm = resetConfirmInput.value;
-    if (pw.length < 6) {
-      resetError.textContent = "Sua senha precisa ter pelo menos 6 caracteres.";
-      resetError.classList.remove("hidden");
-      return;
-    }
-    if (pw !== confirm) {
-      resetError.textContent = "As senhas não coincidem — confere de novo.";
-      resetError.classList.remove("hidden");
-      return;
-    }
-    resetError.classList.add("hidden");
-
-    // Atualiza a senha só se o e-mail realmente existir — mas a resposta
-    // pra pessoa é sempre a mesma, pra não revelar se a conta existe.
-    const users = loadUsers();
-    const idx = users.findIndex(u => u.email === forgotPasswordEmail);
-    if (idx >= 0) {
-      users[idx].password = pw;
-      saveUsers(users);
-    }
-
-    showLoginView("signin");
-    document.getElementById("login-email").value = forgotPasswordEmail;
-    loginError.textContent = "Senha redefinida! Já pode entrar com a nova senha.";
-    loginError.classList.remove("hidden");
-    loginError.style.color = "var(--live)";
-    setTimeout(() => {
-      document.getElementById("login-password").focus();
-      loginError.style.color = "";
-    }, 2500);
+  // ----- Tela 3: confirmação (link enviado de verdade) — só permite reenviar -----
+  document.getElementById("login-resend-btn").addEventListener("click", () => {
+    if (!forgotPasswordEmail) return;
+    window.ArenaUtils.resetPassword(forgotPasswordEmail).catch((err) => {
+      console.warn("Falha ao reenviar e-mail de redefinição:", err.code);
+    });
+    showSignupToast("E-mail reenviado — confira sua caixa de entrada.");
   });
 
   document.getElementById("login-back-to-signin-1").addEventListener("click", () => showLoginView("signin"));
@@ -2260,32 +2212,50 @@
     const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
 
-    const users = loadUsers();
-    if (users.some(u => u.email === email)) {
+    if (loadUsers().some(u => u.email === email)) {
       signupError.textContent = "Esse e-mail já tem conta na Arena. Faça login.";
       signupError.classList.remove("hidden");
       goToSignupStep(1);
       return;
     }
-    users.push({ name, email, password });
-    saveUsers(users);
 
-    saveProfilePatch(email, {
-      username: (usernameInput.value.trim() || slugifyUsername(name)).toLowerCase(),
-      avatar: signupAvatarDataUrl || "",
-      favoriteGames: Array.from(selectedGames),
-      marketingOptIn: document.getElementById("signup-marketing").checked,
+    signupNextBtn.disabled = true;
+    signupSkipBtn.disabled = true;
+
+    // registerUser() já cria a conta no Firebase Auth E o documento
+    // em users/{email} no Firestore (ver data/utils.js) — antes eram
+    // dois passos manuais (push no array local + saveUsers()).
+    registerUser(email, password, name).then(() => {
+      saveProfilePatch(email, {
+        username: (usernameInput.value.trim() || slugifyUsername(name)).toLowerCase(),
+        avatar: signupAvatarDataUrl || "",
+        favoriteGames: Array.from(selectedGames),
+        marketingOptIn: document.getElementById("signup-marketing").checked,
+      });
+
+      // Conta nova já entra logada — igual antes; a persistência
+      // padrão do Firebase Auth já equivale ao antigo "manter
+      // conectado neste dispositivo".
+      isLoggedIn = true;
+      userName = name.split(" ")[0];
+      userEmail = email;
+      updateLoginUI();
+
+      closeModal(signupOverlay);
+      resetSignupWizard();
+      showSignupToast(`Conta criada! Bem-vindo(a), ${userName} 🎉`);
+    }).catch((err) => {
+      signupError.textContent = err.code === "auth/email-already-in-use"
+        ? "Esse e-mail já tem conta na Arena. Faça login."
+        : err.code === "auth/weak-password"
+          ? "Sua senha precisa ter pelo menos 6 caracteres."
+          : "Não foi possível criar sua conta agora. Tente de novo.";
+      signupError.classList.remove("hidden");
+      goToSignupStep(1);
+    }).finally(() => {
+      signupNextBtn.disabled = false;
+      signupSkipBtn.disabled = false;
     });
-
-    isLoggedIn = true;
-    userName = name.split(" ")[0];
-    userEmail = email;
-    setSession(userEmail, true); // conta nova já entra com "manter conectado" por padrão
-    updateLoginUI();
-
-    closeModal(signupOverlay);
-    resetSignupWizard();
-    showSignupToast(`Conta criada! Bem-vindo(a), ${userName} 🎉`);
   }
 
   document.querySelector(".js-open-signup").addEventListener("click", (e) => {

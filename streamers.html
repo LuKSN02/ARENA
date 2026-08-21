@@ -9,6 +9,10 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171E">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="data/firebase-config.js"></script>
 <script src="data/utils.js"></script>
 <script src="data/pwa.js"></script>
 <script src="data/social.js"></script>
@@ -112,10 +116,21 @@
 <script src="data/streamers.js"></script>
 <script>
 (function(){
-  const { getSessionEmail, escapeHtml, formatCount } = window.ArenaUtils;
+  const { escapeHtml, formatCount, onAuthReady } = window.ArenaUtils;
 
-  ArenaSocial.initHeaderBell();
-  window.ArenaMessages?.mountNavBadge("dm-nav-badge", getSessionEmail());
+  // Sino de notificações e badge de mensagens dependem de saber se há
+  // sessão — e isso agora é assíncrono (Firebase Auth). onAuthReady
+  // garante que só tentamos montar essa UI depois que o Firebase
+  // confirmou, com certeza, se o usuário está logado ou não. Também
+  // escuta o evento "arena-auth-changed" pra remontar sozinho se a
+  // pessoa fizer login/logout sem sair desta página.
+  function mountSessionUI(email) {
+    if (!email) return;
+    ArenaSocial.initHeaderBell({ email });
+    window.ArenaMessages?.mountNavBadge("dm-nav-badge", email);
+  }
+  onAuthReady(mountSessionUI);
+  window.addEventListener("arena-auth-changed", (e) => mountSessionUI(e.detail.email));
 
   const filterBar = document.getElementById("game-filter-bar");
   let streamers = [];

@@ -60,7 +60,7 @@
   }
 
   // ===== EMBLEMAS =====
-  // Catálogo canônico — mesmos 14 emblemas (id/nome/emoji/raridade) do
+  // Catálogo canônico — mesmos emblemas (id/nome/emoji/raridade) do
   // CATALOG (itens type:"emblema") em inventario.html. Só metadados de
   // exibição ficam aqui; posse real do item continua em
   // arena-inventory-<email>, lido/escrito pelas funções acima.
@@ -80,6 +80,9 @@
     "emblema-mestre-arena": { name: "Emblema Mestre da Arena", emoji: "🎯", rarity: "lendario" },
     "emblema-fenix-renascida": { name: "Emblema Fênix Renascida", emoji: "🔥", rarity: "epico" },
     "emblema-criador": { name: "Criador", emoji: "🛠️", rarity: "lendario" },
+    "emblema-guardiao-arena": { name: "Emblema Guardião da Arena", emoji: "🛡️", rarity: "epico" },
+    "emblema-lenda-viva": { name: "Emblema Lenda Viva", emoji: "⚡", rarity: "lendario" },
+    "emblema-sombra-arena": { name: "Emblema Sombra da Arena", emoji: "🌑", rarity: "epico" },
   };
 
   // Se por algum motivo (dado antigo, teste, etc.) houver mais emblemas
@@ -103,9 +106,34 @@
     return inv;
   }
 
+  // ===== RARIDADE (resumo enxuto do catálogo, só id → raridade) =====
+  // Usado por páginas que precisam calcular XP/pontuação a partir da
+  // raridade de itens possuídos (perfil.html, ranking.html) sem
+  // carregar o CATALOG inteiro de inventario.html (nome/desc/emoji/
+  // condição de desbloqueio — informação que essas páginas não usam).
+  // Antes esse objeto vinha copiado byte a byte nos dois arquivos —
+  // qualquer item novo no catálogo (loja ou conquista) exigia lembrar
+  // de atualizar as duas cópias manualmente, e era fácil uma ficar
+  // pra trás (foi exatamente isso que aconteceu com os emblemas
+  // guardiao-arena/lenda-viva/sombra-arena antes de entrarem aqui).
+  const ITEM_RARITY_LOOKUP = {
+    "banner-neon-grade": "comum", "banner-sinal-ao-vivo": "raro", "banner-chamas-furia": "raro",
+    "banner-nebulosa-roxa": "epico", "banner-aurora-cyber": "lendario", "emblema-primeira-vitoria": "comum",
+    "emblema-cacador-noticias": "raro", "emblema-comentarista": "raro", "emblema-estrategista": "raro",
+    "emblema-coracao-roxo": "epico", "emblema-veterano": "epico", "emblema-fa-fundador": "lendario",
+    "moldura-cyber-digital": "epico", "moldura-ouro-elite": "lendario", "moldura-neon-glitch": "epico",
+    "banner-perfil-nebulosa": "epico", "banner-perfil-campeao": "epico", "banner-perfil-tempestade": "epico",
+    "banner-perfil-vaporwave": "epico", "moldura-plasma-arena": "lendario", "moldura-gelo-eterno": "epico",
+    "emblema-arena-vip": "lendario", "emblema-cacador-lendas": "epico", "emblema-fundador-cosmico": "lendario",
+    "banner-perfil-oceano-digital": "epico", "banner-perfil-aurora-verde": "epico", "emblema-mestre-arena": "lendario",
+    "emblema-fenix-renascida": "epico", "cupom-loja-10": "comum", "cupom-chat-vip": "raro", "emblema-popular": "raro",
+    "emblema-guardiao-arena": "epico", "emblema-lenda-viva": "lendario", "emblema-sombra-arena": "epico",
+  };
+
   global.ArenaProfile = {
     profileKey, loadProfile, saveProfilePatch,
     inventoryKey, loadInventoryList, saveInventoryList,
     EMBLEM_CATALOG, MAX_EQUIPPED_BADGES, normalizeEquippedBadges,
+    ITEM_RARITY_LOOKUP,
   };
 })(window);

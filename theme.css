@@ -48,6 +48,14 @@
 
   /* ranking / raridade */
   --gold: #F5B729; --silver: #C6CCD8; --bronze: #D97B4F;
+
+  /* raridade de cosméticos (inventário/loja) — usado em inventario.html,
+     perfil.html, perfil-config.html, ranking.html, feed.html */
+  --r-comum: #7C8394; --r-raro: #5865F2; --r-epico: #8B5CF6; --r-lendario: #F59E0B;
+
+  /* outros tokens usados em mais de uma página */
+  --discord-blurple: #5865F2;  /* index.html, inventario.html, perfil.html, perfil-config.html */
+  --ticker-bg: #0F1116;        /* index.html, jogo.html, loja.html, noticia.html, perfil-config.html */
 }
 
 html, body{ background: var(--bg); }
